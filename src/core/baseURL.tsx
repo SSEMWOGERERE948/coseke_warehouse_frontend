@@ -4,7 +4,7 @@ import { getTokenFromSessionStorage } from "../utils/helpers";
 export const baseApi = `http://${window.location.hostname}:7000/api/v1/`;
 
 export const AxiosInstance = axios.create({
-baseURL:baseApi,
+  baseURL: baseApi,
 });
 
 AxiosInstance.interceptors.request.use(

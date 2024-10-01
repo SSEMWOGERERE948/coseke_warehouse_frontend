@@ -14,9 +14,11 @@ export const PrivateRoute = ({ permission }: { permission?: string }) => {
 
   const permissions: string[] = permisionsList?.role?.activities;
 
-  return isAuthenticated() || permission && permissions.indexOf(permission) !== -1 ? (
+  return isAuthenticated() ||
+    (permission && permissions.indexOf(permission) !== -1) ? (
     <Outlet />
-  ) : isAuthenticated() || permission && permissions.indexOf(permission!) === -1 ? (
+  ) : isAuthenticated() ||
+    (permission && permissions.indexOf(permission!) === -1) ? (
     <Navigate to={routes.ERRORS} />
   ) : (
     <Navigate to="/" />
