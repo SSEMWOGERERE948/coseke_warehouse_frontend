@@ -33,14 +33,6 @@ export default function Navigation() {
           <ListItem>
             <ListItemButton>
               <ListItemDecorator>
-                <ShareRoundedIcon fontSize="small" />
-              </ListItemDecorator>
-              <ListItemContent>Shared files</ListItemContent>
-            </ListItemButton>
-          </ListItem>
-          <ListItem>
-            <ListItemButton>
-              <ListItemDecorator>
                 <DeleteRoundedIcon fontSize="small" />
               </ListItemDecorator>
               <ListItemContent>Trash</ListItemContent>
@@ -72,7 +64,7 @@ export default function Navigation() {
                   }}
                 />
               </ListItemDecorator>
-              <ListItemContent>Personal</ListItemContent>
+              <ListItemContent>Clinic</ListItemContent>
             </ListItemButton>
           </ListItem>
           <ListItem>
@@ -87,7 +79,7 @@ export default function Navigation() {
                   }}
                 />
               </ListItemDecorator>
-              <ListItemContent>Work</ListItemContent>
+              <ListItemContent>Lab</ListItemContent>
             </ListItemButton>
           </ListItem>
           <ListItem>
@@ -102,7 +94,7 @@ export default function Navigation() {
                   }}
                 />
               </ListItemDecorator>
-              <ListItemContent>Travels</ListItemContent>
+              <ListItemContent>Pharmacy</ListItemContent>
             </ListItemButton>
           </ListItem>
           <ListItem>
@@ -117,7 +109,7 @@ export default function Navigation() {
                   }}
                 />
               </ListItemDecorator>
-              <ListItemContent>Concert tickets</ListItemContent>
+              <ListItemContent>Regulatory Team</ListItemContent>
             </ListItemButton>
           </ListItem>
         </List>

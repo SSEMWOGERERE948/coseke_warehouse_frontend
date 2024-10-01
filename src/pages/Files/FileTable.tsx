@@ -35,186 +35,152 @@ import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import KeyboardArrowLeftIcon from "@mui/icons-material/KeyboardArrowLeft";
 import MoreHorizRoundedIcon from "@mui/icons-material/MoreHorizRounded";
 
-const rows = [
+interface ResponsiblePerson {
+  initial: string;
+  name: string;
+  email: string;
+}
+
+interface Row {
+  id: string;
+  fileName: string;
+  responsiblePerson: ResponsiblePerson;
+  status: "Available" | "Unavailable" | "Checked Out"; // Updated statuses
+  dateModified: string;
+  dateUploaded: string;
+  statusColor: "success" | "error" | "warning"; // Color types
+}
+
+const rows: Row[] = [
   {
-    id: "INV-1234",
-    date: "Feb 3, 2023",
-    status: "Refunded",
-    customer: {
+    id: "1",
+    fileName: "Project Proposal.docx",
+    responsiblePerson: {
       initial: "O",
-      name: "Olivia Ryhe",
-      email: "olivia@email.com",
+      name: "Olivia Rhye",
+      email: "olivia.rhye@email.com",
     },
+    status: "Available", // Updated status
+    dateModified: "2024-09-25",
+    dateUploaded: "2024-09-15",
+    statusColor: "success", // Color for Available
   },
   {
-    id: "INV-1233",
-    date: "Feb 3, 2023",
-    status: "Paid",
-    customer: {
+    id: "2",
+    fileName: "Budget Report.xlsx",
+    responsiblePerson: {
       initial: "S",
       name: "Steve Hampton",
-      email: "steve.hamp@email.com",
+      email: "steve.hampton@email.com",
     },
+    status: "Unavailable", // Updated status
+    dateModified: "2024-09-20",
+    dateUploaded: "2024-09-10",
+    statusColor: "error", // Color for Unavailable
   },
   {
-    id: "INV-1232",
-    date: "Feb 3, 2023",
-    status: "Refunded",
-    customer: {
+    id: "3",
+    fileName: "Meeting Notes.txt",
+    responsiblePerson: {
       initial: "C",
       name: "Ciaran Murray",
       email: "ciaran.murray@email.com",
     },
+    status: "Checked Out", // Updated status
+    dateModified: "2024-09-23",
+    dateUploaded: "2024-09-12",
+    statusColor: "warning", // Color for Checked Out
   },
   {
-    id: "INV-1231",
-    date: "Feb 3, 2023",
-    status: "Refunded",
-    customer: {
+    id: "4",
+    fileName: "Design Mockups.zip",
+    responsiblePerson: {
       initial: "M",
-      name: "Maria Macdonald",
-      email: "maria.mc@email.com",
+      name: "Marina Macdonald",
+      email: "marina.macdonald@email.com",
     },
+    status: "Available", // Updated status
+    dateModified: "2024-09-26",
+    dateUploaded: "2024-09-14",
+    statusColor: "success", // Color for Available
   },
   {
-    id: "INV-1230",
-    date: "Feb 3, 2023",
-    status: "Cancelled",
-    customer: {
+    id: "5",
+    fileName: "Final Presentation.pptx",
+    responsiblePerson: {
       initial: "C",
       name: "Charles Fulton",
-      email: "fulton@email.com",
+      email: "charles.fulton@email.com",
     },
+    status: "Unavailable", // Updated status
+    dateModified: "2024-09-30",
+    dateUploaded: "2024-09-01",
+    statusColor: "error", // Color for Unavailable
   },
   {
-    id: "INV-1229",
-    date: "Feb 3, 2023",
-    status: "Cancelled",
-    customer: {
+    id: "6",
+    fileName: "Sales Data.csv",
+    responsiblePerson: {
       initial: "J",
-      name: "Jay Hooper",
-      email: "hooper@email.com",
+      name: "Jay Hoper",
+      email: "jay.hoper@email.com",
     },
+    status: "Available", // Updated status
+    dateModified: "2024-09-28",
+    dateUploaded: "2024-09-05",
+    statusColor: "success", // Color for Available
   },
   {
-    id: "INV-1228",
-    date: "Feb 3, 2023",
-    status: "Refunded",
-    customer: {
-      initial: "K",
-      name: "Krystal Stevens",
-      email: "k.stevens@email.com",
-    },
-  },
-  {
-    id: "INV-1227",
-    date: "Feb 3, 2023",
-    status: "Paid",
-    customer: {
-      initial: "S",
-      name: "Sachin Flynn",
-      email: "s.flyn@email.com",
-    },
-  },
-  {
-    id: "INV-1226",
-    date: "Feb 3, 2023",
-    status: "Cancelled",
-    customer: {
-      initial: "B",
-      name: "Bradley Rosales",
-      email: "brad123@email.com",
-    },
-  },
-  {
-    id: "INV-1225",
-    date: "Feb 3, 2023",
-    status: "Paid",
-    customer: {
+    id: "7",
+    fileName: "User Feedback.pdf",
+    responsiblePerson: {
       initial: "O",
-      name: "Olivia Ryhe",
-      email: "olivia@email.com",
+      name: "Olivia Rhye",
+      email: "olivia.rhye@email.com",
     },
+    status: "Checked Out", // Updated status
+    dateModified: "2024-09-29",
+    dateUploaded: "2024-09-08",
+    statusColor: "warning", // Color for Checked Out
   },
   {
-    id: "INV-1224",
-    date: "Feb 3, 2023",
-    status: "Cancelled",
-    customer: {
+    id: "8",
+    fileName: "Market Research.docx",
+    responsiblePerson: {
       initial: "S",
       name: "Steve Hampton",
-      email: "steve.hamp@email.com",
+      email: "steve.hampton@email.com",
     },
+    status: "Unavailable", // Updated status
+    dateModified: "2024-09-27",
+    dateUploaded: "2024-09-03",
+    statusColor: "error", // Color for Unavailable
   },
   {
-    id: "INV-1223",
-    date: "Feb 3, 2023",
-    status: "Paid",
-    customer: {
+    id: "9",
+    fileName: "Client Feedback.txt",
+    responsiblePerson: {
       initial: "C",
       name: "Ciaran Murray",
       email: "ciaran.murray@email.com",
     },
+    status: "Available", // Updated status
+    dateModified: "2024-09-24",
+    dateUploaded: "2024-09-02",
+    statusColor: "success", // Color for Available
   },
   {
-    id: "INV-1221",
-    date: "Feb 3, 2023",
-    status: "Refunded",
-    customer: {
+    id: "10",
+    fileName: "Product Roadmap.pptx",
+    responsiblePerson: {
       initial: "M",
-      name: "Maria Macdonald",
-      email: "maria.mc@email.com",
+      name: "Marina Macdonald",
+      email: "marina.macdonald@email.com",
     },
-  },
-  {
-    id: "INV-1220",
-    date: "Feb 3, 2023",
-    status: "Paid",
-    customer: {
-      initial: "C",
-      name: "Charles Fulton",
-      email: "fulton@email.com",
-    },
-  },
-  {
-    id: "INV-1219",
-    date: "Feb 3, 2023",
-    status: "Cancelled",
-    customer: {
-      initial: "J",
-      name: "Jay Hooper",
-      email: "hooper@email.com",
-    },
-  },
-  {
-    id: "INV-1218",
-    date: "Feb 3, 2023",
-    status: "Cancelled",
-    customer: {
-      initial: "K",
-      name: "Krystal Stevens",
-      email: "k.stevens@email.com",
-    },
-  },
-  {
-    id: "INV-1217",
-    date: "Feb 3, 2023",
-    status: "Paid",
-    customer: {
-      initial: "S",
-      name: "Sachin Flynn",
-      email: "s.flyn@email.com",
-    },
-  },
-  {
-    id: "INV-1216",
-    date: "Feb 3, 2023",
-    status: "Cancelled",
-    customer: {
-      initial: "B",
-      name: "Bradley Rosales",
-      email: "brad123@email.com",
-    },
+    status: "Checked Out", // Updated status
+    dateModified: "2024-09-21",
+    dateUploaded: "2024-08-28",
+    statusColor: "warning", // Color for Checked Out
   },
 ];
 
@@ -261,48 +227,22 @@ function RowMenu() {
     </Dropdown>
   );
 }
-export default function OrderTable() {
+export default function FileTable() {
   const [order, setOrder] = React.useState<Order>("desc");
   const [selected, setSelected] = React.useState<readonly string[]>([]);
   const [open, setOpen] = React.useState(false);
-  const renderFilters = () => (
-    <React.Fragment>
-      <FormControl size="sm">
-        <FormLabel>Status</FormLabel>
-        <Select
-          size="sm"
-          placeholder="Filter by status"
-          slotProps={{ button: { sx: { whiteSpace: "nowrap" } } }}
-        >
-          <Option value="paid">Paid</Option>
-          <Option value="pending">Pending</Option>
-          <Option value="refunded">Refunded</Option>
-          <Option value="cancelled">Cancelled</Option>
-        </Select>
-      </FormControl>
-      <FormControl size="sm">
-        <FormLabel>Category</FormLabel>
-        <Select size="sm" placeholder="All">
-          <Option value="all">All</Option>
-          <Option value="refund">Refund</Option>
-          <Option value="purchase">Purchase</Option>
-          <Option value="debit">Debit</Option>
-        </Select>
-      </FormControl>
-      <FormControl size="sm">
-        <FormLabel>Customer</FormLabel>
-        <Select size="sm" placeholder="All">
-          <Option value="all">All</Option>
-          <Option value="olivia">Olivia Rhye</Option>
-          <Option value="steve">Steve Hampton</Option>
-          <Option value="ciaran">Ciaran Murray</Option>
-          <Option value="marina">Marina Macdonald</Option>
-          <Option value="charles">Charles Fulton</Option>
-          <Option value="jay">Jay Hoper</Option>
-        </Select>
-      </FormControl>
-    </React.Fragment>
+  const [searchTerm, setSearchTerm] = React.useState<string>("");
+
+  // Handle search input change
+  const handleSearchChange = (event: any) => {
+    setSearchTerm(event.target.value);
+  };
+
+  // Filter files based on search term
+  const filteredFiles = rows.filter((file) =>
+    file.fileName.toLowerCase().includes(searchTerm.toLowerCase()),
   );
+
   return (
     <React.Fragment>
       <Sheet
@@ -331,7 +271,6 @@ export default function OrderTable() {
             </Typography>
             <Divider sx={{ my: 2 }} />
             <Sheet sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {renderFilters()}
               <Button color="primary" onClick={() => setOpen(false)}>
                 Submit
               </Button>
@@ -353,14 +292,15 @@ export default function OrderTable() {
         }}
       >
         <FormControl sx={{ flex: 1 }} size="sm">
-          <FormLabel>Search for order</FormLabel>
+          <FormLabel>Search for file</FormLabel>
           <Input
             size="sm"
             placeholder="Search"
             startDecorator={<SearchIcon />}
+            value={searchTerm}
+            onChange={handleSearchChange} // Update the search term
           />
         </FormControl>
-        {renderFilters()}
       </Box>
       <Sheet
         className="OrderTableContainer"
@@ -433,17 +373,20 @@ export default function OrderTable() {
                       : { "& svg": { transform: "rotate(180deg)" } },
                   ]}
                 >
-                  Invoice
+                  File Name
                 </Link>
               </th>
-              <th style={{ width: 140, padding: "12px 6px" }}>Date</th>
+              <th style={{ width: 240, padding: "12px 6px" }}>
+                Responsible Person
+              </th>
               <th style={{ width: 140, padding: "12px 6px" }}>Status</th>
-              <th style={{ width: 240, padding: "12px 6px" }}>Customer</th>
-              <th style={{ width: 140, padding: "12px 6px" }}> </th>
+              <th style={{ width: 140, padding: "12px 6px" }}>Date Modified</th>
+              <th style={{ width: 140, padding: "12px 6px" }}>Date Uploaded</th>
+              <th style={{ width: 140, padding: "12px 6px" }}></th>
             </tr>
           </thead>
           <tbody>
-            {[...rows].sort(getComparator(order, "id")).map((row) => (
+            {[...filteredFiles].sort(getComparator(order, "id")).map((row) => (
               <tr key={row.id}>
                 <td style={{ textAlign: "center", width: 120 }}>
                   <Checkbox
@@ -462,27 +405,38 @@ export default function OrderTable() {
                   />
                 </td>
                 <td>
-                  <Typography level="body-xs">{row.id}</Typography>
+                  <Typography level="body-xs">{row.fileName}</Typography>
                 </td>
                 <td>
-                  <Typography level="body-xs">{row.date}</Typography>
+                  <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+                    <Avatar size="sm">{row.responsiblePerson.initial}</Avatar>
+                    <div>
+                      <Typography level="body-xs">
+                        {row.responsiblePerson.name}
+                      </Typography>
+                      <Typography level="body-xs">
+                        {row.responsiblePerson.email}
+                      </Typography>
+                    </div>
+                  </Box>
                 </td>
+
                 <td>
                   <Chip
                     variant="soft"
                     size="sm"
                     startDecorator={
                       {
-                        Paid: <CheckRoundedIcon />,
-                        Refunded: <AutorenewRoundedIcon />,
-                        Cancelled: <BlockIcon />,
+                        Available: <CheckRoundedIcon />,
+                        "Checked Out": <AutorenewRoundedIcon />,
+                        Unavailable: <BlockIcon />,
                       }[row.status]
                     }
                     color={
                       {
-                        Paid: "success",
-                        Refunded: "neutral",
-                        Cancelled: "danger",
+                        Available: "success",
+                        "Checked Out": "neutral",
+                        Unavailable: "danger",
                       }[row.status] as ColorPaletteProp
                     }
                   >
@@ -490,18 +444,12 @@ export default function OrderTable() {
                   </Chip>
                 </td>
                 <td>
-                  <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-                    <Avatar size="sm">{row.customer.initial}</Avatar>
-                    <div>
-                      <Typography level="body-xs">
-                        {row.customer.name}
-                      </Typography>
-                      <Typography level="body-xs">
-                        {row.customer.email}
-                      </Typography>
-                    </div>
-                  </Box>
+                  <Typography level="body-xs">{row.dateUploaded}</Typography>
                 </td>
+                <td>
+                  <Typography level="body-xs">{row.dateModified}</Typography>
+                </td>
+
                 <td>
                   <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
                     <Link level="body-xs" component="button">
@@ -515,48 +463,6 @@ export default function OrderTable() {
           </tbody>
         </Table>
       </Sheet>
-      <Box
-        className="Pagination-laptopUp"
-        sx={{
-          pt: 2,
-          gap: 1,
-          [`& .${iconButtonClasses.root}`]: { borderRadius: "50%" },
-          display: {
-            xs: "none",
-            md: "flex",
-          },
-        }}
-      >
-        <Button
-          size="sm"
-          variant="outlined"
-          color="neutral"
-          startDecorator={<KeyboardArrowLeftIcon />}
-        >
-          Previous
-        </Button>
-
-        <Box sx={{ flex: 1 }} />
-        {["1", "2", "3", "…", "8", "9", "10"].map((page) => (
-          <IconButton
-            key={page}
-            size="sm"
-            variant={Number(page) ? "outlined" : "plain"}
-            color="neutral"
-          >
-            {page}
-          </IconButton>
-        ))}
-        <Box sx={{ flex: 1 }} />
-        <Button
-          size="sm"
-          variant="outlined"
-          color="neutral"
-          endDecorator={<KeyboardArrowRightIcon />}
-        >
-          Next
-        </Button>
-      </Box>
     </React.Fragment>
   );
 }

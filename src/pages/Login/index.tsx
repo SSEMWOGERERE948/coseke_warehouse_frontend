@@ -102,7 +102,7 @@ export default function Login() {
               <IconButton variant="soft" color="primary" size="sm">
                 <BadgeRoundedIcon />
               </IconButton>
-              <Typography level="title-lg">Company logo</Typography>
+              <Typography level="title-lg">Baylor Foundation</Typography>
             </Box>
             <ColorSchemeToggle />
           </Box>
