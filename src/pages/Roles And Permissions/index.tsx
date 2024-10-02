@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { CssVarsProvider, useColorScheme } from "@mui/joy/styles";
+import { CssVarsProvider } from "@mui/joy/styles";
 import CssBaseline from "@mui/joy/CssBaseline";
 import Box from "@mui/joy/Box";
 import Typography from "@mui/joy/Typography";
@@ -14,8 +14,11 @@ import ModalDialog from "@mui/joy/ModalDialog";
 import FormControl from "@mui/joy/FormControl";
 import FormLabel from "@mui/joy/FormLabel";
 import Input from "@mui/joy/Input";
-import Stack from "@mui/joy/Stack";
 import Grid from "@mui/joy/Grid";
+import Tabs from "@mui/joy/Tabs";
+import Tab from "@mui/joy/Tab";
+import TabList from "@mui/joy/TabList";
+import SwipeableViews from "react-swipeable-views";
 
 interface Permission {
   id: string;
@@ -66,6 +69,29 @@ export default function SystemRolesPermissions() {
     },
   ]);
 
+  const [caseStudyRoles, setCaseStudyRoles] = useState<Role[]>([
+    {
+      id: "malaria_study",
+      name: "Malaria Case Study",
+      enabled: true,
+      permissions: [
+        { id: "view_results", label: "View Results", checked: true },
+        { id: "edit_analysis", label: "Edit Analysis", checked: false },
+        { id: "export_data", label: "Export Data", checked: true },
+      ],
+    },
+    {
+      id: "typhoid_study",
+      name: "Typhoid Case Study",
+      enabled: false,
+      permissions: [
+        { id: "view_results", label: "View Results", checked: false },
+        { id: "edit_analysis", label: "Edit Analysis", checked: false },
+        { id: "export_data", label: "Export Data", checked: false },
+      ],
+    },
+  ]);
+
   const [openNewRoleModal, setOpenNewRoleModal] = useState(false);
   const [newRoleName, setNewRoleName] = useState("");
   const [openNewPermissionModal, setOpenNewPermissionModal] = useState(false);
@@ -73,8 +99,11 @@ export default function SystemRolesPermissions() {
   const [selectedRoleForNewPermission, setSelectedRoleForNewPermission] =
     useState<string | null>(null);
 
-  const handleRoleToggle = (roleId: string) => {
-    setRoles((prevRoles) =>
+  const [tabIndex, setTabIndex] = useState<number>(0);
+
+  const handleRoleToggle = (roleId: string, isCaseStudy: boolean = false) => {
+    const rolesToUpdate = isCaseStudy ? setCaseStudyRoles : setRoles;
+    rolesToUpdate((prevRoles) =>
       prevRoles.map((role) => {
         if (role.id === roleId) {
           const newEnabled = !role.enabled;
@@ -92,8 +121,13 @@ export default function SystemRolesPermissions() {
     );
   };
 
-  const handlePermissionToggle = (roleId: string, permId: string) => {
-    setRoles((prevRoles) =>
+  const handlePermissionToggle = (
+    roleId: string,
+    permId: string,
+    isCaseStudy: boolean = false,
+  ) => {
+    const rolesToUpdate = isCaseStudy ? setCaseStudyRoles : setRoles;
+    rolesToUpdate((prevRoles) =>
       prevRoles.map((role) => {
         if (role.id === roleId) {
           return {
@@ -108,209 +142,149 @@ export default function SystemRolesPermissions() {
     );
   };
 
-  const handleAddNewRole = () => {
-    if (newRoleName.trim()) {
-      const newRole: Role = {
-        id: newRoleName.toLowerCase().replace(/\s+/g, "_"),
-        name: newRoleName,
-        enabled: false,
-        permissions: [],
-      };
-      setRoles((prevRoles) => [...prevRoles, newRole]);
-      setNewRoleName("");
-      setOpenNewRoleModal(false);
-    }
-  };
-
-  const handleAddNewPermission = () => {
-    if (newPermissionName.trim() && selectedRoleForNewPermission) {
-      setRoles((prevRoles) =>
-        prevRoles.map((role) => {
-          if (role.id === selectedRoleForNewPermission) {
-            return {
-              ...role,
-              permissions: [
-                ...role.permissions,
-                {
-                  id: newPermissionName.toLowerCase().replace(/\s+/g, "_"),
-                  label: newPermissionName,
-                  checked: false,
-                },
-              ],
-            };
-          }
-          return role;
-        }),
-      );
-      setNewPermissionName("");
-      setOpenNewPermissionModal(false);
-      setSelectedRoleForNewPermission(null);
-    }
-  };
-
   return (
     <CssVarsProvider>
       <CssBaseline />
       <Box sx={{ p: { xs: 2, sm: 3, md: 4 }, maxWidth: "1200px", mx: "auto" }}>
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid xs={12} sm={6}>
-            <Typography level="h1" fontSize={{ xs: "lg", sm: "xl" }}>
+        {/* Tabs for navigating between roles and case studies */}
+        <Tabs
+          value={tabIndex}
+          onChange={(_, value) => setTabIndex(value as number)}
+          sx={{ mb: 4 }}
+        >
+          <TabList>
+            <Tab>Roles & Permissions</Tab>
+            <Tab>Case Studies</Tab>
+          </TabList>
+        </Tabs>
+
+        <SwipeableViews index={tabIndex} onChangeIndex={setTabIndex}>
+          <Box p={2}>
+            {/* System Roles and Permissions */}
+            <Typography level="h1" fontSize="xl" mb={2}>
               System Roles and Permissions
             </Typography>
-          </Grid>
-          <Grid
-            xs={12}
-            sm={6}
-            sx={{
-              display: "flex",
-              justifyContent: { xs: "flex-start", sm: "flex-end" },
-              mt: { xs: 2, sm: 0 },
-            }}
-          >
-            <Button onClick={() => setOpenNewRoleModal(true)} sx={{ mr: 1 }}>
-              Add New Role
-            </Button>
-            <Button color="danger" variant="solid">
-              Delete All Roles
-            </Button>
-          </Grid>
-        </Grid>
-
-        <Grid container spacing={3}>
-          {roles.map((role) => (
-            <Grid key={role.id} xs={12} md={6} lg={4}>
-              <Sheet
-                variant="outlined"
-                sx={{ p: 3, borderRadius: "sm", height: "100%" }}
-              >
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    mb: 2,
-                  }}
-                >
-                  <Typography level="h2" fontSize="lg">
-                    {role.name}
-                  </Typography>
-                  <Switch
-                    checked={role.enabled}
-                    onChange={() => handleRoleToggle(role.id)}
-                    color={role.enabled ? "success" : "neutral"}
-                    slotProps={{
-                      input: { "aria-label": `Toggle ${role.name} role` },
-                    }}
-                  />
-                </Box>
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 1,
-                    ml: 3,
-                  }}
-                >
-                  {role.permissions.map((perm) => (
-                    <Checkbox
-                      key={perm.id}
-                      label={perm.label}
-                      checked={perm.checked}
-                      onChange={() => handlePermissionToggle(role.id, perm.id)}
-                      disabled={!role.enabled}
-                      slotProps={{
-                        input: {
-                          "aria-label": `${perm.label} permission for ${role.name} role`,
-                        },
+            <Grid container spacing={3}>
+              {roles.map((role) => (
+                <Grid key={role.id} xs={12} md={6} lg={4}>
+                  <Sheet
+                    variant="outlined"
+                    sx={{ p: 3, borderRadius: "sm", height: "100%" }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        mb: 2,
                       }}
-                    />
-                  ))}
-                </Box>
-                <Button
-                  onClick={() => {
-                    setSelectedRoleForNewPermission(role.id);
-                    setOpenNewPermissionModal(true);
-                  }}
-                  sx={{ mt: 2 }}
-                >
-                  Add New Permission
-                </Button>
-              </Sheet>
+                    >
+                      <Typography level="h2" fontSize="lg">
+                        {role.name}
+                      </Typography>
+                      <Switch
+                        checked={role.enabled}
+                        onChange={() => handleRoleToggle(role.id)}
+                        color={role.enabled ? "success" : "neutral"}
+                        slotProps={{
+                          input: { "aria-label": `Toggle ${role.name} role` },
+                        }}
+                      />
+                    </Box>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1,
+                        ml: 3,
+                      }}
+                    >
+                      {role.permissions.map((perm) => (
+                        <Checkbox
+                          key={perm.id}
+                          label={perm.label}
+                          checked={perm.checked}
+                          onChange={() =>
+                            handlePermissionToggle(role.id, perm.id)
+                          }
+                          disabled={!role.enabled}
+                          slotProps={{
+                            input: {
+                              "aria-label": `${perm.label} permission for ${role.name} role`,
+                            },
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  </Sheet>
+                </Grid>
+              ))}
             </Grid>
-          ))}
-        </Grid>
+          </Box>
 
-        <Modal
-          open={openNewRoleModal}
-          onClose={() => setOpenNewRoleModal(false)}
-        >
-          <ModalDialog>
-            <Typography level="h2" fontSize="lg" mb={2}>
-              Add New Role
+          <Box p={2}>
+            {/* Case Studies Roles and Permissions */}
+            <Typography level="h1" fontSize="xl" mb={2}>
+              Case Studies Roles and Permissions
             </Typography>
-            <FormControl>
-              <FormLabel>Role Name</FormLabel>
-              <Input
-                autoFocus
-                value={newRoleName}
-                onChange={(e) => setNewRoleName(e.target.value)}
-              />
-            </FormControl>
-            <Box
-              sx={{
-                mt: 2,
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 1,
-              }}
-            >
-              <Button
-                variant="plain"
-                color="neutral"
-                onClick={() => setOpenNewRoleModal(false)}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleAddNewRole}>Add Role</Button>
-            </Box>
-          </ModalDialog>
-        </Modal>
-
-        <Modal
-          open={openNewPermissionModal}
-          onClose={() => setOpenNewPermissionModal(false)}
-        >
-          <ModalDialog>
-            <Typography level="h2" fontSize="lg" mb={2}>
-              Add New Permission
-            </Typography>
-            <FormControl>
-              <FormLabel>Permission Name</FormLabel>
-              <Input
-                autoFocus
-                value={newPermissionName}
-                onChange={(e) => setNewPermissionName(e.target.value)}
-              />
-            </FormControl>
-            <Box
-              sx={{
-                mt: 2,
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 1,
-              }}
-            >
-              <Button
-                variant="plain"
-                color="neutral"
-                onClick={() => setOpenNewPermissionModal(false)}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleAddNewPermission}>Add Permission</Button>
-            </Box>
-          </ModalDialog>
-        </Modal>
+            <Grid container spacing={3}>
+              {caseStudyRoles.map((role) => (
+                <Grid key={role.id} xs={12} md={6} lg={4}>
+                  <Sheet
+                    variant="outlined"
+                    sx={{ p: 3, borderRadius: "sm", height: "100%" }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        mb: 2,
+                      }}
+                    >
+                      <Typography level="h2" fontSize="lg">
+                        {role.name}
+                      </Typography>
+                      <Switch
+                        checked={role.enabled}
+                        onChange={() => handleRoleToggle(role.id, true)}
+                        color={role.enabled ? "success" : "neutral"}
+                        slotProps={{
+                          input: { "aria-label": `Toggle ${role.name} role` },
+                        }}
+                      />
+                    </Box>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1,
+                        ml: 3,
+                      }}
+                    >
+                      {role.permissions.map((perm) => (
+                        <Checkbox
+                          key={perm.id}
+                          label={perm.label}
+                          checked={perm.checked}
+                          onChange={() =>
+                            handlePermissionToggle(role.id, perm.id, true)
+                          }
+                          disabled={!role.enabled}
+                          slotProps={{
+                            input: {
+                              "aria-label": `${perm.label} permission for ${role.name} role`,
+                            },
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  </Sheet>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+        </SwipeableViews>
       </Box>
     </CssVarsProvider>
   );
