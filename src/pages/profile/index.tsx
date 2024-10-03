@@ -1,28 +1,46 @@
+import * as React from "react";
 import AspectRatio from "@mui/joy/AspectRatio";
 import Box from "@mui/joy/Box";
-import Breadcrumbs from "@mui/joy/Breadcrumbs";
 import Button from "@mui/joy/Button";
-import Card from "@mui/joy/Card";
-import CardActions from "@mui/joy/CardActions";
-import CardOverflow from "@mui/joy/CardOverflow";
 import Divider from "@mui/joy/Divider";
 import FormControl from "@mui/joy/FormControl";
 import FormLabel from "@mui/joy/FormLabel";
-import IconButton from "@mui/joy/IconButton";
 import Input from "@mui/joy/Input";
-import Link from "@mui/joy/Link";
+import IconButton from "@mui/joy/IconButton";
 import Stack from "@mui/joy/Stack";
-import Tab, { tabClasses } from "@mui/joy/Tab";
-import TabList from "@mui/joy/TabList";
-import Tabs from "@mui/joy/Tabs";
+import Select from "@mui/joy/Select";
+import Option from "@mui/joy/Option";
 import Typography from "@mui/joy/Typography";
-
-import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
-import EditRoundedIcon from "@mui/icons-material/EditRounded";
-import EmailRoundedIcon from "@mui/icons-material/EmailRounded";
+import Tabs from "@mui/joy/Tabs";
+import TabList from "@mui/joy/TabList";
+import Tab, { tabClasses } from "@mui/joy/Tab";
+import Breadcrumbs from "@mui/joy/Breadcrumbs";
+import Link from "@mui/joy/Link";
+import Card from "@mui/joy/Card";
+import CardActions from "@mui/joy/CardActions";
+import CardOverflow from "@mui/joy/CardOverflow";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
+import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
+import EmailRoundedIcon from "@mui/icons-material/EmailRounded";
+import AccessTimeFilledRoundedIcon from "@mui/icons-material/AccessTimeFilledRounded";
+import EditRoundedIcon from "@mui/icons-material/EditRounded";
 
-export default function MyProfile() {
+function Index() {
+  const [selectedImage, setSelectedImage] = React.useState<string | null>(null);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files && event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target && typeof e.target.result === "string") {
+          setSelectedImage(e.target.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <Box sx={{ flex: 1, width: "100%" }}>
       <Box
@@ -114,9 +132,6 @@ export default function MyProfile() {
         <Card>
           <Box sx={{ mb: 1 }}>
             <Typography level="title-md">Personal info</Typography>
-            <Typography level="body-sm">
-              Customize how your profile information will apper to the networks.
-            </Typography>
           </Box>
           <Divider />
           <Stack
@@ -131,7 +146,10 @@ export default function MyProfile() {
                 sx={{ flex: 1, minWidth: 120, borderRadius: "100%" }}
               >
                 <img
-                  src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=286"
+                  src={
+                    selectedImage ||
+                    "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=286"
+                  }
                   srcSet="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=286&dpr=2 2x"
                   loading="lazy"
                   alt=""
@@ -151,8 +169,15 @@ export default function MyProfile() {
                   top: 170,
                   boxShadow: "sm",
                 }}
+                component="label"
               >
                 <EditRoundedIcon />
+                <input
+                  hidden
+                  accept="image/*"
+                  type="file"
+                  onChange={handleFileChange}
+                />
               </IconButton>
             </Stack>
             <Stack spacing={2} sx={{ flexGrow: 1 }}>
@@ -189,77 +214,58 @@ export default function MyProfile() {
                   />
                 </FormControl>
               </Stack>
-            </Stack>
-          </Stack>
-          <Stack
-            direction="column"
-            spacing={2}
-            sx={{ display: { xs: "flex", md: "none" }, my: 1 }}
-          >
-            <Stack direction="row" spacing={2}>
-              <Stack direction="column" spacing={1}>
-                <AspectRatio
-                  ratio="1"
-                  maxHeight={108}
-                  sx={{ flex: 1, minWidth: 108, borderRadius: "100%" }}
-                >
-                  <img
-                    src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=286"
-                    srcSet="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=286&dpr=2 2x"
-                    loading="lazy"
-                    alt=""
-                  />
-                </AspectRatio>
-                <IconButton
-                  aria-label="upload new picture"
-                  size="sm"
-                  variant="outlined"
-                  color="neutral"
-                  sx={{
-                    bgcolor: "background.body",
-                    position: "absolute",
-                    zIndex: 2,
-                    borderRadius: "50%",
-                    left: 85,
-                    top: 180,
-                    boxShadow: "sm",
-                  }}
-                >
-                  <EditRoundedIcon />
-                </IconButton>
-              </Stack>
-              <Stack spacing={1} sx={{ flexGrow: 1 }}>
-                <FormLabel>Name</FormLabel>
-                <FormControl
-                  sx={{
-                    display: {
-                      sm: "flex-column",
-                      md: "flex-row",
-                    },
-                    gap: 2,
-                  }}
-                >
-                  <Input size="sm" placeholder="First name" />
-                  <Input size="sm" placeholder="Last name" />
+              <div>
+                <FormControl sx={{ display: { sm: "contents" } }}>
+                  <FormLabel>Timezone</FormLabel>
+                  <Select
+                    size="sm"
+                    startDecorator={<AccessTimeFilledRoundedIcon />}
+                    defaultValue="1"
+                  >
+                    <Option value="1">
+                      Indochina Time (Bangkok)
+                      <Typography textColor="text.tertiary" sx={{ ml: 0.5 }}>
+                        — GMT+07:00
+                      </Typography>
+                    </Option>
+                    <Option value="2">
+                      Indochina Time (Ho Chi Minh City)
+                      <Typography textColor="text.tertiary" sx={{ ml: 0.5 }}>
+                        — GMT+07:00
+                      </Typography>
+                    </Option>
+                  </Select>
                 </FormControl>
-              </Stack>
+              </div>
             </Stack>
-            <FormControl>
-              <FormLabel>Role</FormLabel>
-              <Input size="sm" defaultValue="UI Developer" />
-            </FormControl>
-            <FormControl sx={{ flexGrow: 1 }}>
-              <FormLabel>Email</FormLabel>
-              <Input
-                size="sm"
-                type="email"
-                startDecorator={<EmailRoundedIcon />}
-                placeholder="email"
-                defaultValue="siriwatk@test.com"
-                sx={{ flexGrow: 1 }}
-              />
-            </FormControl>
           </Stack>
+          <CardOverflow sx={{ borderTop: "1px solid", borderColor: "divider" }}>
+            <CardActions sx={{ alignSelf: "flex-end", pt: 2 }}>
+              <Button size="sm" variant="outlined" color="neutral">
+                Cancel
+              </Button>
+              <Button size="sm" variant="solid">
+                Save
+              </Button>
+            </CardActions>
+          </CardOverflow>
+        </Card>
+        <Card>
+          <Box sx={{ mb: 1 }}>
+            <Typography level="title-md">Change Password</Typography>
+            <Typography level="body-sm">
+              You can update your account password here
+            </Typography>
+          </Box>
+          <Divider />
+          <FormControl>
+            <FormLabel>Current Password</FormLabel>
+            <Input size="sm" type="password" placeholder="Current Password" />
+          </FormControl>
+          <FormControl>
+            <FormLabel>New Password</FormLabel>
+            <Input size="sm" type="password" placeholder="New Password" />
+          </FormControl>
           <CardOverflow sx={{ borderTop: "1px solid", borderColor: "divider" }}>
             <CardActions sx={{ alignSelf: "flex-end", pt: 2 }}>
               <Button size="sm" variant="outlined" color="neutral">
@@ -275,3 +281,5 @@ export default function MyProfile() {
     </Box>
   );
 }
+
+export default Index;
