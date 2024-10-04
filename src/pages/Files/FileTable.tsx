@@ -218,11 +218,11 @@ function RowMenu() {
         <MoreHorizRoundedIcon />
       </MenuButton>
       <Menu size="sm" sx={{ minWidth: 140 }}>
-        <MenuItem>Edit</MenuItem>
-        <MenuItem>Rename</MenuItem>
-        <MenuItem>Move</MenuItem>
+        <MenuItem>Checkout</MenuItem>
+        <MenuItem>Check-in</MenuItem>
+        {/* <MenuItem>Move</MenuItem>
         <Divider />
-        <MenuItem color="danger">Delete</MenuItem>
+        <MenuItem color="danger">Delete</MenuItem> */}
       </Menu>
     </Dropdown>
   );
@@ -373,7 +373,7 @@ export default function FileTable() {
                       : { "& svg": { transform: "rotate(180deg)" } },
                   ]}
                 >
-                  File Name
+                  File PID
                 </Link>
               </th>
               <th style={{ width: 240, padding: "12px 6px" }}>

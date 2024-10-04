@@ -47,165 +47,123 @@ const filesData = {
 
 const chartOptions = {
   maintainAspectRatio: false,
+  responsive: true,
 };
+
+// Card data
+const cardsData = [
+  {
+    title: "Files",
+    value: "40,689",
+    icon: <PersonIcon sx={{ color: "white" }} />,
+    color: "blue",
+    change: "8.5% Up from yesterday",
+    changeColor: "success",
+  },
+  {
+    title: "Total Orders",
+    value: "10,293",
+    icon: <ShoppingCartIcon sx={{ color: "white" }} />,
+    color: "purple",
+    change: "1.3% Up from last week",
+    changeColor: "success",
+  },
+  {
+    title: "Total Sales",
+    value: "$89,000",
+    icon: <AttachMoneyIcon sx={{ color: "green" }} />,
+    color: "palegreen",
+    change: "4.3% Down from yesterday",
+    changeColor: "danger",
+  },
+  {
+    title: "Total Pending",
+    value: "2040",
+    icon: <AttachMoneyIcon sx={{ color: "white" }} />,
+    color: "blue",
+    change: "1.8% Up from yesterday",
+    changeColor: "success",
+  },
+];
+
+// Table data
+const tableData = [
+  {
+    fileName: "Pharmacy records",
+    fileID: "PH001",
+    user: "Pharmacist",
+    action: "Edited and removed some fields",
+  },
+  {
+    fileName: "Medicine requests",
+    fileID: "ME101",
+    user: "Doctor Bushira",
+    action: "Created",
+  },
+  {
+    fileName: "Supplies",
+    fileID: "PH200",
+    user: "Data Inspector",
+    action: "Edited",
+  },
+  {
+    fileName: "Medicine Supplies",
+    fileID: "ME005",
+    user: "Manager",
+    action: "Completed",
+  },
+];
 
 export default function DashboardContent() {
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 3, width: "100%" }}>
       {/* Grid container for cards */}
-      <Grid
-        container
-        spacing={3}
-        justifyContent="space-between"
-        alignItems="stretch"
-      >
-        {/* Total Users Card */}
-        <Grid component="div" xs={12} sm={6} md={3}>
-          <Card sx={{ height: "100%" }}>
-            <CardContent>
-              <Box
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
-              >
-                <Typography level="h4">Files</Typography>
+      <Grid container spacing={3}>
+        {cardsData.map((card, index) => (
+          <Grid xs={12} sm={6} md={3} key={index}>
+            <Card sx={{ height: "100%" }}>
+              <CardContent>
                 <Box
-                  sx={{
-                    backgroundColor: "blue",
-                    borderRadius: "50%",
-                    padding: 1,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: 40, // Set a fixed width
-                    height: 40, // Set a fixed height
-                  }}
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
                 >
-                  <PersonIcon sx={{ color: "white" }} />
+                  <Typography level="h4">{card.title}</Typography>
+                  <Box
+                    sx={{
+                      backgroundColor: card.color,
+                      borderRadius: "50%",
+                      padding: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: "40px",
+                      height: "40px",
+                    }}
+                  >
+                    {card.icon}
+                  </Box>
                 </Box>
-              </Box>
-              <Typography level="h4">40,689</Typography>
-              <Typography level="body-sm" color="success">
-                8.5% Up from yesterday
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Total Orders Card */}
-        <Grid component="div" xs={12} sm={6} md={3}>
-          <Card sx={{ height: "100%" }}>
-            <CardContent>
-              <Box
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
-              >
-                <Typography level="h4">Total Orders</Typography>
-                <Box
-                  sx={{
-                    backgroundColor: "purple",
-                    borderRadius: "50%",
-                    padding: 1,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: 40,
-                    height: 40,
-                  }}
-                >
-                  <ShoppingCartIcon sx={{ color: "white" }} />
-                </Box>
-              </Box>
-              <Typography level="h4">10,293</Typography>
-              <Typography level="body-sm" color="success">
-                1.3% Up from last week
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Total Sales Card */}
-        <Grid component="div" xs={12} sm={6} md={3}>
-          <Card sx={{ height: "100%" }}>
-            <CardContent>
-              <Box
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
-              >
-                <Typography level="h4">Total Sales</Typography>
-                <Box
-                  sx={{
-                    backgroundColor: "palegreen",
-                    borderRadius: "50%",
-                    padding: 1,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: 40,
-                    height: 40,
-                  }}
-                >
-                  <AttachMoneyIcon sx={{ color: "green" }} />
-                </Box>
-              </Box>
-              <Typography level="h4">$89,000</Typography>
-              <Typography
-                level="body-sm"
-                color="danger"
-                sx={{ whiteSpace: "nowrap" }}
-              >
-                4.3% Down from yesterday
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Total Pending Card */}
-        <Grid component="div" xs={12} sm={6} md={3}>
-          <Card sx={{ height: "100%" }}>
-            <CardContent>
-              <Box
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
-              >
-                <Typography level="h4">Total Pending</Typography>
-                <Box
-                  sx={{
-                    backgroundColor: "blue",
-                    borderRadius: "50%",
-                    padding: 1,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: 40,
-                    height: 40,
-                  }}
-                >
-                  <AttachMoneyIcon sx={{ color: "white" }} />
-                </Box>
-              </Box>
-              <Typography level="h4">2040</Typography>
-              <Typography level="body-sm" color="success">
-                1.8% Up from yesterday
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+                <Typography level="h4">{card.value}</Typography>
+                <Typography level="body-sm" sx={{ color: card.changeColor }}>
+                  {card.change}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
       </Grid>
 
       {/* Sales Details Line Chart */}
       <Box sx={{ mt: 4 }}>
         <Typography level="h4">Files Details</Typography>
-        <Box sx={{ height: 250 }}>
+        <Box sx={{ height: "250px", width: "100%" }}>
           <Line data={filesData} options={chartOptions} />
         </Box>
       </Box>
 
       {/* Table Section */}
-      <Box sx={{ mt: 4 }}>
+      <Box sx={{ mt: 4, overflowX: "auto" }}>
         <Typography level="h4">Recent Orders</Typography>
         <table
           style={{ width: "100%", border: "1px solid #ddd", marginTop: "10px" }}
@@ -219,30 +177,14 @@ export default function DashboardContent() {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td style={{ padding: "8px" }}>Pharmacy records</td>
-              <td style={{ padding: "8px" }}>PH001</td>
-              <td style={{ padding: "8px" }}>Pharmacist</td>
-              <td style={{ padding: "8px" }}>Edited and removed some fields</td>
-            </tr>
-            <tr>
-              <td style={{ padding: "8px" }}>Medicine requests</td>
-              <td style={{ padding: "8px" }}>ME101</td>
-              <td style={{ padding: "8px" }}>Doctor Bushira</td>
-              <td style={{ padding: "8px" }}>Created</td>
-            </tr>
-            <tr>
-              <td style={{ padding: "8px" }}>Supplies</td>
-              <td style={{ padding: "8px" }}>PH200</td>
-              <td style={{ padding: "8px" }}>Data Inspector</td>
-              <td style={{ padding: "8px" }}>edited</td>
-            </tr>
-            <tr>
-              <td style={{ padding: "8px" }}>Medicine Supplies</td>
-              <td style={{ padding: "8px" }}>ME005</td>
-              <td style={{ padding: "8px" }}>Manager</td>
-              <td style={{ padding: "8px" }}>Completed</td>
-            </tr>
+            {tableData.map((row, index) => (
+              <tr key={index}>
+                <td style={{ padding: "8px" }}>{row.fileName}</td>
+                <td style={{ padding: "8px" }}>{row.fileID}</td>
+                <td style={{ padding: "8px" }}>{row.user}</td>
+                <td style={{ padding: "8px" }}>{row.action}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </Box>
