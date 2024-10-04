@@ -1,11 +1,9 @@
+import React from "react";
 import Box from "@mui/joy/Box";
-import Button from "@mui/joy/Button";
 import Typography from "@mui/joy/Typography";
+import ApprovalTable from "./ApprovalTable"; // Import your table component
 
-import { UploadRounded } from "@mui/icons-material";
-import RequestTable from "./RequestTable";
-
-function index() {
+function App() {
   return (
     <Box
       component="main"
@@ -38,15 +36,12 @@ function index() {
         }}
       >
         <Typography level="h2" component="h1">
-          Files
+          Approvals
         </Typography>
-        <Button color="primary" startDecorator={<UploadRounded />} size="sm">
-          Upload File
-        </Button>
       </Box>
-      <RequestTable />
+      <ApprovalTable /> {/* Render the approval table here */}
     </Box>
   );
 }
 
-export default index;
+export default App;

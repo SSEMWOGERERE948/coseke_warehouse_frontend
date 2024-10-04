@@ -8,6 +8,7 @@ import CardContent from "@mui/joy/CardContent";
 import PersonIcon from "@mui/icons-material/Person";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
+import PauseCircleOutlineTwoToneIcon from "@mui/icons-material/PauseCircleOutlineTwoTone";
 
 // Import required Chart.js components
 import {
@@ -68,7 +69,7 @@ export default function DashboardContent() {
                 justifyContent="space-between"
                 alignItems="center"
               >
-                <Typography level="h4">Files</Typography>
+                <Typography level="title-lg">Files</Typography>
                 <Box
                   sx={{
                     backgroundColor: "blue",
@@ -84,7 +85,7 @@ export default function DashboardContent() {
                   <PersonIcon sx={{ color: "white" }} />
                 </Box>
               </Box>
-              <Typography level="h4">40,689</Typography>
+              <Typography level="title-lg">40,689</Typography>
               <Typography level="body-sm" color="success">
                 8.5% Up from yesterday
               </Typography>
@@ -101,7 +102,7 @@ export default function DashboardContent() {
                 justifyContent="space-between"
                 alignItems="center"
               >
-                <Typography level="h4">Total Orders</Typography>
+                <Typography level="title-lg">Total Orders</Typography>
                 <Box
                   sx={{
                     backgroundColor: "purple",
@@ -117,7 +118,7 @@ export default function DashboardContent() {
                   <ShoppingCartIcon sx={{ color: "white" }} />
                 </Box>
               </Box>
-              <Typography level="h4">10,293</Typography>
+              <Typography level="title-lg">10,293</Typography>
               <Typography level="body-sm" color="success">
                 1.3% Up from last week
               </Typography>
@@ -134,7 +135,7 @@ export default function DashboardContent() {
                 justifyContent="space-between"
                 alignItems="center"
               >
-                <Typography level="h4">Total Sales</Typography>
+                <Typography level="title-lg">Total Sales</Typography>
                 <Box
                   sx={{
                     backgroundColor: "palegreen",
@@ -150,7 +151,7 @@ export default function DashboardContent() {
                   <AttachMoneyIcon sx={{ color: "green" }} />
                 </Box>
               </Box>
-              <Typography level="h4">$89,000</Typography>
+              <Typography level="title-lg">$89,000</Typography>
               <Typography
                 level="body-sm"
                 color="danger"
@@ -171,7 +172,7 @@ export default function DashboardContent() {
                 justifyContent="space-between"
                 alignItems="center"
               >
-                <Typography level="h4">Total Pending</Typography>
+                <Typography level="title-lg">Total Pending</Typography>
                 <Box
                   sx={{
                     backgroundColor: "blue",
@@ -184,10 +185,10 @@ export default function DashboardContent() {
                     height: 40,
                   }}
                 >
-                  <AttachMoneyIcon sx={{ color: "white" }} />
+                  <PauseCircleOutlineTwoToneIcon sx={{ color: "white" }} />
                 </Box>
               </Box>
-              <Typography level="h4">2040</Typography>
+              <Typography level="title-md">2040</Typography>
               <Typography level="body-sm" color="success">
                 1.8% Up from yesterday
               </Typography>
@@ -198,7 +199,7 @@ export default function DashboardContent() {
 
       {/* Sales Details Line Chart */}
       <Box sx={{ mt: 4 }}>
-        <Typography level="h4">Files Details</Typography>
+        <Typography level="title-md">Files Details</Typography>
         <Box sx={{ height: 250 }}>
           <Line data={filesData} options={chartOptions} />
         </Box>
