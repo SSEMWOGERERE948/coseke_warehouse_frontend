@@ -19,6 +19,7 @@ import Tabs from "@mui/joy/Tabs";
 import Tab from "@mui/joy/Tab";
 import TabList from "@mui/joy/TabList";
 import SwipeableViews from "react-swipeable-views";
+import Table from "@mui/joy/Table";
 
 interface Permission {
   id: string;
@@ -32,6 +33,33 @@ interface Role {
   enabled: boolean;
   permissions: Permission[];
 }
+
+const departments = [
+  {
+    id: 1,
+    name: "Human Resources",
+    addedDate: "2024-01-15",
+    modifiedDate: "2024-03-20",
+  },
+  {
+    id: 2,
+    name: "Engineering",
+    addedDate: "2024-02-01",
+    modifiedDate: "2024-04-01",
+  },
+  {
+    id: 3,
+    name: "Marketing",
+    addedDate: "2024-01-30",
+    modifiedDate: "2024-03-25",
+  },
+  {
+    id: 4,
+    name: "Finance",
+    addedDate: "2024-03-10",
+    modifiedDate: "2024-04-02",
+  },
+];
 
 export default function SystemRolesPermissions() {
   const [roles, setRoles] = useState<Role[]>([
@@ -155,6 +183,7 @@ export default function SystemRolesPermissions() {
           <TabList>
             <Tab>Roles & Permissions</Tab>
             <Tab>Case Studies</Tab>
+            <Tab>Departments</Tab>
           </TabList>
         </Tabs>
 
@@ -283,6 +312,35 @@ export default function SystemRolesPermissions() {
                 </Grid>
               ))}
             </Grid>
+          </Box>
+
+          <Box p={2}>
+            {/* Department Roles and Permissions */}
+            <Typography level="h1" fontSize="xl" mb={2}>
+              Organization Departments
+            </Typography>
+            <div className="rounded-md border">
+              <Sheet sx={{ maxHeight: 400, overflow: "auto" }}>
+                <Table stickyHeader>
+                  <thead>
+                    <tr>
+                      <th>Department Name</th>
+                      <th>Added Date</th>
+                      <th>Modified Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {departments.map((department) => (
+                      <tr key={department.id}>
+                        <td>{department.name}</td>
+                        <td>{department.addedDate}</td>
+                        <td>{department.modifiedDate}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </Sheet>
+            </div>
           </Box>
         </SwipeableViews>
       </Box>
