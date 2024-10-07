@@ -1,25 +1,30 @@
 "use client";
 
 import React, { useState } from "react";
-import { CssVarsProvider } from "@mui/joy/styles";
+import {
+  CssVarsProvider,
+  Box,
+  Typography,
+  Button,
+  Switch,
+  Checkbox,
+  Sheet,
+  Modal,
+  ModalDialog,
+  FormControl,
+  FormLabel,
+  Input,
+  Grid,
+  Tabs,
+  Tab,
+  TabList,
+  Table,
+  Avatar,
+  ModalClose,
+  Stack,
+} from "@mui/joy";
 import CssBaseline from "@mui/joy/CssBaseline";
-import Box from "@mui/joy/Box";
-import Typography from "@mui/joy/Typography";
-import Button from "@mui/joy/Button";
-import Switch from "@mui/joy/Switch";
-import Checkbox from "@mui/joy/Checkbox";
-import Sheet from "@mui/joy/Sheet";
-import Modal from "@mui/joy/Modal";
-import ModalDialog from "@mui/joy/ModalDialog";
-import FormControl from "@mui/joy/FormControl";
-import FormLabel from "@mui/joy/FormLabel";
-import Input from "@mui/joy/Input";
-import Grid from "@mui/joy/Grid";
-import Tabs from "@mui/joy/Tabs";
-import Tab from "@mui/joy/Tab";
-import TabList from "@mui/joy/TabList";
 import SwipeableViews from "react-swipeable-views";
-import Table from "@mui/joy/Table";
 
 interface Permission {
   id: string;
@@ -34,7 +39,14 @@ interface Role {
   permissions: Permission[];
 }
 
-const departments = [
+interface Department {
+  id: number;
+  name: string;
+  addedDate: string;
+  modifiedDate: string;
+}
+
+const departments: Department[] = [
   {
     id: 1,
     name: "Human Resources",
@@ -120,14 +132,9 @@ export default function SystemRolesPermissions() {
     },
   ]);
 
-  const [openNewRoleModal, setOpenNewRoleModal] = useState(false);
-  const [newRoleName, setNewRoleName] = useState("");
-  const [openNewPermissionModal, setOpenNewPermissionModal] = useState(false);
-  const [newPermissionName, setNewPermissionName] = useState("");
-  const [selectedRoleForNewPermission, setSelectedRoleForNewPermission] =
-    useState<string | null>(null);
-
   const [tabIndex, setTabIndex] = useState<number>(0);
+  const [isAddDepartmentOpen, setIsAddDepartmentOpen] = useState(false);
+  const [newDepartment, setNewDepartment] = useState({ name: "" });
 
   const handleRoleToggle = (roleId: string, isCaseStudy: boolean = false) => {
     const rolesToUpdate = isCaseStudy ? setCaseStudyRoles : setRoles;
@@ -170,11 +177,19 @@ export default function SystemRolesPermissions() {
     );
   };
 
+  const handleOpenAddDepartment = () => setIsAddDepartmentOpen(true);
+  const handleCloseAddDepartment = () => setIsAddDepartmentOpen(false);
+
+  const handleSubmitNewDepartment = (event: React.FormEvent) => {
+    event.preventDefault();
+    // Handle department submission logic here
+    handleCloseAddDepartment();
+  };
+
   return (
     <CssVarsProvider>
       <CssBaseline />
       <Box sx={{ p: { xs: 2, sm: 3, md: 4 }, maxWidth: "1200px", mx: "auto" }}>
-        {/* Tabs for navigating between roles and case studies */}
         <Tabs
           value={tabIndex}
           onChange={(_, value) => setTabIndex(value as number)}
@@ -188,8 +203,8 @@ export default function SystemRolesPermissions() {
         </Tabs>
 
         <SwipeableViews index={tabIndex} onChangeIndex={setTabIndex}>
+          {/* Roles & Permissions Tab */}
           <Box p={2}>
-            {/* System Roles and Permissions */}
             <Typography level="h1" fontSize="xl" mb={2}>
               System Roles and Permissions
             </Typography>
@@ -251,8 +266,8 @@ export default function SystemRolesPermissions() {
             </Grid>
           </Box>
 
+          {/* Case Studies Tab */}
           <Box p={2}>
-            {/* Case Studies Roles and Permissions */}
             <Typography level="h1" fontSize="xl" mb={2}>
               Case Studies Roles and Permissions
             </Typography>
@@ -314,35 +329,83 @@ export default function SystemRolesPermissions() {
             </Grid>
           </Box>
 
+          {/* Departments Tab */}
           <Box p={2}>
-            {/* Department Roles and Permissions */}
-            <Typography level="h1" fontSize="xl" mb={2}>
-              Organization Departments
-            </Typography>
-            <div className="rounded-md border">
-              <Sheet sx={{ maxHeight: 400, overflow: "auto" }}>
-                <Table stickyHeader>
-                  <thead>
-                    <tr>
-                      <th>Department Name</th>
-                      <th>Added Date</th>
-                      <th>Modified Date</th>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                mb: 2,
+              }}
+            >
+              <Typography level="h2" fontSize="lg">
+                Organization Departments
+              </Typography>
+              <Box sx={{ display: "flex", gap: 2 }}>
+                <Input
+                  placeholder="Search departments..."
+                  variant="outlined"
+                  sx={{ minWidth: "200px" }}
+                />
+                <Button variant="outlined">Filter</Button>
+                <Button
+                  variant="solid"
+                  color="primary"
+                  onClick={handleOpenAddDepartment}
+                >
+                  Add Department
+                </Button>
+              </Box>
+            </Box>
+
+            <Sheet sx={{ maxHeight: 400, overflow: "auto" }}>
+              <Table stickyHeader>
+                <thead>
+                  <tr>
+                    <th>Department Name</th>
+                    <th>Added Date</th>
+                    <th>Modified Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {departments.map((department) => (
+                    <tr key={department.id}>
+                      <td>{department.name}</td>
+                      <td>{department.addedDate}</td>
+                      <td>{department.modifiedDate}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {departments.map((department) => (
-                      <tr key={department.id}>
-                        <td>{department.name}</td>
-                        <td>{department.addedDate}</td>
-                        <td>{department.modifiedDate}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </Sheet>
-            </div>
+                  ))}
+                </tbody>
+              </Table>
+            </Sheet>
           </Box>
         </SwipeableViews>
+
+        {/* Modal for Adding a Department */}
+        <Modal open={isAddDepartmentOpen} onClose={handleCloseAddDepartment}>
+          <ModalDialog>
+            <ModalClose />
+            <Typography component="h2" fontSize="lg" mb={2}>
+              Add Department
+            </Typography>
+            <form onSubmit={handleSubmitNewDepartment}>
+              <Stack gap={2}>
+                <FormControl>
+                  <FormLabel>Department Name</FormLabel>
+                  <Input
+                    required
+                    value={newDepartment.name}
+                    onChange={(e) => setNewDepartment({ name: e.target.value })}
+                  />
+                </FormControl>
+                <Button type="submit" variant="solid" color="primary">
+                  Add Department
+                </Button>
+              </Stack>
+            </form>
+          </ModalDialog>
+        </Modal>
       </Box>
     </CssVarsProvider>
   );
