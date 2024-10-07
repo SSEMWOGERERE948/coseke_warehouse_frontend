@@ -373,13 +373,12 @@ export default function RequestTable() {
                       : { "& svg": { transform: "rotate(180deg)" } },
                   ]}
                 >
-                  File Name
+                  File PID
                 </Link>
               </th>
               <th style={{ width: 240, padding: "12px 6px" }}>
                 Responsible Person
               </th>
-              <th style={{ width: 140, padding: "12px 6px" }}>Status</th>
               <th style={{ width: 140, padding: "12px 6px" }}>Date Modified</th>
               <th style={{ width: 140, padding: "12px 6px" }}>Date Uploaded</th>
               <th style={{ width: 140, padding: "12px 6px" }}></th>
@@ -420,29 +419,6 @@ export default function RequestTable() {
                     </div>
                   </Box>
                 </td>
-
-                <td>
-                  <Chip
-                    variant="soft"
-                    size="sm"
-                    startDecorator={
-                      {
-                        Available: <CheckRoundedIcon />,
-                        "Checked Out": <AutorenewRoundedIcon />,
-                        Unavailable: <BlockIcon />,
-                      }[row.status]
-                    }
-                    color={
-                      {
-                        Available: "success",
-                        "Checked Out": "neutral",
-                        Unavailable: "danger",
-                      }[row.status] as ColorPaletteProp
-                    }
-                  >
-                    {row.status}
-                  </Chip>
-                </td>
                 <td>
                   <Typography level="body-xs">{row.dateUploaded}</Typography>
                 </td>
@@ -452,9 +428,6 @@ export default function RequestTable() {
 
                 <td>
                   <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-                    <Link level="body-xs" component="button">
-                      Download
-                    </Link>
                     <RowMenu />
                   </Box>
                 </td>

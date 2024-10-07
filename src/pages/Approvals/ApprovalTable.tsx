@@ -156,9 +156,9 @@ export default function ApprovalTable() {
                   sx={{ verticalAlign: "text-bottom" }}
                 />
               </th>
-              <th style={{ width: "40%" }}>File Name</th>
-              <th style={{ width: "20%" }}>Responsible Person</th>
-              <th style={{ textAlign: "right" }}>Status</th>
+              <th style={{ width: "40%" }}>File PID</th>
+              <th style={{ width: "20%" }}>Requester</th>
+              <th style={{ textAlign: "right" }}>Date Uploaded</th>
               <th style={{ textAlign: "right" }}>Date Modified</th>
               <th style={{ width: "48px" }} />
             </tr>
@@ -181,11 +181,8 @@ export default function ApprovalTable() {
                   />
                 </td>
                 <td>
-                  <Typography fontWeight="lg" textColor="text.primary" mb={0.5}>
+                  <Typography fontWeight="lg" textColor="text.primary">
                     {row.fileName}
-                  </Typography>
-                  <Typography level="body-sm">
-                    Uploaded on: {row.dateUploaded}
                   </Typography>
                 </td>
                 <td>
@@ -202,24 +199,12 @@ export default function ApprovalTable() {
                   </Box>
                 </td>
                 <td align="right">
-                  <Chip
-                    variant="soft"
-                    size="sm"
-                    startDecorator={
-                      row.status === "Available" ? (
-                        <CheckRoundedIcon />
-                      ) : row.status === "Checked Out" ? (
-                        <AutorenewRoundedIcon />
-                      ) : (
-                        <BlockIcon />
-                      )
-                    }
-                    color={row.statusColor}
-                  >
-                    {row.status}
-                  </Chip>
+                  <Typography level="body-sm">{row.dateUploaded}</Typography>
                 </td>
-                <td align="right">{row.dateModified}</td>
+                <td align="right">
+                  {" "}
+                  <Typography level="body-sm">{row.dateModified}</Typography>
+                </td>
                 <td>
                   <RowMenu
                     onApprove={() => handleApprovalClick(row)}
@@ -241,7 +226,7 @@ export default function ApprovalTable() {
             {selectedFile && (
               <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 <Typography level="body-md">
-                  <strong>File Name:</strong> {selectedFile.fileName}
+                  <strong>File PID:</strong> {selectedFile.fileName}
                 </Typography>
                 <Typography level="body-md">
                   <strong>Requesting Approval From:</strong>{" "}

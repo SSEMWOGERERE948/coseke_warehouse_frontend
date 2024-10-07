@@ -38,7 +38,7 @@ function index() {
         }}
       >
         <Typography level="h2" component="h1">
-          Files
+          Requests
         </Typography>
         <Button color="primary" startDecorator={<UploadRounded />} size="sm">
           Upload File
