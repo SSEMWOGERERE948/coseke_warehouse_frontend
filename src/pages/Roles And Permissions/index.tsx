@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   CssVarsProvider,
   Box,
@@ -25,6 +25,7 @@ import {
 } from "@mui/joy";
 import CssBaseline from "@mui/joy/CssBaseline";
 import SwipeableViews from "react-swipeable-views";
+import { departmentService } from "./department-service";
 
 interface Permission {
   id: string;
@@ -46,7 +47,7 @@ interface Department {
   modifiedDate: string;
 }
 
-const departments: Department[] = [
+const department: Department[] = [
   {
     id: 1,
     name: "Human Resources",
@@ -72,8 +73,7 @@ const departments: Department[] = [
     modifiedDate: "2024-04-02",
   },
 ];
-
-export default function SystemRolesPermissions() {
+const RolesAndPermissions: React.FC = () => {
   const [roles, setRoles] = useState<Role[]>([
     {
       id: "admin",
@@ -134,7 +134,9 @@ export default function SystemRolesPermissions() {
 
   const [tabIndex, setTabIndex] = useState<number>(0);
   const [isAddDepartmentOpen, setIsAddDepartmentOpen] = useState(false);
-  const [newDepartment, setNewDepartment] = useState({ name: "" });
+  const [newDepartment, setNewDepartment] = useState<{ name: string }>({
+    name: "",
+  });
 
   const handleRoleToggle = (roleId: string, isCaseStudy: boolean = false) => {
     const rolesToUpdate = isCaseStudy ? setCaseStudyRoles : setRoles;
@@ -180,11 +182,52 @@ export default function SystemRolesPermissions() {
   const handleOpenAddDepartment = () => setIsAddDepartmentOpen(true);
   const handleCloseAddDepartment = () => setIsAddDepartmentOpen(false);
 
-  const handleSubmitNewDepartment = (event: React.FormEvent) => {
-    event.preventDefault();
-    // Handle department submission logic here
-    handleCloseAddDepartment();
+  //Added by Sylvia
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchDepartments();
+  }, []);
+
+  const fetchDepartments = async () => {
+    setIsLoading(true);
+    try {
+      const fetchedDepartments = await departmentService.getAllDepartments();
+      setDepartments(fetchedDepartments);
+      setError(null);
+    } catch (error) {
+      setError("Failed to fetch departments");
+      console.error("Error fetching departments:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  const handleSubmitNewDepartment = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setIsLoading(true);
+    try {
+      await departmentService.createDepartment({ name: newDepartment.name });
+      await fetchDepartments();
+      handleCloseAddDepartment();
+      setError("Failed to create department");
+      console.error("Error creating department:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  function setDefaultResultOrder(arg0: string) {
+    throw new Error("Function not implemented.");
+  }
+
+  // stopped here
+
+  // const handleSubmitNewDepartment = (event: React.FormEvent) => {
+  // event.preventDefault();
+  // Handle department submission logic here
+  // handleCloseAddDepartment();
 
   return (
     <CssVarsProvider>
@@ -374,6 +417,34 @@ export default function SystemRolesPermissions() {
                       <td>{department.name}</td>
                       <td>{department.addedDate}</td>
                       <td>{department.modifiedDate}</td>
+
+                      <td>
+                        <Button
+                          size="sm"
+                          variant="outlined"
+                          color="danger"
+                          onClick={async () => {
+                            if (department.id) {
+                              try {
+                                await departmentService.deleteDepartment(
+                                  department.id,
+                                );
+                                await fetchDepartments();
+                              } catch (err) {
+                                setDefaultResultOrder(
+                                  "Failed to delete department",
+                                );
+                                console.error(
+                                  "error deleting department:",
+                                  err,
+                                );
+                              }
+                            }
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -395,7 +466,6 @@ export default function SystemRolesPermissions() {
                   <FormLabel>Department Name</FormLabel>
                   <Input
                     required
-                    value={newDepartment.name}
                     onChange={(e) => setNewDepartment({ name: e.target.value })}
                   />
                 </FormControl>
@@ -409,4 +479,5 @@ export default function SystemRolesPermissions() {
       </Box>
     </CssVarsProvider>
   );
-}
+};
+export default RolesAndPermissions;
