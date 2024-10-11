@@ -11,43 +11,52 @@ import Requests from "../pages/Requests";
 import Profile from "../pages/Profile";
 import Users from "../pages/users";
 import RolesAndPermissions from "../pages/Roles And Permissions";
-import { FileProvider } from "../pages/Folders/FileContext";
+import CaseStudies from "../pages/case_studies";
 
 function AppRoutes() {
   return (
-    <FileProvider>
-      <Routes>
-        <Route path={routes.LOGIN} element={<Login />} />
-        <Route path={routes.DASHBOARD} element={<PrivateRoute />}>
-          <Route path={routes.DASHBOARD} element={<Dashboard />}>
-            <Route path={routes.FILES} element={<PrivateRoute />}>
-              <Route path={routes.FILES} element={<Files />} />
-            </Route>
-            <Route path={routes.FOLDERS} element={<PrivateRoute />}>
-              <Route path={routes.FOLDERS} element={<Folders />} />
-            </Route>
-            <Route path={routes.APPROVALS} element={<PrivateRoute />}>
-              <Route path={routes.APPROVALS} element={<Approvals />} />
-            </Route>
-            <Route path={routes.REQUESTS} element={<PrivateRoute />}>
-              <Route path={routes.REQUESTS} element={<Requests />} />
-            </Route>
-            <Route path={routes.PROFILE} element={<PrivateRoute />}>
-              <Route path={routes.PROFILE} element={<Profile />} />
-            </Route>
-            <Route path={routes.USERS} element={<PrivateRoute />}>
-              <Route path={routes.USERS} element={<Users />} />
-            </Route>
-            <Route path={routes.ROLESANDPERMISSIONS} element={<PrivateRoute />}>
-              <Route
-                path={routes.ROLESANDPERMISSIONS}
-                element={<RolesAndPermissions />}
-              />
-            </Route>
+    <Routes>
+      <Route path={routes.LOGIN} element={<Login />} />
+      <Route path={routes.DASHBOARD} element={<PrivateRoute />}>
+        <Route path={routes.DASHBOARD} element={<Dashboard />}>
+          <Route path={routes.FILES} element={<PrivateRoute />}>
+            <Route path={routes.FILES} element={<Files />} />
+          </Route>
+          <Route path={routes.FOLDERS} element={<PrivateRoute />}>
+            <Route path={routes.FOLDERS} element={<Folders />} />
+          </Route>
+          <Route path={routes.APPROVALS} element={<PrivateRoute />}>
+            <Route path={routes.APPROVALS} element={<Approvals />} />
+          </Route>
+          <Route path={routes.REQUESTS} element={<PrivateRoute />}>
+            <Route path={routes.REQUESTS} element={<Requests />} />
+          </Route>
+          <Route path={routes.PROFILE} element={<PrivateRoute />}>
+            <Route path={routes.PROFILE} element={<Profile />} />
+          </Route>
+          <Route path={routes.USERS} element={<PrivateRoute />}>
+            <Route path={routes.USERS} element={<Users />} />
+          </Route>
+          <Route
+            path={`${routes.ROLESANDPERMISSIONS}`}
+            element={<PrivateRoute />}
+          >
+            <Route
+              path={`${routes.ROLESANDPERMISSIONS}`}
+              element={<RolesAndPermissions />}
+            />
           </Route>
         </Route>
-      </Routes>
-    </FileProvider>
+      </Route>
+      <Route
+        path="/roles-and-permissions/:userId"
+        element={<RolesAndPermissions />}
+      />
+      <Route path={routes.CASE_STUDIES} element={<PrivateRoute />}>
+        <Route path={routes.CASE_STUDIES} element={<CaseStudies />} />
+      </Route>
+      <Route path="/case-studies" element={<CaseStudies />} />
+    </Routes>
   );
 }
 

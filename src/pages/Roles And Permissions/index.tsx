@@ -1,30 +1,32 @@
-"use client";
-
 import React, { useState, useEffect } from "react";
 import {
   CssVarsProvider,
+  CssBaseline,
   Box,
   Typography,
-  Button,
   Switch,
   Checkbox,
   Sheet,
-  Modal,
-  ModalDialog,
-  FormControl,
-  FormLabel,
-  Input,
   Grid,
   Tabs,
   Tab,
   TabList,
+  Select,
+  Option,
+  FormControl,
+  FormLabel,
+  Button,
+  Modal,
+  Input,
   Table,
-  Avatar,
+  ModalDialog,
   ModalClose,
   Stack,
 } from "@mui/joy";
-import CssBaseline from "@mui/joy/CssBaseline";
 import SwipeableViews from "react-swipeable-views";
+import { AxiosInstance } from "../../core/baseURL"; // Your Axios instance
+import { useParams } from "react-router-dom";
+import IRole from "../../interfaces/IRole";
 import {
   createDepartment,
   deleteDepartment,
@@ -33,13 +35,12 @@ import {
 
 interface Permission {
   id: string;
-  label: string;
+  permissionName: string;
   checked: boolean;
 }
 
-interface Role {
-  id: string;
-  name: string;
+interface RolePermissions {
+  role: string;
   enabled: boolean;
   permissions: Permission[];
 }
@@ -78,108 +79,257 @@ const department: Department[] = [
   },
 ];
 const RolesAndPermissions: React.FC = () => {
-  const [roles, setRoles] = useState<Role[]>([
+  const [roles, setRoles] = useState<IRole[]>([
     {
-      id: "admin",
-      name: "Administrator",
-      enabled: true,
+      id: 1, // changed to number
+      roleName: "Administrator", // changed to roleName
       permissions: [
-        { id: "user_manage", label: "Manage Users", checked: true },
-        { id: "role_manage", label: "Manage Roles", checked: true },
-        { id: "system_config", label: "System Configuration", checked: true },
-        { id: "audit_logs", label: "View Audit Logs", checked: true },
+        "user_manage", // changed to string
+        "role_manage",
+        "system_config",
+        "audit_logs",
       ],
+      activities: null, // you can set this as needed
+      user: null, // you can set this as needed
     },
     {
-      id: "editor",
-      name: "Content Editor",
-      enabled: false,
+      id: 2, // changed to number
+      roleName: "Content Editor", // changed to roleName
       permissions: [
-        { id: "content_create", label: "Create Content", checked: false },
-        { id: "content_edit", label: "Edit Content", checked: false },
-        { id: "content_publish", label: "Publish Content", checked: false },
-        { id: "media_manage", label: "Manage Media", checked: false },
+        "content_create", // changed to string
+        "content_edit",
+        "content_publish",
+        "media_manage",
       ],
+      activities: null, // you can set this as needed
+      user: null, // you can set this as needed
     },
     {
-      id: "viewer",
-      name: "Viewer",
-      enabled: false,
+      id: 3, // changed to number
+      roleName: "Viewer", // changed to roleName
       permissions: [
-        { id: "content_view", label: "View Content", checked: false },
-        { id: "reports_view", label: "View Reports", checked: false },
-        { id: "dashboard_access", label: "Access Dashboard", checked: false },
+        "content_view", // changed to string
+        "reports_view",
+        "dashboard_access",
       ],
-    },
-  ]);
-
-  const [caseStudyRoles, setCaseStudyRoles] = useState<Role[]>([
-    {
-      id: "malaria_study",
-      name: "Malaria Case Study",
-      enabled: true,
-      permissions: [
-        { id: "view_results", label: "View Results", checked: true },
-        { id: "edit_analysis", label: "Edit Analysis", checked: false },
-        { id: "export_data", label: "Export Data", checked: true },
-      ],
-    },
-    {
-      id: "typhoid_study",
-      name: "Typhoid Case Study",
-      enabled: false,
-      permissions: [
-        { id: "view_results", label: "View Results", checked: false },
-        { id: "edit_analysis", label: "Edit Analysis", checked: false },
-        { id: "export_data", label: "Export Data", checked: false },
-      ],
+      activities: null, // you can set this as needed
+      user: null, // you can set this as needed
     },
   ]);
 
-  const [tabIndex, setTabIndex] = useState<number>(0);
+  const [caseStudyRoles, setCaseStudyRoles] = useState<IRole[]>([
+    {
+      id: 4, // changed to number
+      roleName: "Malaria Case Study", // changed to roleName
+      permissions: [
+        "view_results", // changed to string
+        "edit_analysis",
+        "export_data",
+      ],
+      activities: null, // you can set this as needed
+      user: null, // you can set this as needed
+    },
+    {
+      id: 5, // changed to number
+      roleName: "Typhoid Case Study", // changed to roleName
+      permissions: [
+        "view_results", // changed to string
+        "edit_analysis",
+        "export_data",
+      ],
+      activities: null, // you can set this as needed
+      user: null, // you can set this as needed
+    },
+  ]);
+
   const [isAddDepartmentOpen, setIsAddDepartmentOpen] = useState(false);
   const [newDepartment, setNewDepartment] = useState<{ name: string }>({
     name: "",
   });
+  interface CaseStudy {
+    id: number;
+    name: string;
+    enabled: boolean;
+    permissions: { name: string; checked: boolean }[];
+  }
 
-  const handleRoleToggle = (roleId: string, isCaseStudy: boolean = false) => {
-    const rolesToUpdate = isCaseStudy ? setCaseStudyRoles : setRoles;
-    rolesToUpdate((prevRoles) =>
-      prevRoles.map((role) => {
-        if (role.id === roleId) {
-          const newEnabled = !role.enabled;
-          return {
-            ...role,
-            enabled: newEnabled,
-            permissions: role.permissions.map((perm) => ({
-              ...perm,
-              checked: newEnabled,
-            })),
-          };
-        }
-        return role;
-      }),
+  const [permissionsByRole, setPermissionsByRole] = useState<RolePermissions[]>(
+    [],
+  );
+  const [tabIndex, setTabIndex] = useState<number>(0);
+  const [caseStudies, setCaseStudies] = useState<CaseStudy[]>([]);
+  const [isModalOpen, setModalOpen] = useState(false);
+  const [newCaseStudy, setNewCaseStudy] = useState({
+    name: "",
+    description: "",
+    role: 1, // Default role
+  });
+  const { userId } = useParams(); // If needed for role/user context
+
+  // Fetch permissions by role
+  useEffect(() => {
+    const fetchPermissions = async () => {
+      try {
+        const response = await AxiosInstance.get("permissions/all");
+
+        // Organize permissions based on roles and apply predefined role-based permissions
+        const organizedPermissions = [
+          {
+            role: "Dashboard",
+            enabled: true,
+            permissions: response.data
+              .filter((perm: any) =>
+                [
+                  "READ_DASHBOARD",
+                  "CREATE_DASHBOARD",
+                  "UPDATE_DASHBOARD",
+                  "DELETE_DASHBOARD",
+                ].includes(perm.name),
+              )
+              .map((perm: any) => ({
+                id: perm.id,
+                permissionName: perm.name,
+                checked: true,
+              })),
+          },
+          {
+            role: "Files",
+            enabled: true,
+            permissions: response.data
+              .filter((perm: any) =>
+                [
+                  "READ_FILES",
+                  "CREATE_FILES",
+                  "UPDATE_FILES",
+                  "DELETE_FILES",
+                ].includes(perm.name),
+              )
+              .map((perm: any) => ({
+                id: perm.id,
+                permissionName: perm.name,
+                checked: true,
+              })),
+          },
+          {
+            role: "Folders",
+            enabled: false,
+            permissions: response.data
+              .filter((perm: any) =>
+                [
+                  "READ_FOLDERS",
+                  "CREATE_FOLDERS",
+                  "UPDATE_FOLDERS",
+                  "DELETE_FOLDERS",
+                ].includes(perm.name),
+              )
+              .map((perm: any) => ({
+                id: perm.id,
+                permissionName: perm.name,
+                checked: false,
+              })),
+          },
+          {
+            role: "Users",
+            enabled: false,
+            permissions: response.data
+              .filter((perm: any) =>
+                [
+                  "READ_USER",
+                  "CREATE_USER",
+                  "UPDATE_USER",
+                  "DELETE_USER",
+                ].includes(perm.name),
+              )
+              .map((perm: any) => ({
+                id: perm.id,
+                permissionName: perm.name,
+                checked: false,
+              })),
+          },
+          {
+            role: "Case Studies",
+            enabled: false,
+            permissions: response.data
+              .filter((perm: any) =>
+                [
+                  "READ_CASESTUDIES",
+                  "CREATE_CASESTUDIES",
+                  "UPDATE_CASESTUDIES",
+                  "DELETE_CASESTUDIES",
+                ].includes(perm.name),
+              )
+              .map((perm: any) => ({
+                id: perm.id,
+                permissionName: perm.name,
+                checked: false,
+              })),
+          },
+        ];
+
+        setPermissionsByRole(organizedPermissions);
+      } catch (error) {
+        console.error("Error fetching permissions:", error);
+      }
+    };
+
+    fetchPermissions();
+  }, []);
+
+  // Fetch case studies
+  useEffect(() => {
+    const fetchCaseStudies = async () => {
+      try {
+        const response = await AxiosInstance.get("case-studies/all");
+        const fetchedCaseStudies = response.data.map((study: any) => ({
+          id: study.id,
+          name: study.name,
+          enabled: true,
+          permissions: study.permissions.map((perm: string) => ({
+            name: perm,
+            checked: false,
+          })),
+        }));
+
+        setCaseStudies(fetchedCaseStudies);
+      } catch (error) {
+        console.error("Error fetching case studies:", error);
+      }
+    };
+
+    fetchCaseStudies();
+  }, []);
+
+  // Role-based toggle for enabling/disabling role permissions
+  const handleRoleToggle = (roleIndex: number) => {
+    setPermissionsByRole((prevRoles) =>
+      prevRoles.map((role, index) =>
+        index === roleIndex
+          ? {
+              ...role,
+              enabled: !role.enabled,
+              permissions: role.permissions.map((perm) => ({
+                ...perm,
+                checked: role.enabled ? false : perm.checked,
+              })),
+            }
+          : role,
+      ),
     );
   };
 
-  const handlePermissionToggle = (
-    roleId: string,
-    permId: string,
-    isCaseStudy: boolean = false,
-  ) => {
-    const rolesToUpdate = isCaseStudy ? setCaseStudyRoles : setRoles;
-    rolesToUpdate((prevRoles) =>
-      prevRoles.map((role) => {
-        if (role.id === roleId) {
-          return {
-            ...role,
-            permissions: role.permissions.map((perm) =>
-              perm.id === permId ? { ...perm, checked: !perm.checked } : perm,
-            ),
-          };
-        }
-        return role;
-      }),
+  // Toggle specific permissions for a role
+  const handlePermissionToggle = (roleIndex: number, permId: string) => {
+    setPermissionsByRole((prevRoles) =>
+      prevRoles.map((role, index) =>
+        index === roleIndex
+          ? {
+              ...role,
+              permissions: role.permissions.map((perm) =>
+                perm.id === permId ? { ...perm, checked: !perm.checked } : perm,
+              ),
+            }
+          : role,
+      ),
     );
   };
 
@@ -243,21 +393,29 @@ const RolesAndPermissions: React.FC = () => {
           sx={{ mb: 4 }}
         >
           <TabList>
-            <Tab>Roles & Permissions</Tab>
+            <Tab>System Roles</Tab>
             <Tab>Case Studies</Tab>
             <Tab>Departments</Tab>
           </TabList>
         </Tabs>
 
         <SwipeableViews index={tabIndex} onChangeIndex={setTabIndex}>
-          {/* Roles & Permissions Tab */}
+          {/* System Roles and Permissions */}
           <Box p={2}>
             <Typography level="h1" fontSize="xl" mb={2}>
               System Roles and Permissions
             </Typography>
+            <FormControl>
+              <FormLabel>Select Role</FormLabel>
+              <Select>
+                <Option value={1}>Super_Admin</Option>
+                <Option value={3}>Admin</Option>
+                <Option value={4}>User</Option>
+              </Select>
+            </FormControl>
             <Grid container spacing={3}>
-              {roles.map((role) => (
-                <Grid key={role.id} xs={12} md={6} lg={4}>
+              {permissionsByRole.map((role, roleIndex) => (
+                <Grid key={role.role} xs={12} md={6} lg={4}>
                   <Sheet
                     variant="outlined"
                     sx={{ p: 3, borderRadius: "sm", height: "100%" }}
@@ -271,14 +429,14 @@ const RolesAndPermissions: React.FC = () => {
                       }}
                     >
                       <Typography level="h2" fontSize="lg">
-                        {role.name}
+                        {role.role}
                       </Typography>
                       <Switch
                         checked={role.enabled}
-                        onChange={() => handleRoleToggle(role.id)}
+                        onChange={() => handleRoleToggle(roleIndex)}
                         color={role.enabled ? "success" : "neutral"}
                         slotProps={{
-                          input: { "aria-label": `Toggle ${role.name} role` },
+                          input: { "aria-label": `Toggle ${role.role} role` },
                         }}
                       />
                     </Box>
@@ -293,15 +451,15 @@ const RolesAndPermissions: React.FC = () => {
                       {role.permissions.map((perm) => (
                         <Checkbox
                           key={perm.id}
-                          label={perm.label}
+                          label={perm.permissionName}
                           checked={perm.checked}
                           onChange={() =>
-                            handlePermissionToggle(role.id, perm.id)
+                            handlePermissionToggle(roleIndex, perm.id)
                           }
                           disabled={!role.enabled}
                           slotProps={{
                             input: {
-                              "aria-label": `${perm.label} permission for ${role.name} role`,
+                              "aria-label": `${perm.permissionName} permission for ${role.role}`,
                             },
                           }}
                         />
@@ -312,15 +470,71 @@ const RolesAndPermissions: React.FC = () => {
               ))}
             </Grid>
           </Box>
-
           {/* Case Studies Tab */}
           <Box p={2}>
             <Typography level="h1" fontSize="xl" mb={2}>
               Case Studies Roles and Permissions
             </Typography>
+            <Button
+              onClick={() => setModalOpen(true)}
+              sx={{ mb: 4 }}
+              color="primary"
+              variant="solid"
+            >
+              Create Case Study
+            </Button>
+            <Modal
+              open={isModalOpen}
+              onClose={() => setModalOpen(false)}
+              aria-labelledby="create-case-study-modal"
+            >
+              <Box
+                sx={{
+                  p: 2,
+                  bgcolor: "background.surface",
+                  borderRadius: "sm",
+                  boxShadow: "md",
+                  width: "500px",
+                  mx: "auto",
+                  mt: "10vh",
+                }}
+              >
+                <Typography level="h2" fontSize="lg" mb={2}>
+                  Create New Case Study
+                </Typography>
+                <FormControl>
+                  <FormLabel>Name</FormLabel>
+                  <Input
+                    type="text"
+                    name="name"
+                    value={newCaseStudy.name}
+                    onChange={handleInputChange}
+                    sx={{ mb: 2 }}
+                  />
+                </FormControl>
+                <FormControl>
+                  <FormLabel>Description</FormLabel>
+                  <Input
+                    type="text"
+                    name="description"
+                    value={newCaseStudy.description}
+                    onChange={handleInputChange}
+                    sx={{ mb: 2 }}
+                  />
+                </FormControl>
+                <Button
+                  onClick={submitNewCaseStudy}
+                  color="primary"
+                  variant="solid"
+                >
+                  Submit
+                </Button>
+              </Box>
+            </Modal>
+
             <Grid container spacing={3}>
-              {caseStudyRoles.map((role) => (
-                <Grid key={role.id} xs={12} md={6} lg={4}>
+              {caseStudies.map((study) => (
+                <Grid key={study.id} xs={12} md={6} lg={4}>
                   <Sheet
                     variant="outlined"
                     sx={{ p: 3, borderRadius: "sm", height: "100%" }}
@@ -334,14 +548,16 @@ const RolesAndPermissions: React.FC = () => {
                       }}
                     >
                       <Typography level="h2" fontSize="lg">
-                        {role.name}
+                        {study.name}
                       </Typography>
                       <Switch
-                        checked={role.enabled}
-                        onChange={() => handleRoleToggle(role.id, true)}
-                        color={role.enabled ? "success" : "neutral"}
+                        checked={study.enabled}
+                        onChange={() => handleToggleCaseStudy(study.id)}
+                        color={study.enabled ? "success" : "neutral"}
                         slotProps={{
-                          input: { "aria-label": `Toggle ${role.name} role` },
+                          input: {
+                            "aria-label": `Toggle ${study.name} case study`,
+                          },
                         }}
                       />
                     </Box>
@@ -353,18 +569,18 @@ const RolesAndPermissions: React.FC = () => {
                         ml: 3,
                       }}
                     >
-                      {role.permissions.map((perm) => (
+                      {study.permissions.map((perm) => (
                         <Checkbox
-                          key={perm.id}
-                          label={perm.label}
+                          key={perm.name}
+                          label={perm.name}
                           checked={perm.checked}
                           onChange={() =>
-                            handlePermissionToggle(role.id, perm.id, true)
+                            handlePermissionToggleCaseStudy(study.id, perm.name)
                           }
-                          disabled={!role.enabled}
+                          disabled={!study.enabled}
                           slotProps={{
                             input: {
-                              "aria-label": `${perm.label} permission for ${role.name} role`,
+                              "aria-label": `${perm.name} permission for ${study.name}`,
                             },
                           }}
                         />

@@ -7,7 +7,8 @@ const REQUESTS: string = `${DASHBOARD}/tasks/requests`;
 const APPROVALS: string = `${DASHBOARD}/tasks/approvals`;
 const PROFILE: string = `${DASHBOARD}/users/profile`;
 const USERS: string = `${DASHBOARD}/users/users`;
-const ROLESANDPERMISSIONS: string = `${DASHBOARD}/users/roles-and-permissions`;
+const ROLESANDPERMISSIONS = `${DASHBOARD}/users/roles-and-permissions/:userId`;
+const CASE_STUDIES: string = `${DASHBOARD}/case-studies`;
 const SETTINGS: string = "/settings";
 
 const routes = {
@@ -22,6 +23,7 @@ const routes = {
   USERS,
   SETTINGS,
   APPROVALS,
+  CASE_STUDIES,
 };
 
 export default routes;
