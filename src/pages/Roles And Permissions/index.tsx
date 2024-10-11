@@ -166,6 +166,39 @@ const RolesAndPermissions: React.FC = () => {
   });
   const { userId } = useParams(); // If needed for role/user context
 
+  // Handle case study form input
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewCaseStudy({
+      ...newCaseStudy,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  // Submit new case study
+  const submitNewCaseStudy = async () => {
+    try {
+      const response = await AxiosInstance.post(
+        "case-studies/create-cases",
+        newCaseStudy,
+      );
+      const createdCaseStudy = response.data;
+
+      setCaseStudies((prevStudies) => [
+        ...prevStudies,
+        {
+          id: createdCaseStudy.id,
+          name: createdCaseStudy.name,
+          enabled: true,
+          permissions: [], // Initially no permissions
+        },
+      ]);
+
+      setModalOpen(false);
+    } catch (error) {
+      console.error("Error creating case study:", error);
+    }
+  };
+
   // Fetch permissions by role
   useEffect(() => {
     const fetchPermissions = async () => {
