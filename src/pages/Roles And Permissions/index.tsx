@@ -25,7 +25,11 @@ import {
 } from "@mui/joy";
 import CssBaseline from "@mui/joy/CssBaseline";
 import SwipeableViews from "react-swipeable-views";
-import { departmentService } from "./department-service";
+import {
+  createDepartment,
+  deleteDepartment,
+  getAllDepartments,
+} from "./roles_api";
 
 interface Permission {
   id: string;
@@ -194,7 +198,7 @@ const RolesAndPermissions: React.FC = () => {
   const fetchDepartments = async () => {
     setIsLoading(true);
     try {
-      const fetchedDepartments = await departmentService.getAllDepartments();
+      const fetchedDepartments = await getAllDepartments();
       setDepartments(fetchedDepartments);
       setError(null);
     } catch (error) {
@@ -209,7 +213,7 @@ const RolesAndPermissions: React.FC = () => {
     event.preventDefault();
     setIsLoading(true);
     try {
-      await departmentService.createDepartment({ name: newDepartment.name });
+      await createDepartment({ name: newDepartment.name });
       await fetchDepartments();
       handleCloseAddDepartment();
       setError("Failed to create department");
@@ -426,9 +430,7 @@ const RolesAndPermissions: React.FC = () => {
                           onClick={async () => {
                             if (department.id) {
                               try {
-                                await departmentService.deleteDepartment(
-                                  department.id,
-                                );
+                                await deleteDepartment(department.id);
                                 await fetchDepartments();
                               } catch (err) {
                                 setDefaultResultOrder(

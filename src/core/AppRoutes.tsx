@@ -8,7 +8,7 @@ import Files from "../pages/Files";
 import Folders from "../pages/Folders";
 import Approvals from "../pages/Approvals";
 import Requests from "../pages/Requests";
-import Profile from "../pages/profile";
+import Profile from "../pages/Profile";
 import Users from "../pages/users";
 import RolesAndPermissions from "../pages/Roles And Permissions";
 
