@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Search, ChevronDown, MoreVertical, ChevronUp } from "lucide-react";
 import {
   Avatar,
@@ -16,73 +16,59 @@ import {
   Table,
   Sheet,
 } from "@mui/joy";
+import { AxiosInstance } from "../../core/baseURL";
+import { useNavigate } from "react-router-dom";
 
 interface User {
   id: number;
-  name: string;
+  first_name: string;
+  last_name: string;
   email: string;
-  access: string[];
-  lastActive: string;
-  dateAdded: string;
+  phone: string;
+  address: string;
 }
 
-const users: User[] = [
-  {
-    id: 1,
-    name: "Florence Shaw",
-    email: "florence@untitledui.com",
-    access: ["Admin", "Data Export", "Data Import"],
-    lastActive: "Mar 4, 2024",
-    dateAdded: "July 4, 2022",
-  },
-  {
-    id: 2,
-    name: "Amélie Laurent",
-    email: "amelie@untitledui.com",
-    access: ["Admin", "Data Export", "Data Import"],
-    lastActive: "Mar 4, 2024",
-    dateAdded: "July 4, 2022",
-  },
-  {
-    id: 3,
-    name: "Ammar Foley",
-    email: "ammar@untitledui.com",
-    access: ["Data Export", "Data Import"],
-    lastActive: "Mar 2, 2024",
-    dateAdded: "July 4, 2022",
-  },
-  {
-    id: 4,
-    name: "Caitlyn King",
-    email: "caitlyn@untitledui.com",
-    access: ["Data Export", "Data Import"],
-    lastActive: "Mar 6, 2024",
-    dateAdded: "July 4, 2022",
-  },
-  {
-    id: 5,
-    name: "Sienna Hewitt",
-    email: "sienna@untitledui.com",
-    access: ["Data Export", "Data Import"],
-    lastActive: "Mar 6, 2024",
-    dateAdded: "July 4, 2022",
-  },
-];
-
 const Index: React.FC = () => {
+  const [users, setUsers] = useState<User[]>([]);
   const [sortColumn, setSortColumn] = useState<keyof User | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [newUser, setNewUser] = useState<{
-    name: string;
+    first_name: string;
+    last_name: string;
     email: string;
-    access: string[];
+    password: string;
+    phone: string;
+    address: string;
+    roles: number[]; // Roles represented as an array of numbers
+    userType: string; // User type field
   }>({
-    name: "",
+    first_name: "",
+    last_name: "",
     email: "",
-    access: [],
+    password: "",
+    phone: "",
+    address: "",
+    roles: [], // Initialize roles as empty array
+    userType: "", // Initialize userType
   });
 
+  const navigate = useNavigate(); // Initialize navigate hook
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await AxiosInstance.get("/users");
+        setUsers(response.data); // Set the fetched users
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
+  // Sorting functionality
   const handleSort = (column: keyof User) => {
     if (sortColumn === column) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -99,28 +85,68 @@ const Index: React.FC = () => {
     return 0;
   });
 
+  // Handle modal opening and closing
   const handleAddUser = () => {
     setIsAddUserOpen(true);
   };
 
   const handleCloseAddUser = () => {
     setIsAddUserOpen(false);
-    setNewUser({ name: "", email: "", access: [] });
+    setNewUser({
+      first_name: "",
+      last_name: "",
+      email: "",
+      password: "",
+      phone: "",
+      address: "",
+      roles: [], // Reset roles
+      userType: "", // Reset userType
+    });
   };
 
-  const handleSubmitNewUser = (e: React.FormEvent) => {
+  // Handle form submission for adding a new user
+  const handleSubmitNewUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("New user submitted:", newUser);
-    handleCloseAddUser();
+
+    const userData = {
+      ...newUser,
+    };
+
+    try {
+      const response = await AxiosInstance.post("/create-users", userData);
+      const newUserId = response.data.id; // Assuming the response contains the new user's id
+
+      setUsers((prev) => [
+        ...prev,
+        {
+          id: newUserId,
+          ...userData,
+        },
+      ]);
+
+      // Close the modal
+      handleCloseAddUser();
+
+      // Navigate to the roles-and-permissions page with the new user's id
+      navigate(`/roles-and-permissions/${newUserId}`);
+    } catch (error) {
+      console.error("Error adding user:", error);
+    }
   };
 
-  const handleAccessChange = (access: string) => {
+  // Handle role selection
+  const handleRoleChange = (roleId: number) => {
     setNewUser((prev) => ({
       ...prev,
-      access: prev.access.includes(access)
-        ? prev.access.filter((a) => a !== access)
-        : [...prev.access, access],
+      roles: prev.roles.includes(roleId)
+        ? prev.roles.filter((id) => id !== roleId) // Remove role if unchecked
+        : [...prev.roles, roleId], // Add role if checked
     }));
+  };
+
+  // Navigate to roles and permissions when clicking a row
+  const handleRowClick = (userId: number) => {
+    navigate(`/roles-and-permissions/${userId}`);
   };
 
   return (
@@ -159,50 +185,48 @@ const Index: React.FC = () => {
                 <Checkbox size="sm" />
               </th>
               <th
-                onClick={() => handleSort("name")}
+                onClick={() => handleSort("first_name")}
                 style={{ cursor: "pointer" }}
               >
                 <Stack direction="row" alignItems="center">
-                  User name
-                  {sortColumn === "name" &&
-                    (sortDirection === "asc" ? <ChevronUp /> : <ChevronDown />)}
-                </Stack>
-              </th>
-              <th>Access</th>
-              <th
-                onClick={() => handleSort("lastActive")}
-                style={{ cursor: "pointer" }}
-              >
-                <Stack direction="row" alignItems="center">
-                  Last active
-                  {sortColumn === "lastActive" &&
+                  First Name
+                  {sortColumn === "first_name" &&
                     (sortDirection === "asc" ? <ChevronUp /> : <ChevronDown />)}
                 </Stack>
               </th>
               <th
-                onClick={() => handleSort("dateAdded")}
+                onClick={() => handleSort("last_name")}
                 style={{ cursor: "pointer" }}
               >
                 <Stack direction="row" alignItems="center">
-                  Date added
-                  {sortColumn === "dateAdded" &&
+                  Last Name
+                  {sortColumn === "last_name" &&
                     (sortDirection === "asc" ? <ChevronUp /> : <ChevronDown />)}
                 </Stack>
               </th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Address</th>
               <th style={{ width: 60 }} />
             </tr>
           </thead>
           <tbody>
             {sortedUsers.map((user) => (
-              <tr key={user.id}>
+              <tr
+                key={user.id}
+                onClick={() => handleRowClick(user.id)} // Pass user ID on row click
+                style={{ cursor: "pointer" }}
+              >
                 <td>
                   <Checkbox size="sm" />
                 </td>
                 <td>
                   <Stack direction="row" spacing={2} alignItems="center">
-                    <Avatar size="sm">{user.name.charAt(0)}</Avatar>
+                    <Avatar size="sm">{user.first_name.charAt(0)}</Avatar>
                     <Stack>
-                      <Typography level="body-sm">{user.name}</Typography>
+                      <Typography level="body-sm">
+                        {user.first_name} {user.last_name}
+                      </Typography>
                       <Typography level="body-xs" color="neutral">
                         {user.email}
                       </Typography>
@@ -210,29 +234,16 @@ const Index: React.FC = () => {
                   </Stack>
                 </td>
                 <td>
-                  <Stack direction="row" spacing={1}>
-                    {user.access.map((access) => (
-                      <Typography
-                        key={access}
-                        level="body-xs"
-                        sx={{
-                          backgroundColor: "primary.100",
-                          color: "primary.700",
-                          borderRadius: "sm",
-                          px: 1,
-                          py: 0.5,
-                        }}
-                      >
-                        {access}
-                      </Typography>
-                    ))}
-                  </Stack>
+                  <Typography level="body-sm">{user.last_name}</Typography>
                 </td>
                 <td>
-                  <Typography level="body-sm">{user.lastActive}</Typography>
+                  <Typography level="body-sm">{user.email}</Typography>
                 </td>
                 <td>
-                  <Typography level="body-sm">{user.dateAdded}</Typography>
+                  <Typography level="body-sm">{user.phone}</Typography>
+                </td>
+                <td>
+                  <Typography level="body-sm">{user.address}</Typography>
                 </td>
                 <td>
                   <Button variant="plain" color="neutral" size="sm">
@@ -245,12 +256,15 @@ const Index: React.FC = () => {
         </Table>
       </Sheet>
 
+      {/* Add User Modal */}
       <Modal open={isAddUserOpen} onClose={handleCloseAddUser}>
         <ModalDialog
           aria-labelledby="add-user-modal-title"
           aria-describedby="add-user-modal-description"
           sx={{
-            maxWidth: 500,
+            maxWidth: "400px",
+            maxHeight: "80vh",
+            overflowY: "auto",
             borderRadius: "md",
             p: 3,
             boxShadow: "lg",
@@ -261,73 +275,115 @@ const Index: React.FC = () => {
             sx={{
               top: "calc(-1/4 * var(--IconButton-size))",
               right: "calc(-1/4 * var(--IconButton-size))",
-              boxShadow: "0 2px 12px 0 rgba(0 0 0 / 0.2)",
-              borderRadius: "50%",
-              bgcolor: "background.body",
             }}
           />
-          <Typography
-            id="add-user-modal-title"
-            component="h2"
-            level="h4"
-            textColor="inherit"
-            fontWeight="lg"
-            mb={1}
-          >
+          <Typography level="h4" fontWeight="bold" textAlign="center">
             Add New User
           </Typography>
+
           <form onSubmit={handleSubmitNewUser}>
             <Stack spacing={2}>
               <FormControl>
-                <FormLabel>Name</FormLabel>
+                <FormLabel>First Name</FormLabel>
                 <Input
-                  autoFocus
                   required
-                  value={newUser.name}
+                  value={newUser.first_name}
                   onChange={(e) =>
-                    setNewUser((prev) => ({ ...prev, name: e.target.value }))
+                    setNewUser({ ...newUser, first_name: e.target.value })
                   }
                 />
               </FormControl>
+
+              <FormControl>
+                <FormLabel>Last Name</FormLabel>
+                <Input
+                  required
+                  value={newUser.last_name}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, last_name: e.target.value })
+                  }
+                />
+              </FormControl>
+
               <FormControl>
                 <FormLabel>Email</FormLabel>
                 <Input
-                  required
                   type="email"
+                  required
                   value={newUser.email}
                   onChange={(e) =>
-                    setNewUser((prev) => ({ ...prev, email: e.target.value }))
+                    setNewUser({ ...newUser, email: e.target.value })
                   }
                 />
               </FormControl>
+
               <FormControl>
-                <FormLabel>Access</FormLabel>
+                <FormLabel>Password</FormLabel>
+                <Input
+                  type="password"
+                  required
+                  value={newUser.password}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, password: e.target.value })
+                  }
+                />
+              </FormControl>
+
+              <FormControl>
+                <FormLabel>Phone</FormLabel>
+                <Input
+                  required
+                  value={newUser.phone}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, phone: e.target.value })
+                  }
+                />
+              </FormControl>
+
+              <FormControl>
+                <FormLabel>Address</FormLabel>
+                <Input
+                  required
+                  value={newUser.address}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, address: e.target.value })
+                  }
+                />
+              </FormControl>
+
+              <FormControl>
+                <FormLabel>Roles</FormLabel>
+                <Checkbox
+                  label="Admin"
+                  checked={newUser.roles.includes(3)}
+                  onChange={() => handleRoleChange(3)}
+                />
+                <Checkbox
+                  label="User"
+                  checked={newUser.roles.includes(4)}
+                  onChange={() => handleRoleChange(4)}
+                />
+              </FormControl>
+
+              <FormControl>
+                <FormLabel>User Type</FormLabel>
                 <Stack direction="row" spacing={2}>
-                  {["Admin", "Data Export", "Data Import"].map((access) => (
+                  {["ADMIN", "USER"].map((type) => (
                     <Checkbox
-                      key={access}
-                      label={access}
-                      checked={newUser.access.includes(access)}
-                      onChange={() => handleAccessChange(access)}
+                      key={type}
+                      label={type}
+                      checked={newUser.userType === type}
+                      onChange={() =>
+                        setNewUser((prev) => ({ ...prev, userType: type }))
+                      }
                     />
                   ))}
                 </Stack>
               </FormControl>
-              <Stack
-                direction="row"
-                spacing={2}
-                justifyContent="flex-end"
-                mt={2}
-              >
-                <Button
-                  variant="plain"
-                  color="neutral"
-                  onClick={handleCloseAddUser}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit">Add User</Button>
-              </Stack>
+
+              <Button type="submit" fullWidth variant="solid" color="primary">
+                Add User
+              </Button>
             </Stack>
           </form>
         </ModalDialog>

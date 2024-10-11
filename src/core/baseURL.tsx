@@ -10,7 +10,7 @@ export const AxiosInstance = axios.create({
 AxiosInstance.interceptors.request.use(
   (config) => {
     const token = getTokenFromSessionStorage(),
-      authorization = `Bearer ${JSON.parse(token)}`,
+      authorization = `Bearer ${token}`,
       contentType = "application/json";
 
     if (token) {
