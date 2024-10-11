@@ -5,7 +5,7 @@ import IDepartment from "../../interfaces/IDepartment";
 export const createDepartment = async (department: IDepartment) => {
   try {
     const response = await AxiosInstance.post(
-      "departments/createDepartment",
+      "departments/create-department",
       department,
     );
     return response.data;

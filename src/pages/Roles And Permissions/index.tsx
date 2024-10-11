@@ -1,31 +1,31 @@
-import React, { useState, useEffect } from "react";
 import {
-  CssVarsProvider,
-  CssBaseline,
   Box,
-  Typography,
-  Switch,
+  Button,
   Checkbox,
-  Sheet,
-  Grid,
-  Tabs,
-  Tab,
-  TabList,
-  Select,
-  Option,
+  CssBaseline,
+  CssVarsProvider,
   FormControl,
   FormLabel,
-  Button,
-  Modal,
+  Grid,
   Input,
-  Table,
-  ModalDialog,
+  Modal,
   ModalClose,
+  ModalDialog,
+  Option,
+  Select,
+  Sheet,
   Stack,
+  Switch,
+  Tab,
+  Table,
+  TabList,
+  Tabs,
+  Typography,
 } from "@mui/joy";
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import SwipeableViews from "react-swipeable-views";
 import { AxiosInstance } from "../../core/baseURL"; // Your Axios instance
-import { useParams } from "react-router-dom";
 import IRole from "../../interfaces/IRole";
 import {
   createDepartment,
@@ -172,6 +172,45 @@ const RolesAndPermissions: React.FC = () => {
       ...newCaseStudy,
       [e.target.name]: e.target.value,
     });
+  };
+
+  // Case Study toggle
+  const handleToggleCaseStudy = (studyId: number) => {
+    setCaseStudies((prevStudies) =>
+      prevStudies.map((study) =>
+        study.id === studyId
+          ? {
+              ...study,
+              enabled: !study.enabled,
+              permissions: study.permissions.map((perm) => ({
+                ...perm,
+                checked: !study.enabled ? perm.checked : true,
+              })),
+            }
+          : study,
+      ),
+    );
+  };
+
+  // Permission toggle within a Case Study
+  const handlePermissionToggleCaseStudy = (
+    studyId: number,
+    permName: string,
+  ) => {
+    setCaseStudies((prevStudies) =>
+      prevStudies.map((study) =>
+        study.id === studyId
+          ? {
+              ...study,
+              permissions: study.permissions.map((perm) =>
+                perm.name === permName
+                  ? { ...perm, checked: !perm.checked }
+                  : perm,
+              ),
+            }
+          : study,
+      ),
+    );
   };
 
   // Submit new case study
