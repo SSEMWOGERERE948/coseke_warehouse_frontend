@@ -3,6 +3,7 @@ import BrightnessAutoRoundedIcon from "@mui/icons-material/BrightnessAutoRounded
 import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
 import GroupRoundedIcon from "@mui/icons-material/GroupRounded";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
+import AssessmentIcon from "@mui/icons-material/Assessment";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
@@ -26,6 +27,8 @@ import { useNavigate } from "react-router";
 import routes from "../../core/routes";
 import ColorSchemeToggle from "./ColorSchemeToggle";
 import { closeSidebar } from "./utils";
+import IUser from "../../interfaces/IUser";
+import { getCurrentUser } from "../../utils/helpers";
 
 function Toggler({
   defaultExpanded = false,
@@ -65,6 +68,7 @@ export default function Sidebar() {
   const navigate = useNavigate();
 
   const [selectedItem, setSelectedItem] = React.useState<string | null>("/");
+  const user: IUser = getCurrentUser();
 
   const handleSelect = (item: string) => {
     setSelectedItem(item);
@@ -277,6 +281,15 @@ export default function Sidebar() {
               </List>
             </Toggler>
           </ListItem>
+          <ListItemButton
+            selected={selectedItem === routes.CASE_STUDIES}
+            onClick={() => handleSelect(routes.CASE_STUDIES)}
+          >
+            <AssessmentIcon />
+            <ListItemContent>
+              <Typography level="title-sm">Case Studies</Typography>
+            </ListItemContent>
+          </ListItemButton>
         </List>
         <List
           size="sm"
@@ -309,10 +322,20 @@ export default function Sidebar() {
       <Divider />
       <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
         <Box sx={{ minWidth: 0, flex: 1 }}>
-          <Typography level="title-sm">Siriwat K.</Typography>
-          <Typography level="body-xs">siriwatk@test.com</Typography>
+          <Typography level="title-sm">
+            {user.first_name + " " + user.last_name}
+          </Typography>
+          <Typography level="body-xs">{user.email}</Typography>
         </Box>
-        <IconButton size="sm" variant="plain" color="neutral">
+        <IconButton
+          size="sm"
+          variant="plain"
+          color="neutral"
+          onClick={() => {
+            sessionStorage.clear();
+            navigate("/");
+          }}
+        >
           <LogoutRoundedIcon />
         </IconButton>
       </Box>

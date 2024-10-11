@@ -11,6 +11,7 @@ import Requests from "../pages/Requests";
 import Profile from "../pages/Profile";
 import Users from "../pages/users";
 import RolesAndPermissions from "../pages/Roles And Permissions";
+import CaseStudies from "../pages/case_studies";
 
 function AppRoutes() {
   return (
@@ -36,14 +37,25 @@ function AppRoutes() {
           <Route path={routes.USERS} element={<PrivateRoute />}>
             <Route path={routes.USERS} element={<Users />} />
           </Route>
-          <Route path={routes.ROLESANDPERMISSIONS} element={<PrivateRoute />}>
+          <Route
+            path={`${routes.ROLESANDPERMISSIONS}`}
+            element={<PrivateRoute />}
+          >
             <Route
-              path={routes.ROLESANDPERMISSIONS}
+              path={`${routes.ROLESANDPERMISSIONS}`}
               element={<RolesAndPermissions />}
             />
           </Route>
         </Route>
       </Route>
+      <Route
+        path="/roles-and-permissions/:userId"
+        element={<RolesAndPermissions />}
+      />
+      <Route path={routes.CASE_STUDIES} element={<PrivateRoute />}>
+        <Route path={routes.CASE_STUDIES} element={<CaseStudies />} />
+      </Route>
+      <Route path="/case-studies" element={<CaseStudies />} />
     </Routes>
   );
 }
