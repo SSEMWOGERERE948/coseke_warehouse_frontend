@@ -26,7 +26,9 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import SwipeableViews from "react-swipeable-views";
 import { AxiosInstance } from "../../core/baseURL"; // Your Axios instance
+import IDepartment from "../../interfaces/IDepartment";
 import IRole from "../../interfaces/IRole";
+import { convertArrayToDate } from "../../utils/helpers";
 import {
   createDepartment,
   deleteDepartment,
@@ -45,39 +47,6 @@ interface RolePermissions {
   permissions: Permission[];
 }
 
-interface Department {
-  id: number;
-  name: string;
-  addedDate: string;
-  modifiedDate: string;
-}
-
-const department: Department[] = [
-  {
-    id: 1,
-    name: "Human Resources",
-    addedDate: "2024-01-15",
-    modifiedDate: "2024-03-20",
-  },
-  {
-    id: 2,
-    name: "Engineering",
-    addedDate: "2024-02-01",
-    modifiedDate: "2024-04-01",
-  },
-  {
-    id: 3,
-    name: "Marketing",
-    addedDate: "2024-01-30",
-    modifiedDate: "2024-03-25",
-  },
-  {
-    id: 4,
-    name: "Finance",
-    addedDate: "2024-03-10",
-    modifiedDate: "2024-04-02",
-  },
-];
 const RolesAndPermissions: React.FC = () => {
   const [roles, setRoles] = useState<IRole[]>([
     {
@@ -409,7 +378,7 @@ const RolesAndPermissions: React.FC = () => {
   const handleCloseAddDepartment = () => setIsAddDepartmentOpen(false);
 
   //Added by Sylvia
-  const [departments, setDepartments] = useState<Department[]>([]);
+  const [departments, setDepartments] = useState<IDepartment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -421,6 +390,7 @@ const RolesAndPermissions: React.FC = () => {
     setIsLoading(true);
     try {
       const fetchedDepartments = await getAllDepartments();
+      console.log(fetchedDepartments);
       setDepartments(fetchedDepartments);
       setError(null);
     } catch (error) {
@@ -435,7 +405,7 @@ const RolesAndPermissions: React.FC = () => {
     event.preventDefault();
     setIsLoading(true);
     try {
-      await createDepartment({ name: newDepartment.name });
+      await createDepartment({ departmentName: newDepartment.name });
       await fetchDepartments();
       handleCloseAddDepartment();
       setError("Failed to create department");
@@ -704,12 +674,19 @@ const RolesAndPermissions: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {departments.map((department) => (
-                    <tr key={department.id}>
-                      <td>{department.name}</td>
-                      <td>{department.addedDate}</td>
-                      <td>{department.modifiedDate}</td>
-
+                  {departments.map((department: IDepartment) => (
+                    <tr key={department.id!}>
+                      <td>{department.departmentName}</td>
+                      <td>
+                        {convertArrayToDate(
+                          department.createdDate!,
+                        )?.toDateString()}
+                      </td>
+                      <td>
+                        {convertArrayToDate(
+                          department.lastModifiedDateTime!,
+                        )?.toDateString()}
+                      </td>
                       <td>
                         <Button
                           size="sm"

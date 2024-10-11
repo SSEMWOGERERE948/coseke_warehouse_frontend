@@ -1,6 +1,11 @@
+import IUser from "./IUser";
+
 export default interface IDepartment {
   id?: number;
-  name: string;
-  addedDate?: string;
-  modifiedDate?: string;
+  departmentName: string;
+  users?: IUser[];
+  createdDate?: number[];
+  lastModifiedDateTime?: number[];
+  lastModifiedBy?: number;
+  createdBy?: number;
 }
