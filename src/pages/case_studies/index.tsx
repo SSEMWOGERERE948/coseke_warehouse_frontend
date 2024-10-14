@@ -50,7 +50,6 @@ export default function CaseStudiesScreen() {
   );
   const [assignedUsers, setAssignedUsers] = useState<number[]>([]);
 
-  // Fetch case studies on component mount
   useEffect(() => {
     fetchCaseStudies();
   }, []);
@@ -74,11 +73,10 @@ export default function CaseStudiesScreen() {
     }
   };
 
-  // Fetch users from the API when assigning a user
   const fetchUsers = async () => {
     try {
       const response = await AxiosInstance.get("users");
-      setUsers(response.data); // Update state with fetched users
+      setUsers(response.data);
     } catch (error: any) {
       console.error(
         "Error fetching users:",
@@ -87,7 +85,6 @@ export default function CaseStudiesScreen() {
     }
   };
 
-  // Handle case study enable/disable toggle
   const handleToggleCaseStudy = (studyId: number) => {
     setCaseStudies((prevStudies) =>
       prevStudies.map((study) =>
@@ -101,7 +98,6 @@ export default function CaseStudiesScreen() {
     );
   };
 
-  // Handle new case study input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewCaseStudy({
       ...newCaseStudy,
@@ -109,7 +105,6 @@ export default function CaseStudiesScreen() {
     });
   };
 
-  // Submit new case study to the API and add to the list
   const submitNewCaseStudy = async () => {
     try {
       const response = await AxiosInstance.post(
@@ -118,7 +113,6 @@ export default function CaseStudiesScreen() {
       );
       const createdCaseStudy = response.data;
 
-      // Append newly created case study to the existing list
       setCaseStudies((prevStudies) => [
         ...prevStudies,
         {
@@ -127,7 +121,7 @@ export default function CaseStudiesScreen() {
           enabled: true,
         },
       ]);
-      setModalOpen(false); // Close modal after successful creation
+      setModalOpen(false);
     } catch (error: any) {
       console.error("Error creating case study:", error);
     }
@@ -135,27 +129,23 @@ export default function CaseStudiesScreen() {
 
   const handleAssignUser = async (study: CaseStudy) => {
     setSelectedCaseStudy(study);
-    await fetchUsers(); // Fetch all users when opening the modal
+    await fetchUsers();
 
-    // Fetch assigned user IDs for the selected case study
     const assignedUserIds = await fetchAssignedUserIds(study.id);
 
-    // Automatically check the users that are already assigned
     const preSelectedUsers = users.filter((user) =>
       assignedUserIds.includes(user.id),
     );
 
-    setSelectedUsers(preSelectedUsers); // Set those users as pre-selected in the state
+    setSelectedUsers(preSelectedUsers);
 
-    setAssignModalOpen(true); // Open the modal
+    setAssignModalOpen(true);
   };
 
-  // Handle user search input
   const handleUserSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
 
-  // Filter users based on the search term
   const filteredUsers = users.filter(
     (user) =>
       user &&
@@ -165,18 +155,16 @@ export default function CaseStudiesScreen() {
         .includes(searchTerm.toLocaleLowerCase()),
   );
 
-  // Assign user to the selected case study
-  // Assign users to the selected case study
   const assignUserToCaseStudy = async () => {
     if (selectedUsers.length > 0 && selectedCaseStudy) {
       try {
         await AxiosInstance.post("case-studies/assign-user", {
           caseStudyId: selectedCaseStudy.id,
-          userId: selectedUsers.map((user) => user.id), // Sending an array of user IDs
+          userId: selectedUsers.map((user) => user.id),
         });
-        fetchCaseStudies(); // Optionally refresh case studies list
-        setAssignModalOpen(false); // Close assign modal after success
-        setSelectedUsers([]); // Reset selected users
+        fetchCaseStudies();
+        setAssignModalOpen(false);
+        setSelectedUsers([]);
       } catch (error: any) {
         console.error(
           "Error assigning user to case study:",
@@ -193,13 +181,13 @@ export default function CaseStudiesScreen() {
       const response = await AxiosInstance.post("case-studies/assigned-users", {
         caseStudyId,
       });
-      return response.data.map((user: User) => user.id); // Return an array of user IDs
+      return response.data.map((user: User) => user.id);
     } catch (error: any) {
       console.error(
         "Error fetching assigned users:",
         error.response?.data || error.message,
       );
-      return []; // Return an empty array on error
+      return [];
     }
   };
 
@@ -408,10 +396,10 @@ export default function CaseStudiesScreen() {
                             type="checkbox"
                             checked={selectedUsers.some(
                               (selected) => selected.id === user.id,
-                            )} // Auto-check if user is in selectedUsers
+                            )}
                             onChange={(e) => {
                               if (e.target.checked) {
-                                setSelectedUsers((prev) => [...prev, user]); // Add user to selectedUsers
+                                setSelectedUsers((prev) => [...prev, user]);
                               } else {
                                 setSelectedUsers((prev) =>
                                   prev.filter(

@@ -13,6 +13,7 @@ import Users from "../pages/users";
 import RolesAndPermissions from "../pages/Roles And Permissions";
 import CaseStudies from "../pages/case_studies";
 import { FileProvider } from "../pages/Folders/FileContext";
+import UserRoles from "../pages/roles";
 
 function AppRoutes() {
   return (

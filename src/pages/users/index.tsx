@@ -1,9 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { Search, ChevronDown, MoreVertical, ChevronUp } from "lucide-react";
+import {
+  Search,
+  ChevronDown,
+  MoreVertical,
+  ChevronUp,
+  Trash2,
+  Edit,
+} from "lucide-react";
 import {
   Avatar,
   Button,
-  Checkbox,
   Input,
   Modal,
   ModalDialog,
@@ -40,8 +46,6 @@ const Index: React.FC = () => {
     password: string;
     phone: string;
     address: string;
-    roles: number[]; // Roles represented as an array of numbers
-    userType: string; // User type field
   }>({
     first_name: "",
     last_name: "",
@@ -49,17 +53,15 @@ const Index: React.FC = () => {
     password: "",
     phone: "",
     address: "",
-    roles: [], // Initialize roles as empty array
-    userType: "", // Initialize userType
   });
 
-  const navigate = useNavigate(); // Initialize navigate hook
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const response = await AxiosInstance.get("/users");
-        setUsers(response.data); // Set the fetched users
+        setUsers(response.data);
       } catch (error) {
         console.error("Error fetching users:", error);
       }
@@ -99,8 +101,6 @@ const Index: React.FC = () => {
       password: "",
       phone: "",
       address: "",
-      roles: [], // Reset roles
-      userType: "", // Reset userType
     });
   };
 
@@ -113,8 +113,8 @@ const Index: React.FC = () => {
     };
 
     try {
-      const response = await AxiosInstance.post("/create-users", userData);
-      const newUserId = response.data.id; // Assuming the response contains the new user's id
+      const response = await AxiosInstance.post("users/create-users", userData);
+      const newUserId = response.data.id;
 
       setUsers((prev) => [
         ...prev,
@@ -124,29 +124,26 @@ const Index: React.FC = () => {
         },
       ]);
 
-      // Close the modal
       handleCloseAddUser();
-
-      // Navigate to the roles-and-permissions page with the new user's id
       navigate(`/roles-and-permissions/${newUserId}`);
     } catch (error) {
       console.error("Error adding user:", error);
     }
   };
 
-  // Handle role selection
-  const handleRoleChange = (roleId: number) => {
-    setNewUser((prev) => ({
-      ...prev,
-      roles: prev.roles.includes(roleId)
-        ? prev.roles.filter((id) => id !== roleId) // Remove role if unchecked
-        : [...prev.roles, roleId], // Add role if checked
-    }));
+  // Navigate to roles and permissions for updating
+  const handleUpdateUser = (userId: number) => {
+    navigate(`/roles/${userId}`);
   };
 
-  // Navigate to roles and permissions when clicking a row
-  const handleRowClick = (userId: number) => {
-    navigate(`/roles-and-permissions/${userId}`);
+  // Handle user removal
+  const handleRemoveUser = async (userId: number) => {
+    try {
+      await AxiosInstance.delete(`/users/${userId}`); // Assuming DELETE endpoint exists
+      setUsers(users.filter((user) => user.id !== userId)); // Remove user locally
+    } catch (error) {
+      console.error("Error removing user:", error);
+    }
   };
 
   return (
@@ -181,9 +178,7 @@ const Index: React.FC = () => {
         <Table stickyHeader hoverRow>
           <thead>
             <tr>
-              <th style={{ width: 40 }}>
-                <Checkbox size="sm" />
-              </th>
+              <th style={{ width: 40 }} />
               <th
                 onClick={() => handleSort("first_name")}
                 style={{ cursor: "pointer" }}
@@ -207,19 +202,14 @@ const Index: React.FC = () => {
               <th>Email</th>
               <th>Phone</th>
               <th>Address</th>
-              <th style={{ width: 60 }} />
+              <th style={{ width: 120 }} />{" "}
+              {/* Adjust column width for buttons */}
             </tr>
           </thead>
           <tbody>
             {sortedUsers.map((user) => (
-              <tr
-                key={user.id}
-                onClick={() => handleRowClick(user.id)} // Pass user ID on row click
-                style={{ cursor: "pointer" }}
-              >
-                <td>
-                  <Checkbox size="sm" />
-                </td>
+              <tr key={user.id} style={{ cursor: "pointer" }}>
+                <td />
                 <td>
                   <Stack direction="row" spacing={2} alignItems="center">
                     <Avatar size="sm">{user.first_name.charAt(0)}</Avatar>
@@ -246,9 +236,24 @@ const Index: React.FC = () => {
                   <Typography level="body-sm">{user.address}</Typography>
                 </td>
                 <td>
-                  <Button variant="plain" color="neutral" size="sm">
-                    <MoreVertical />
-                  </Button>
+                  <Stack direction="row" spacing={1}>
+                    <Button
+                      variant="plain"
+                      // color="info"
+                      size="sm"
+                      onClick={() => handleUpdateUser(user.id)} // Pass user ID for update
+                    >
+                      <Edit />
+                    </Button>
+                    <Button
+                      variant="plain"
+                      color="danger"
+                      size="sm"
+                      onClick={() => handleRemoveUser(user.id)} // Remove user
+                    >
+                      <Trash2 />
+                    </Button>
+                  </Stack>
                 </td>
               </tr>
             ))}
@@ -308,7 +313,6 @@ const Index: React.FC = () => {
               <FormControl>
                 <FormLabel>Email</FormLabel>
                 <Input
-                  type="email"
                   required
                   value={newUser.email}
                   onChange={(e) =>
@@ -320,8 +324,8 @@ const Index: React.FC = () => {
               <FormControl>
                 <FormLabel>Password</FormLabel>
                 <Input
-                  type="password"
                   required
+                  type="password"
                   value={newUser.password}
                   onChange={(e) =>
                     setNewUser({ ...newUser, password: e.target.value })
@@ -351,37 +355,7 @@ const Index: React.FC = () => {
                 />
               </FormControl>
 
-              <FormControl>
-                <FormLabel>Roles</FormLabel>
-                <Checkbox
-                  label="Admin"
-                  checked={newUser.roles.includes(3)}
-                  onChange={() => handleRoleChange(3)}
-                />
-                <Checkbox
-                  label="User"
-                  checked={newUser.roles.includes(4)}
-                  onChange={() => handleRoleChange(4)}
-                />
-              </FormControl>
-
-              <FormControl>
-                <FormLabel>User Type</FormLabel>
-                <Stack direction="row" spacing={2}>
-                  {["ADMIN", "USER"].map((type) => (
-                    <Checkbox
-                      key={type}
-                      label={type}
-                      checked={newUser.userType === type}
-                      onChange={() =>
-                        setNewUser((prev) => ({ ...prev, userType: type }))
-                      }
-                    />
-                  ))}
-                </Stack>
-              </FormControl>
-
-              <Button type="submit" fullWidth variant="solid" color="primary">
+              <Button type="submit" fullWidth>
                 Add User
               </Button>
             </Stack>

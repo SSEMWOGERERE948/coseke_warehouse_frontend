@@ -9,6 +9,7 @@ const PROFILE: string = `${DASHBOARD}/users/profile`;
 const USERS: string = `${DASHBOARD}/users/users`;
 const ROLESANDPERMISSIONS = `${DASHBOARD}/users/roles-and-permissions/:userId`;
 const CASE_STUDIES: string = `${DASHBOARD}/case-studies`;
+const ROLES: string = `${DASHBOARD}/roles/:id`;
 const SETTINGS: string = "/settings";
 
 const routes = {
@@ -24,6 +25,7 @@ const routes = {
   SETTINGS,
   APPROVALS,
   CASE_STUDIES,
+  ROLES,
 };
 
 export default routes;
