@@ -35,8 +35,8 @@ import {
   deleteDepartment,
   getAllDepartments,
 } from "./roles_api";
-import { DeleteIcon } from "lucide-react";
-import { Add } from "@mui/icons-material";
+import { Routes, Route } from "react-router-dom";
+import CaseStudies from "../case_studies";
 
 interface Permission {
   id: string;
@@ -731,126 +731,10 @@ const RolesAndPermissions: React.FC = () => {
 
           {/* Case Studies Tab */}
           <Box p={2}>
-            <Typography level="h1" fontSize="xl" mb={2}>
-              Case Studies Roles and Permissions
-            </Typography>
-            <Button
-              onClick={() => setModalOpen(true)}
-              sx={{ mb: 4 }}
-              color="primary"
-              variant="solid"
-            >
-              Create Case Study
-            </Button>
-            <Modal
-              open={isModalOpen}
-              onClose={() => setModalOpen(false)}
-              aria-labelledby="create-case-study-modal"
-            >
-              <Box
-                sx={{
-                  p: 2,
-                  bgcolor: "background.surface",
-                  borderRadius: "sm",
-                  boxShadow: "md",
-                  width: "500px",
-                  mx: "auto",
-                  mt: "10vh",
-                }}
-              >
-                <Typography level="h2" fontSize="lg" mb={2}>
-                  Create New Case Study
-                </Typography>
-                <FormControl>
-                  <FormLabel>Name</FormLabel>
-                  <Input
-                    type="text"
-                    name="name"
-                    value={newCaseStudy.name}
-                    onChange={handleInputChange}
-                    sx={{ mb: 2 }}
-                  />
-                </FormControl>
-                <FormControl>
-                  <FormLabel>Description</FormLabel>
-                  <Input
-                    type="text"
-                    name="description"
-                    value={newCaseStudy.description}
-                    onChange={handleInputChange}
-                    sx={{ mb: 2 }}
-                  />
-                </FormControl>
-                <Button
-                  onClick={submitNewCaseStudy}
-                  color="primary"
-                  variant="solid"
-                >
-                  Submit
-                </Button>
-              </Box>
-            </Modal>
-
-            <Grid container spacing={3}>
-              {caseStudies.map((study) => (
-                <Grid key={study.id} xs={12} md={6} lg={4}>
-                  <Sheet
-                    variant="outlined"
-                    sx={{ p: 3, borderRadius: "sm", height: "100%" }}
-                  >
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        mb: 2,
-                      }}
-                    >
-                      <Typography level="h2" fontSize="lg">
-                        {study.name}
-                      </Typography>
-                      <Switch
-                        checked={study.enabled}
-                        onChange={() => handleToggleCaseStudy(study.id)}
-                        color={study.enabled ? "success" : "neutral"}
-                        slotProps={{
-                          input: {
-                            "aria-label": `Toggle ${study.name} case study`,
-                          },
-                        }}
-                      />
-                    </Box>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 1,
-                        ml: 3,
-                      }}
-                    >
-                      {study.permissions.map((perm) => (
-                        <Checkbox
-                          key={perm.name}
-                          label={perm.name}
-                          checked={perm.checked}
-                          onChange={() =>
-                            handlePermissionToggleCaseStudy(study.id, perm.name)
-                          }
-                          disabled={!study.enabled}
-                          slotProps={{
-                            input: {
-                              "aria-label": `${perm.name} permission for ${study.name}`,
-                            },
-                          }}
-                        />
-                      ))}
-                    </Box>
-                  </Sheet>
-                </Grid>
-              ))}
-            </Grid>
+            <Routes>
+              <Route path="/" element={<CaseStudies />} />
+            </Routes>
           </Box>
-
           {/* Departments Tab */}
           <Box p={2}>
             <Box

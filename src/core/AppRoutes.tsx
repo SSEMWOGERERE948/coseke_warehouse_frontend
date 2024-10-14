@@ -12,6 +12,7 @@ import Profile from "../pages/Profile";
 import Users from "../pages/users";
 import RolesAndPermissions from "../pages/Roles And Permissions";
 import CaseStudies from "../pages/case_studies";
+import UserRoles from "../pages/roles";
 
 function AppRoutes() {
   return (
@@ -56,6 +57,12 @@ function AppRoutes() {
         <Route path={routes.CASE_STUDIES} element={<CaseStudies />} />
       </Route>
       <Route path="/case-studies" element={<CaseStudies />} />
+
+      <Route path="/roles/:id" element={<UserRoles />} />
+
+      <Route path={routes.ROLES} element={<PrivateRoute />}>
+        <Route path={routes.ROLES} element={<UserRoles />} />
+      </Route>
     </Routes>
   );
 }
