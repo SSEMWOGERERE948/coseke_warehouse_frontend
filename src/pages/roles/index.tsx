@@ -58,7 +58,7 @@ export default function UserRoles() {
 
       const payload = {
         userId,
-        userTypes: selectedRoleIds.map(
+        userType: selectedRoleIds.map(
           (id) => availableRoles.find((role) => role.id === id)?.name,
         ), // Extract names based on selected IDs
       };

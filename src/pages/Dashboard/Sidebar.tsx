@@ -29,6 +29,7 @@ import ColorSchemeToggle from "./ColorSchemeToggle";
 import { closeSidebar } from "./utils";
 import IUser from "../../interfaces/IUser";
 import { getCurrentUser } from "../../utils/helpers";
+import Images from "../../asset/images";
 
 function Toggler({
   defaultExpanded = false,
@@ -131,11 +132,7 @@ export default function Sidebar() {
       <Box
         sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}
       >
-        <img
-          src="C:\Users\ssali\OneDrive\Desktop\Sylvy\Baylor\Baylor-Frontend\public\logo.png"
-          alt=""
-          style={{ width: 40, height: 40 }}
-        />
+        <img src={Images.Logo} alt="" style={{ width: 40, height: 40 }} />
 
         <Typography level="title-lg">Baylor Foundation</Typography>
         <ColorSchemeToggle sx={{ ml: "auto" }} />

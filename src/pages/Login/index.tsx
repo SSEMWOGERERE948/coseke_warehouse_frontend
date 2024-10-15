@@ -20,6 +20,8 @@ import { useNavigate } from "react-router";
 import { loginService } from "./auth_api";
 import { accessTokenKey, currentUser } from "../../utils/constants";
 
+import Images from "../../asset/images";
+
 interface FormElements extends HTMLFormControlsCollection {
   email: HTMLInputElement;
   password: HTMLInputElement;
@@ -99,9 +101,7 @@ export default function Login() {
             sx={{ py: 3, display: "flex", justifyContent: "space-between" }}
           >
             <Box sx={{ gap: 2, display: "flex", alignItems: "center" }}>
-              <IconButton variant="soft" color="primary" size="sm">
-                <BadgeRoundedIcon />
-              </IconButton>
+              <img src={Images.Logo} alt="" style={{ width: 40, height: 40 }} />
               <Typography level="title-lg">Baylor Foundation</Typography>
             </Box>
             <ColorSchemeToggle />

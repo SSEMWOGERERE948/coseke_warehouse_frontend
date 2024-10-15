@@ -20,17 +20,26 @@ import {
   LineElement,
   CategoryScale,
   LinearScale,
+  Legend,
+  Title,
   PointElement,
 } from "chart.js";
 
 // Register the components for the chart
-ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement);
+ChartJS.register(
+  LineElement,
+  CategoryScale,
+  LinearScale,
+  Legend,
+  Title,
+  PointElement,
+);
 
 const filesData = {
   labels: ["5", "10", "15", "20", "25", "30"],
   datasets: [
     {
-      label: "File Requests made during the month",
+      label: "File Requests",
       data: [40, 50, 60, 70, 80, 63.4, 70, 65, 78, 90],
       borderColor: "rgba(75, 192, 192, 1)",
       fill: true,
@@ -39,9 +48,9 @@ const filesData = {
     {
       label: "Approved Files",
       data: [30, 40, 50, 65, 58],
-      borderColor: "rgba(75, 190, 190, 1)",
-      backgroundColor: "rgba(75, 192, 192, 0.2)",
-      fill: true,
+      borderColor: "rgba(255, 99, 132, 1)",
+      backgroundColor: "rgba(255, 99, 132, 0.2)",
+      fill: false,
       tension: 0.1,
     },
   ],
@@ -52,7 +61,8 @@ const chartOptions = {
   responsive: true,
   plugins: {
     legend: {
-      position: "top" as const,
+      position: "right" as const,
+      display: true,
     },
     title: {
       display: true,
