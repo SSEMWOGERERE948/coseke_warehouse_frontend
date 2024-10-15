@@ -287,7 +287,7 @@ export default function Sidebar() {
               </List>
             </Toggler>
           </ListItem>
-          <ListItemButton
+          {/* <ListItemButton
             selected={selectedItem === routes.CASE_STUDIES}
             onClick={() => handleSelect(routes.CASE_STUDIES)}
           >
@@ -295,7 +295,7 @@ export default function Sidebar() {
             <ListItemContent>
               <Typography level="title-sm">Case Studies</Typography>
             </ListItemContent>
-          </ListItemButton>
+          </ListItemButton> */}
         </List>
         <List
           size="sm"
