@@ -70,7 +70,6 @@ const Index: React.FC = () => {
     fetchUsers();
   }, []);
 
-  // Sorting functionality
   const handleSort = (column: keyof User) => {
     if (sortColumn === column) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -87,7 +86,6 @@ const Index: React.FC = () => {
     return 0;
   });
 
-  // Handle modal opening and closing
   const handleAddUser = () => {
     setIsAddUserOpen(true);
   };
@@ -104,7 +102,6 @@ const Index: React.FC = () => {
     });
   };
 
-  // Handle form submission for adding a new user
   const handleSubmitNewUser = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -125,7 +122,6 @@ const Index: React.FC = () => {
       ]);
 
       handleCloseAddUser();
-      navigate(`/roles-and-permissions/${newUserId}`);
     } catch (error) {
       console.error("Error adding user:", error);
     }
@@ -139,8 +135,8 @@ const Index: React.FC = () => {
   // Handle user removal
   const handleRemoveUser = async (userId: number) => {
     try {
-      await AxiosInstance.delete(`/users/${userId}`); // Assuming DELETE endpoint exists
-      setUsers(users.filter((user) => user.id !== userId)); // Remove user locally
+      await AxiosInstance.delete(`/users/${userId}`);
+      setUsers(users.filter((user) => user.id !== userId));
     } catch (error) {
       console.error("Error removing user:", error);
     }
@@ -202,8 +198,7 @@ const Index: React.FC = () => {
               <th>Email</th>
               <th>Phone</th>
               <th>Address</th>
-              <th style={{ width: 120 }} />{" "}
-              {/* Adjust column width for buttons */}
+              <th style={{ width: 120 }} />
             </tr>
           </thead>
           <tbody>
@@ -261,7 +256,6 @@ const Index: React.FC = () => {
         </Table>
       </Sheet>
 
-      {/* Add User Modal */}
       <Modal open={isAddUserOpen} onClose={handleCloseAddUser}>
         <ModalDialog
           aria-labelledby="add-user-modal-title"

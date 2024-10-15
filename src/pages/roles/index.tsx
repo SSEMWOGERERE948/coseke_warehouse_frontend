@@ -1,38 +1,34 @@
 import React, { useEffect, useState } from "react";
 import {
   Button,
-  Radio,
   Typography,
   Box,
   List,
   ListItem,
   FormControl,
   FormLabel,
-  RadioGroup,
+  Checkbox,
 } from "@mui/joy";
 import { AxiosInstance } from "../../core/baseURL";
 import { useParams, useNavigate } from "react-router-dom";
-import { FormControlLabel } from "@mui/material";
+import { FormGroup } from "@mui/material";
 
-// Interface for Role
 interface Role {
   id: number;
   name: string;
 }
 
 export default function UserRoles() {
-  const { id } = useParams<{ id: string }>(); // Get id from route params
-  const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null); // Single selected role ID
-  const [selectedRoleName, setSelectedRoleName] = useState<string | null>(null); // Single selected role name
-  const [availableRoles, setAvailableRoles] = useState<Role[]>([]); // Available roles typed with Role interface
+  const { id } = useParams<{ id: string }>();
+  const [selectedRoleIds, setSelectedRoleIds] = useState<number[]>([]);
+  const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Fetch available roles from the server
     const fetchRoles = async () => {
       try {
         const response = await AxiosInstance.get("/roles/all");
-        const roles: Role[] = response.data; // Explicitly typing the response data as an array of Role
+        const roles: Role[] = response.data;
         setAvailableRoles(roles);
       } catch (error) {
         console.error("Error fetching roles:", error);
@@ -43,35 +39,34 @@ export default function UserRoles() {
   }, []);
 
   const handleRoleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedRoleId = parseInt(event.target.value);
-    setSelectedRoleId(selectedRoleId); // Set the selected role ID
-    const selectedRole = availableRoles.find(
-      (role) => role.id === selectedRoleId,
-    );
-    if (selectedRole) {
-      setSelectedRoleName(selectedRole.name); // Set the selected role's name
+    const roleId = parseInt(event.target.value);
+    if (selectedRoleIds.includes(roleId)) {
+      setSelectedRoleIds(selectedRoleIds.filter((id) => id !== roleId));
+    } else {
+      setSelectedRoleIds([...selectedRoleIds, roleId]);
     }
   };
 
   const handleSubmitRoles = async () => {
-    if (!selectedRoleName) {
-      console.error("No role selected.");
+    if (selectedRoleIds.length === 0) {
+      console.error("No roles selected.");
       return;
     }
 
     try {
-      const userId = Number(id); // Convert id from string to number
+      const userId = Number(id);
 
       const payload = {
-        userId, // Use the numeric userId
-        userType: selectedRoleName, // Pass the selected role name instead of the id
+        userId,
+        userTypes: selectedRoleIds.map(
+          (id) => availableRoles.find((role) => role.id === id)?.name,
+        ), // Extract names based on selected IDs
       };
 
-      // Send the selected role name to the server for assignment
       await AxiosInstance.post(`assign-userType`, payload);
-      navigate("/users"); // Navigate back to users list or any other page
+      navigate("/users");
     } catch (error) {
-      console.error("Error assigning user role:", error);
+      console.error("Error assigning user roles:", error);
     }
   };
 
@@ -82,25 +77,21 @@ export default function UserRoles() {
       </Typography>
 
       <FormControl component="fieldset">
-        <FormLabel component="legend">Select a Role</FormLabel>
-        <RadioGroup
-          aria-label="roles"
-          name="userRoles"
-          value={selectedRoleId ? selectedRoleId.toString() : ""}
-          onChange={handleRoleChange} // Handle change using the role id
-        >
+        <FormLabel component="legend">Select Roles</FormLabel>
+        <FormGroup>
           <List>
             {availableRoles.map((role) => (
               <ListItem key={role.id}>
-                <FormControlLabel
-                  value={role.id.toString()} // Radio button value is the role's id
-                  control={<Radio />}
-                  label={role.name} // Display the role's name
+                <Checkbox
+                  value={role.id.toString()}
+                  checked={selectedRoleIds.includes(role.id)}
+                  onChange={handleRoleChange}
                 />
+                <Typography>{role.name}</Typography>
               </ListItem>
             ))}
           </List>
-        </RadioGroup>
+        </FormGroup>
       </FormControl>
 
       <Button
@@ -110,7 +101,7 @@ export default function UserRoles() {
         onClick={handleSubmitRoles}
         sx={{ mt: 3 }}
       >
-        Update Role
+        Update Roles
       </Button>
     </Box>
   );
