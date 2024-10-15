@@ -11,6 +11,8 @@ import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import PauseCircleOutlineTwoToneIcon from "@mui/icons-material/PauseCircleOutlineTwoTone";
 import ContentPasteIcon from "@mui/icons-material/ContentPaste";
 import ContentPasteOffIcon from "@mui/icons-material/ContentPasteOff";
+import BusinessCenterIcon from "@mui/icons-material/BusinessCenter";
+import AddTaskIcon from "@mui/icons-material/AddTask";
 
 // Import required Chart.js components
 import {
@@ -50,7 +52,7 @@ const chartOptions = {
   responsive: true,
   plugins: {
     legend: {
-      position: "top",
+      position: "top" as const,
     },
     title: {
       display: true,
@@ -61,13 +63,13 @@ const chartOptions = {
     x: {
       title: {
         display: true,
-        text: "Days of the month",
+        text: "Days of the Month",
       },
     },
     y: {
       title: {
         display: true,
-        text: "Number of files",
+        text: "Number of Files",
       },
     },
   },
@@ -76,9 +78,9 @@ const chartOptions = {
 // Card data
 const cardsData = [
   {
-    title: "Requested and Approval files during the month",
+    title: "Available files",
     value: "40,689",
-    icon: <ContentPasteIcon sx={{ color: "paleblue" }} />,
+    icon: <ContentPasteIcon sx={{ color: "white" }} />,
     color: "blue",
     change: "Available files in the system",
     changeColor: "success",
@@ -86,7 +88,7 @@ const cardsData = [
   {
     title: "Unavailable Files",
     value: "10",
-    icon: <ContentPasteOffIcon sx={{ color: "palered" }} />,
+    icon: <ContentPasteOffIcon sx={{ color: "white" }} />,
     color: "red",
     change: "Files that have been checkedout",
     changeColor: "success",
@@ -94,17 +96,17 @@ const cardsData = [
   {
     title: "CaseStudies",
     value: "10",
-    icon: <AttachMoneyIcon sx={{ color: "green" }} />,
-    color: "palegreen",
+    icon: <BusinessCenterIcon sx={{ color: "white" }} />,
+    color: "green",
     change: "Active casestudies",
     changeColor: "danger",
   },
   {
-    title: "Requests",
+    title: "Approvals",
     value: "5",
-    icon: <AttachMoneyIcon sx={{ color: "white" }} />,
+    icon: <AddTaskIcon sx={{ color: "white" }} />,
     color: "blue",
-    change: "Current number of requests in the system",
+    change: "Current number of Approvals in the system",
     changeColor: "success",
   },
 ];
@@ -178,12 +180,14 @@ export default function DashboardContent() {
       </Grid>
 
       {/* Sales Details Line Chart */}
-      {/* <Box sx={{ mt: 4 }}>
-        <Typography level="h4">Files Details</Typography>
-        <Box sx={{ height: "250px", width: "100%" }}>
-          <Line data={filesData} options={chartOptions} />
+      {
+        <Box sx={{ mt: 4 }}>
+          <Typography level="h4">Request and approved files</Typography>
+          <Box sx={{ height: "250px", width: "100%" }}>
+            <Line data={filesData} options={chartOptions} />
+          </Box>
         </Box>
-      </Box> */}
+      }
 
       {/* Table Section */}
       <Box sx={{ mt: 4, overflowX: "auto" }}>
