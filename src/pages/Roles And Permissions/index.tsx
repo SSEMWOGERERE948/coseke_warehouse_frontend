@@ -159,31 +159,6 @@ const RolesAndPermissions: React.FC = () => {
     );
   };
 
-  // Submit new case study
-  const submitNewCaseStudy = async () => {
-    try {
-      const response = await AxiosInstance.post(
-        "case-studies/create-cases",
-        newCaseStudy,
-      );
-      const createdCaseStudy = response.data;
-
-      setCaseStudies((prevStudies) => [
-        ...prevStudies,
-        {
-          id: createdCaseStudy.id,
-          name: createdCaseStudy.name,
-          enabled: true,
-          permissions: [], // Initially no permissions
-        },
-      ]);
-
-      setModalOpen(false);
-    } catch (error) {
-      console.error("Error creating case study:", error);
-    }
-  };
-
   useEffect(() => {
     const fetchPermissions = async () => {
       try {
@@ -558,7 +533,7 @@ const RolesAndPermissions: React.FC = () => {
   return (
     <CssVarsProvider>
       <CssBaseline />
-      <Box sx={{ p: { xs: 2, sm: 3, md: 4 }, maxWidth: "1200px", mx: "auto" }}>
+      <Box sx={{ p: { xs: 2, sm: 3, md: 4 }, maxWidth: "1000px", mx: "auto" }}>
         <Tabs
           value={tabIndex}
           onChange={(_, value) => setTabIndex(value as number)}

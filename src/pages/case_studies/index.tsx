@@ -331,9 +331,9 @@ export default function CaseStudiesScreen() {
             sx={{
               position: "absolute",
               top: "50%",
-              left: "50%",
+              left: "60%",
               transform: "translate(-50%, -50%)",
-              width: "90vw",
+              width: "70vw",
               height: "90vh",
               bgcolor: "background.paper",
               boxShadow: 24,
