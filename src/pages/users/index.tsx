@@ -180,21 +180,12 @@ const Index: React.FC = () => {
                 style={{ cursor: "pointer" }}
               >
                 <Stack direction="row" alignItems="center">
-                  First Name
+                  Name
                   {sortColumn === "first_name" &&
                     (sortDirection === "asc" ? <ChevronUp /> : <ChevronDown />)}
                 </Stack>
               </th>
-              <th
-                onClick={() => handleSort("last_name")}
-                style={{ cursor: "pointer" }}
-              >
-                <Stack direction="row" alignItems="center">
-                  Last Name
-                  {sortColumn === "last_name" &&
-                    (sortDirection === "asc" ? <ChevronUp /> : <ChevronDown />)}
-                </Stack>
-              </th>
+
               <th>Email</th>
               <th>Phone</th>
               <th>Address</th>
@@ -218,9 +209,7 @@ const Index: React.FC = () => {
                     </Stack>
                   </Stack>
                 </td>
-                <td>
-                  <Typography level="body-sm">{user.last_name}</Typography>
-                </td>
+
                 <td>
                   <Typography level="body-sm">{user.email}</Typography>
                 </td>
