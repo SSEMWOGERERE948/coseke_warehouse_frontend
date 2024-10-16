@@ -4,7 +4,7 @@ import IFile from "../../interfaces/IFile";
 // Add a new file
 export const addFileService = async (file: IFile) => {
   try {
-    const response = await AxiosInstance.post("/api/v1/files/add", file);
+    const response = await AxiosInstance.post("files/add", file);
     return response.data;
   } catch (error) {
     throw error;
@@ -14,7 +14,7 @@ export const addFileService = async (file: IFile) => {
 // Get a file by ID
 export const getFileByIdService = async (id: number) => {
   try {
-    const response = await AxiosInstance.get(`/api/v1/files/${id}`);
+    const response = await AxiosInstance.get(`files/${id}`);
     return response.data;
   } catch (error) {
     throw error;
@@ -24,7 +24,7 @@ export const getFileByIdService = async (id: number) => {
 // Get all files
 export const getAllFilesService = async () => {
   try {
-    const response = await AxiosInstance.get("/api/v1/files/all");
+    const response = await AxiosInstance.get("files/all");
     return response.data;
   } catch (error) {
     throw error;
@@ -34,10 +34,7 @@ export const getAllFilesService = async () => {
 // Update a file by ID
 export const updateFileService = async (id: number, updatedFile: IFile) => {
   try {
-    const response = await AxiosInstance.put(
-      `/api/v1/files/update/${id}`,
-      updatedFile,
-    );
+    const response = await AxiosInstance.put(`files/update/${id}`, updatedFile);
     return response.data;
   } catch (error) {
     throw error;
@@ -47,10 +44,7 @@ export const updateFileService = async (id: number, updatedFile: IFile) => {
 // Update multiple files
 export const updateMultipleFilesService = async (files: IFile[]) => {
   try {
-    const response = await AxiosInstance.put(
-      "/api/v1/files/update-multiple",
-      files,
-    );
+    const response = await AxiosInstance.put("files/update-multiple", files);
     return response.data;
   } catch (error) {
     throw error;
@@ -60,7 +54,7 @@ export const updateMultipleFilesService = async (files: IFile[]) => {
 // Delete a file by ID
 export const deleteFileService = async (id: number) => {
   try {
-    const response = await AxiosInstance.delete(`/api/v1/files/delete/${id}`);
+    const response = await AxiosInstance.delete(`files/delete/${id}`);
     return response.data;
   } catch (error) {
     throw error;
@@ -70,10 +64,9 @@ export const deleteFileService = async (id: number) => {
 // Delete multiple files
 export const deleteMultipleFilesService = async (ids: number[]) => {
   try {
-    const response = await AxiosInstance.delete(
-      "/api/v1/files/delete-multiple",
-      { data: ids },
-    );
+    const response = await AxiosInstance.delete("files/delete-multiple", {
+      data: ids,
+    });
     return response.data;
   } catch (error) {
     throw error;
