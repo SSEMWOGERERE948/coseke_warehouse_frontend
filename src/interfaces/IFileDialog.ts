@@ -5,8 +5,8 @@ interface FileUploadDialogProps {
     fileName: string;
     status: string;
     responsiblePerson: string;
-    folder: string;
-    caseStudy: string;
+    folder: number | null;
+    caseStudy: number | null;
     boxNumber: string;
     PIDInfant: string;
     PIDMother: string;

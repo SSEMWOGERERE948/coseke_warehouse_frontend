@@ -12,8 +12,8 @@ import Profile from "../pages/Profile";
 import Users from "../pages/users";
 import RolesAndPermissions from "../pages/Roles And Permissions";
 import CaseStudies from "../pages/case_studies";
-import { FileProvider } from "../pages/Folders/FileContext";
 import UserRoles from "../pages/roles";
+import { FileProvider } from "../pages/Folders/FileContext";
 
 function AppRoutes() {
   return (
@@ -59,9 +59,7 @@ function AppRoutes() {
           <Route path={routes.CASE_STUDIES} element={<CaseStudies />} />
         </Route>
         <Route path="/case-studies" element={<CaseStudies />} />
-
         <Route path="/roles/:id" element={<UserRoles />} />
-
         <Route path={routes.ROLES} element={<PrivateRoute />}>
           <Route path={routes.ROLES} element={<UserRoles />} />
         </Route>
