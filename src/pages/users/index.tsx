@@ -61,7 +61,6 @@ const Index: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
   const [selectedRoleIds, setSelectedRoleIds] = useState<number[]>([]);
-  const [hasPermission, setHasPermission] = useState<boolean>(false); // Permission state
 
   const navigate = useNavigate();
 
@@ -86,18 +85,6 @@ const Index: React.FC = () => {
 
     fetchUsers();
     fetchRoles();
-
-    // Assume this is where you would check for permission via an API call
-    const checkUserPermission = async () => {
-      try {
-        const response = await AxiosInstance.get("/user/permissions");
-        setHasPermission(response.data.canEdit); // Assuming `canEdit` field from API
-      } catch (error) {
-        console.error("Error checking permissions:", error);
-      }
-    };
-
-    checkUserPermission();
   }, []);
 
   const handleSort = (column: keyof User) => {
@@ -157,7 +144,7 @@ const Index: React.FC = () => {
     }
   };
 
-  const handleUpdateUser = (user: User) => {
+  const handleEditUser = (user: User) => {
     setSelectedUser(user);
     setSelectedRoleIds([]); // Clear previously selected roles
     setIsEditUserOpen(true);
@@ -195,7 +182,7 @@ const Index: React.FC = () => {
     try {
       const payload = {
         userId: selectedUser.id,
-        userType: selectedRoleIds.map(
+        userTypes: selectedRoleIds.map(
           (id) => availableRoles.find((role) => role.id === id)?.name,
         ),
       };
@@ -286,15 +273,13 @@ const Index: React.FC = () => {
                 </td>
                 <td>
                   <Stack direction="row" spacing={1}>
-                    {hasPermission ? (
-                      <Button
-                        variant="plain"
-                        size="sm"
-                        onClick={() => handleUpdateUser(user)} // Trigger edit modal with user details
-                      >
-                        <Edit />
-                      </Button>
-                    ) : null}
+                    <Button
+                      variant="plain"
+                      size="sm"
+                      onClick={() => handleEditUser(user)} // Trigger edit modal with user details
+                    >
+                      <Edit />
+                    </Button>
                     <Button
                       variant="plain"
                       color="danger"
@@ -311,6 +296,7 @@ const Index: React.FC = () => {
         </Table>
       </Sheet>
 
+      {/* Add User Modal */}
       <Modal open={isAddUserOpen} onClose={handleCloseAddUser}>
         <ModalDialog
           aria-labelledby="add-user-modal-title"
@@ -346,7 +332,7 @@ const Index: React.FC = () => {
                 <FormLabel>Last Name</FormLabel>
                 <Input
                   required
-                  defaultValue={newUser.last_name}
+                  value={newUser.last_name}
                   onChange={(e) =>
                     setNewUser({ ...newUser, last_name: e.target.value })
                   }
@@ -424,16 +410,27 @@ const Index: React.FC = () => {
             </Typography>
             {/* Form for editing user details */}
             <FormControl>
-              <FormLabel>Name</FormLabel>
+              <FormLabel>First Name</FormLabel>
               <Input
                 type="text"
-                value={selectedUser?.first_name + " " + selectedUser?.last_name}
-                disabled={!hasPermission}
+                value={selectedUser?.first_name || ""}
                 onChange={(e) =>
                   setSelectedUser({
                     ...selectedUser!,
-                    first_name: e.target.value.split(" ")[0],
-                    last_name: e.target.value.split(" ")[1],
+                    first_name: e.target.value,
+                  })
+                }
+              />
+            </FormControl>
+            <FormControl sx={{ mt: 2 }}>
+              <FormLabel>Last Name</FormLabel>
+              <Input
+                type="text"
+                value={selectedUser?.last_name || ""}
+                onChange={(e) =>
+                  setSelectedUser({
+                    ...selectedUser!,
+                    last_name: e.target.value,
                   })
                 }
               />
@@ -442,8 +439,7 @@ const Index: React.FC = () => {
               <FormLabel>Email</FormLabel>
               <Input
                 type="email"
-                value={selectedUser?.email}
-                disabled={!hasPermission}
+                value={selectedUser?.email || ""}
                 onChange={(e) =>
                   setSelectedUser({ ...selectedUser!, email: e.target.value })
                 }
@@ -453,8 +449,7 @@ const Index: React.FC = () => {
               <FormLabel>Phone</FormLabel>
               <Input
                 type="phone"
-                value={selectedUser?.phone}
-                disabled={!hasPermission}
+                value={selectedUser?.phone || ""}
                 onChange={(e) =>
                   setSelectedUser({ ...selectedUser!, phone: e.target.value })
                 }
@@ -464,8 +459,7 @@ const Index: React.FC = () => {
               <FormLabel>Address</FormLabel>
               <Input
                 type="text"
-                value={selectedUser?.address}
-                disabled={!hasPermission}
+                value={selectedUser?.address || ""}
                 onChange={(e) =>
                   setSelectedUser({ ...selectedUser!, address: e.target.value })
                 }
@@ -483,7 +477,6 @@ const Index: React.FC = () => {
                         value={role.id.toString()}
                         checked={selectedRoleIds.includes(role.id)}
                         onChange={handleRoleChange}
-                        disabled={!hasPermission}
                       />
                       <Typography>{role.name}</Typography>
                     </ListItem>
@@ -492,17 +485,15 @@ const Index: React.FC = () => {
               </FormGroup>
             </FormControl>
 
-            {hasPermission ? (
-              <Button
-                fullWidth
-                variant="solid"
-                color="primary"
-                onClick={handleSubmitRoles}
-                sx={{ mt: 3 }}
-              >
-                Update User and Roles
-              </Button>
-            ) : null}
+            <Button
+              fullWidth
+              variant="solid"
+              color="primary"
+              onClick={handleSubmitRoles}
+              sx={{ mt: 3 }}
+            >
+              Update User and Roles
+            </Button>
           </Box>
         </ModalDialog>
       </Modal>
