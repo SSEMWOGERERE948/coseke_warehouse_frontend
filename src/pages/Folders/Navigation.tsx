@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Box from "@mui/joy/Box";
 import List from "@mui/joy/List";
 import ListItem from "@mui/joy/ListItem";
@@ -7,78 +7,166 @@ import ListItemContent from "@mui/joy/ListItemContent";
 import ListItemDecorator from "@mui/joy/ListItemDecorator";
 import ListSubheader from "@mui/joy/ListSubheader";
 import { useFileContext } from "./FileContext";
+import { getAllFoldersService } from "./folders_api";
+import { AxiosInstance } from "../../core/baseURL";
+import {
+  Button,
+  FormControl,
+  FormLabel,
+  Input,
+  Modal,
+  ModalClose,
+  ModalDialog,
+  Stack,
+  Typography,
+  IconButton,
+} from "@mui/joy";
+import AddIcon from "@mui/icons-material/Add"; // Importing Add Icon
 
-type Tag = "Clinic" | "Lab" | "Pharmacy" | "Regulatory Team";
+type Folder = {
+  id: number;
+  folderName: string;
+  createdDate: number[];
+  lastModifiedDateTime: number[];
+  lastModifiedBy: number;
+  createdBy: number;
+};
+
+type IFileData = {
+  folderName: string;
+  lastModified: string;
+  size: string;
+  avatars: string[];
+};
+
+// Function to generate a random color
+const getRandomColor = () => {
+  const letters = "0123456789ABCDEF";
+  let color = "#";
+  for (let i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
+};
+
+const formatDate = (dateArray: number[]): string => {
+  if (
+    dateArray.length >= 6 &&
+    !isNaN(
+      new Date(
+        dateArray[0],
+        dateArray[1] - 1,
+        dateArray[2],
+        dateArray[3],
+        dateArray[4],
+        dateArray[5],
+      ).getTime(),
+    )
+  ) {
+    return new Date(
+      dateArray[0],
+      dateArray[1] - 1,
+      dateArray[2],
+      dateArray[3],
+      dateArray[4],
+      dateArray[5],
+    ).toLocaleString();
+  }
+  return "Invalid Date";
+};
 
 export default function Navigation() {
   const { selectedTag, setSelectedTag, setFileData } = useFileContext();
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [isAddFolderOpen, setIsAddFolderOpen] = useState(false);
+  const [newFolder, setNewFolder] = useState<Folder>({
+    id: 0,
+    folderName: "",
+    createdDate: [],
+    lastModifiedDateTime: [],
+    lastModifiedBy: 1,
+    createdBy: 1,
+  });
 
-  const handleTagClick = (tag: Tag) => {
-    setSelectedTag(tag);
+  const handleTagClick = (folderName: string) => {
+    setSelectedTag(folderName);
 
-    const fileDataByTag: Record<
-      Tag,
-      {
-        folderName: string;
-        lastModified: string;
-        size: string;
-        avatars: string[];
-      }[]
-    > = {
-      Clinic: [
-        {
-          folderName: "Clinic Folder",
-          lastModified: "21 Oct 2023, 3PM",
-          size: "987.5MB",
-          avatars: [
-            "https://i.pravatar.cc/24?img=6",
-            "https://i.pravatar.cc/24?img=7",
-          ],
-        },
-        {
-          folderName: "Clinic Reports",
-          lastModified: "18 Oct 2023, 1PM",
-          size: "500MB",
-          avatars: ["https://i.pravatar.cc/24?img=8"],
-        },
-      ],
-      Lab: [
-        {
-          folderName: "Lab Results",
-          lastModified: "20 Oct 2023, 9AM",
-          size: "700MB",
-          avatars: ["https://i.pravatar.cc/24?img=9"],
-        },
-      ],
-      Pharmacy: [
-        {
-          folderName: "Pharmacy Orders",
-          lastModified: "19 Oct 2023, 11AM",
-          size: "300MB",
-          avatars: ["https://i.pravatar.cc/24?img=10"],
-        },
-      ],
-      "Regulatory Team": [
-        {
-          folderName: "Regulatory Docs",
-          lastModified: "17 Oct 2023, 4PM",
-          size: "1.2GB",
-          avatars: [
-            "https://i.pravatar.cc/24?img=11",
-            "https://i.pravatar.cc/24?img=12",
-          ],
-        },
-      ],
+    const filteredFolders: IFileData[] = (folders || [])
+      .filter((folder) => folder.folderName === folderName)
+      .map((folder) => ({
+        folderName: folder.folderName,
+        lastModified: formatDate(folder.lastModifiedDateTime),
+        size: "Unknown size",
+        avatars: [],
+      }));
+
+    setFileData(filteredFolders);
+  };
+
+  useEffect(() => {
+    const fetchAllFolders = async () => {
+      try {
+        const response = await AxiosInstance.get("folders/all");
+        setFolders(response.data || []);
+      } catch (error) {
+        console.error("Error fetching folders", error);
+      }
     };
 
-    setFileData(fileDataByTag[tag]);
+    fetchAllFolders();
+  }, []);
+
+  const handleSubmitNewFolder = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    const folderToCreate = {
+      ...newFolder,
+      createdDate: new Date(),
+      lastModifiedDateTime: new Date(),
+    };
+
+    try {
+      const response = await AxiosInstance.post("folders/add", folderToCreate);
+      setFolders((prevFolders) => [...prevFolders, response.data]);
+      console.log("Folder created:", response.data);
+      handleCloseAddFolder();
+    } catch (error) {
+      console.error("Error creating folder:", error);
+    }
+  };
+
+  const handleOpenAddFolder = () => {
+    setIsAddFolderOpen(true);
+  };
+
+  const handleCloseAddFolder = () => {
+    setIsAddFolderOpen(false);
+    setNewFolder({
+      id: 0,
+      folderName: "",
+      createdDate: [],
+      lastModifiedDateTime: [],
+      lastModifiedBy: 1,
+      createdBy: 1,
+    });
   };
 
   return (
     <List size="sm" sx={{ "--ListItem-radius": "8px", "--List-gap": "4px" }}>
       <ListItem nested sx={{ mt: 2 }}>
-        <ListSubheader sx={{ letterSpacing: "2px", fontWeight: "800" }}>
-          Tags
+        <ListSubheader
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            letterSpacing: "2px",
+            fontWeight: "800",
+          }}
+        >
+          Folders
+          <IconButton onClick={handleOpenAddFolder} color="primary">
+            <AddIcon /> {/* Add Icon instead of Button */}
+          </IconButton>
         </ListSubheader>
         <List
           aria-labelledby="nav-list-tags"
@@ -88,16 +176,11 @@ export default function Navigation() {
             "& .JoyListItemButton-root": { p: "8px" },
           }}
         >
-          {[
-            { name: "Clinic", color: "primary.500" },
-            { name: "Lab", color: "danger.500" },
-            { name: "Pharmacy", color: "warning.400" },
-            { name: "Regulatory Team", color: "success.400" },
-          ].map((tag) => (
-            <ListItem key={tag.name}>
+          {(folders || []).map((folder) => (
+            <ListItem key={folder.id}>
               <ListItemButton
-                selected={selectedTag === tag.name}
-                onClick={() => handleTagClick(tag.name as Tag)}
+                selected={selectedTag === folder.folderName}
+                onClick={() => handleTagClick(folder.folderName)}
               >
                 <ListItemDecorator>
                   <Box
@@ -105,16 +188,62 @@ export default function Navigation() {
                       width: "10px",
                       height: "10px",
                       borderRadius: "99px",
-                      bgcolor: tag.color,
+                      bgcolor: getRandomColor(), // Applying random color
                     }}
                   />
                 </ListItemDecorator>
-                <ListItemContent>{tag.name}</ListItemContent>
+                <ListItemContent>{folder.folderName}</ListItemContent>
               </ListItemButton>
             </ListItem>
           ))}
         </List>
       </ListItem>
+
+      {/* Modal for creating new folder */}
+      <Modal open={isAddFolderOpen} onClose={handleCloseAddFolder}>
+        <ModalDialog
+          aria-labelledby="add-folder-modal-title"
+          aria-describedby="add-folder-modal-description"
+          sx={{
+            maxWidth: "400px",
+            maxHeight: "80vh",
+            overflowY: "auto",
+            borderRadius: "md",
+            p: 3,
+            boxShadow: "lg",
+          }}
+        >
+          <ModalClose
+            variant="outlined"
+            sx={{
+              top: "calc(-1/4 * var(--IconButton-size))",
+              right: "calc(-1/4 * var(--IconButton-size))",
+            }}
+          />
+          <Typography level="h4" fontWeight="bold" textAlign="center">
+            Create New Folder
+          </Typography>
+
+          <form onSubmit={handleSubmitNewFolder}>
+            <Stack spacing={2}>
+              <FormControl>
+                <FormLabel>Folder Name</FormLabel>
+                <Input
+                  required
+                  value={newFolder.folderName}
+                  onChange={(e) =>
+                    setNewFolder({ ...newFolder, folderName: e.target.value })
+                  }
+                />
+              </FormControl>
+
+              <Button type="submit" fullWidth>
+                Create Folder
+              </Button>
+            </Stack>
+          </form>
+        </ModalDialog>
+      </Modal>
     </List>
   );
 }

@@ -1,60 +1,4 @@
-/*import Box from "@mui/joy/Box";
-
-import Button from "@mui/joy/Button";
-import Typography from "@mui/joy/Typography";
-
-import { UploadRounded } from "@mui/icons-material";
-import FileTable from "./FileTable";
-
-function index() {
-  return (
-    <Box
-      component="main"
-      className="MainContent"
-      sx={{
-        px: { xs: 2, md: 6 },
-        pt: {
-          xs: "calc(12px + var(--Header-height))",
-          sm: "calc(12px + var(--Header-height))",
-          md: 3,
-        },
-        pb: { xs: 2, sm: 2, md: 3 },
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        minWidth: 0,
-        height: "100dvh",
-        gap: 1,
-      }}
-    >
-      <Box
-        sx={{
-          display: "flex",
-          mb: 1,
-          gap: 1,
-          flexDirection: { xs: "column", sm: "row" },
-          alignItems: { xs: "start", sm: "center" },
-          flexWrap: "wrap",
-          justifyContent: "space-between",
-        }}
-      >
-        <Typography level="h2" component="h1">
-          Files
-        </Typography>
-        <Button
-         color="primary" startDecorator={<UploadRounded />} size="sm">
-          Add File
-        </Button>
-      </Box>
-      <FileTable />
-    </Box>
-  );
-}
-
-export default index;
-*/
-
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Box from "@mui/joy/Box";
 import Button from "@mui/joy/Button";
 import Typography from "@mui/joy/Typography";
@@ -69,17 +13,34 @@ import FormLabel from "@mui/joy/FormLabel";
 import { UploadRounded } from "@mui/icons-material";
 import FileUploadDialogProps from "../../interfaces/IFileDialog";
 import FileTable from "./FileTable";
+import { AxiosInstance } from "../../core/baseURL";
+import { getCurrentUser } from "../../utils/helpers";
+import IUser from "../../interfaces/IUser";
 
 type FileData = {
   fileName: string;
   status: string;
-  responsiblePerson: string;
-  folder: string;
-  caseStudy: string;
+  folder: number | null;
+  caseStudy: number | null;
   boxNumber: string;
   PIDInfant: string;
   PIDMother: string;
 };
+
+type Folder = {
+  id: number;
+  folderName: string;
+  createdDate: number[];
+  lastModifiedDateTime: number[];
+  lastModifiedBy: number;
+  createdBy: number;
+};
+
+interface CaseStudy {
+  id: number;
+  name: string;
+  enabled: boolean;
+}
 
 const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
   open,
@@ -89,13 +50,16 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
   const [fileData, setFileData] = useState<FileData>({
     fileName: "",
     status: "Available",
-    responsiblePerson: "",
-    folder: "",
-    caseStudy: "",
+    folder: null,
+    caseStudy: null,
     boxNumber: "",
     PIDInfant: "",
     PIDMother: "",
   });
+
+  const [files, setFiles] = useState<FileData[]>([]);
+  const [caseStudies, setCaseStudies] = useState<CaseStudy[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
 
   const handleInputChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -107,11 +71,56 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
     }));
   };
 
-  const handleSubmit = () => {
-    // Send the file data back to the parent component
-    onFileCreate(fileData);
-    onClose();
+  const handleSubmit = async () => {
+    try {
+      const newFile = {
+        ...fileData,
+      };
+
+      const response = await AxiosInstance.post("files/add", newFile);
+      onFileCreate(response.data);
+      fetchAllFolders();
+      onClose();
+    } catch (error) {
+      console.error("Error creating file:", error);
+    }
   };
+
+  useEffect(() => {
+    fetchCaseStudies();
+  }, []);
+
+  const fetchCaseStudies = async () => {
+    try {
+      const response = await AxiosInstance.get("case-studies/all");
+
+      const fetchedCaseStudies = response.data.map((study: any) => ({
+        id: study.id,
+        name: study.name,
+        enabled: true, // Assuming all case studies are enabled by default
+      }));
+
+      setCaseStudies(fetchedCaseStudies);
+    } catch (error: any) {
+      console.error(
+        "Error fetching case studies:",
+        error.response?.data || error.message,
+      );
+    }
+  };
+
+  const fetchAllFolders = async () => {
+    try {
+      const response = await AxiosInstance.get("folders/all");
+      setFolders(response.data || []);
+    } catch (error) {
+      console.error("Error fetching folders", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllFolders();
+  }, []);
 
   return (
     <Modal open={open} onClose={onClose}>
@@ -153,30 +162,6 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
               <Option value="Unavailable">Unavailable</Option>
               <Option value="Checked Out">Checked Out</Option>
             </Select>
-          </FormControl>
-          <FormControl>
-            <FormLabel>Responsible Person</FormLabel>
-            <Input
-              name="responsiblePerson"
-              value={fileData.responsiblePerson}
-              onChange={handleInputChange}
-            />
-          </FormControl>
-          <FormControl>
-            <FormLabel>Folder</FormLabel>
-            <Input
-              name="folder"
-              value={fileData.folder}
-              onChange={handleInputChange}
-            />
-          </FormControl>
-          <FormControl>
-            <FormLabel>Case Study</FormLabel>
-            <Input
-              name="caseStudy"
-              value={fileData.caseStudy}
-              onChange={handleInputChange}
-            />
           </FormControl>
           <FormControl>
             <FormLabel>Box Number</FormLabel>
