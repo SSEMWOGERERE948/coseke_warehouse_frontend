@@ -29,6 +29,7 @@ import { IRequests } from "../../interfaces/IRequests";
 import { getAllRequests } from "../Requests/requests_api";
 import IUser from "../../interfaces/IUser";
 import { currentUser } from "../../utils/constants";
+import { convertArrayToDate, getCurrentUser } from "../../utils/helpers";
 
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
   if (b[orderBy] < a[orderBy]) {
@@ -77,9 +78,7 @@ export default function ApprovalTable() {
   const [open, setOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState<string>("");
   const [rows, setRows] = React.useState<IRequests[]>([]);
-  const [user] = React.useState<IUser>(
-    JSON.parse(localStorage.getItem(currentUser) || "{}"),
-  );
+  const user = getCurrentUser();
 
   // Handle search input change
   const handleSearchChange = (event: any) => {
@@ -94,7 +93,7 @@ export default function ApprovalTable() {
   React.useEffect(() => {
     (async () => {
       let res = await getAllRequests();
-      setRows(res);
+      setRows(res.filter((req) => req.stage !== "PI Review"));
     })();
   });
 
@@ -197,7 +196,7 @@ export default function ApprovalTable() {
                   onChange={(event) => {
                     setSelected(
                       event.target.checked
-                        ? rows.map((row) => row.id.toString())
+                        ? rows.map((row) => row.id!.toString())
                         : [],
                     );
                   }}
@@ -242,66 +241,76 @@ export default function ApprovalTable() {
             </tr>
           </thead>
           <tbody>
-            {[...filteredFiles].sort(getComparator(order, "id")).map((row) => (
-              <tr key={row.id}>
-                <td style={{ textAlign: "center", width: 120 }}>
-                  <Checkbox
-                    size="sm"
-                    checked={selected.includes(row.id.toString())}
-                    color={
-                      selected.includes(row.id.toString())
-                        ? "primary"
-                        : undefined
-                    }
-                    onChange={(event) => {
-                      setSelected((ids) =>
-                        event.target.checked
-                          ? ids.concat(row.id.toString())
-                          : ids.filter(
-                              (itemId) => itemId !== row.id.toString(),
-                            ),
-                      );
-                    }}
-                    slotProps={{ checkbox: { sx: { textAlign: "left" } } }}
-                    sx={{ verticalAlign: "text-bottom" }}
-                  />
-                </td>
-                <td>
-                  <Typography level="body-xs">{row.files.pidinfant}</Typography>
-                </td>
-                <td>
-                  <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-                    <Avatar size="sm">
-                      {row.user?.first_name.charAt(0) +
-                        " " +
-                        row.user?.last_name.charAt(0)}
-                    </Avatar>
-                    <div>
-                      <Typography level="body-xs">
-                        {row.user?.first_name + " " + row.user?.last_name}
-                      </Typography>
-                      <Typography level="body-xs">{row.user?.email}</Typography>
-                    </div>
-                  </Box>
-                </td>
-                <td>
-                  <Typography level="body-xs">
-                    {row.createdDate.toDateString()}
-                  </Typography>
-                </td>
-                <td>
-                  <Typography level="body-xs">
-                    {row.lastModifiedDateTime?.toDateString()}
-                  </Typography>
-                </td>
+            {[...filteredFiles]
+              .sort((a, b) =>
+                a.files.pidinfant.localeCompare(b.files.pidinfant),
+              )
+              .map((row) => (
+                <tr key={row.id}>
+                  <td style={{ textAlign: "center", width: 120 }}>
+                    <Checkbox
+                      size="sm"
+                      checked={selected.includes(row.id!.toString())}
+                      color={
+                        selected.includes(row.id!.toString())
+                          ? "primary"
+                          : undefined
+                      }
+                      onChange={(event) => {
+                        setSelected((ids) =>
+                          event.target.checked
+                            ? ids.concat(row.id!.toString())
+                            : ids.filter(
+                                (itemId) => itemId !== row.id!.toString(),
+                              ),
+                        );
+                      }}
+                      slotProps={{ checkbox: { sx: { textAlign: "left" } } }}
+                      sx={{ verticalAlign: "text-bottom" }}
+                    />
+                  </td>
+                  <td>
+                    <Typography level="body-xs">
+                      {row.files.pidinfant}
+                    </Typography>
+                  </td>
+                  <td>
+                    <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+                      <Avatar size="sm">
+                        {row.user?.first_name.charAt(0) +
+                          " " +
+                          row.user?.last_name.charAt(0)}
+                      </Avatar>
+                      <div>
+                        <Typography level="body-xs">
+                          {row.user?.first_name + " " + row.user?.last_name}
+                        </Typography>
+                        <Typography level="body-xs">
+                          {row.user?.email}
+                        </Typography>
+                      </div>
+                    </Box>
+                  </td>
+                  <td>
+                    <Typography level="body-xs">
+                      {convertArrayToDate(row.createdDate!).toDateString()}
+                    </Typography>
+                  </td>
+                  <td>
+                    <Typography level="body-xs">
+                      {convertArrayToDate(
+                        row.lastModifiedDateTime!,
+                      ).toDateString()}
+                    </Typography>
+                  </td>
 
-                <td>
-                  <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-                    {row.user?.id === user.id ? <RowMenu /> : null}
-                  </Box>
-                </td>
-              </tr>
-            ))}
+                  <td>
+                    <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+                      {row.user?.email == user.email ? <RowMenu /> : null}
+                    </Box>
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </Table>
       </Sheet>

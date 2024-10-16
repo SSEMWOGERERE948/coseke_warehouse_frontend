@@ -18,7 +18,7 @@ import DialogComponent from "../../components/DialogComponent";
 import { AxiosInstance } from "../../core/baseURL";
 import IFile from "../../interfaces/IFile";
 import IFolder from "../../interfaces/IFolder";
-import { convertArrayToDate } from "../../utils/helpers";
+import { convertArrayToDate, getCurrentUser } from "../../utils/helpers";
 import { createRequest } from "../Requests/requests_api";
 import { IRequests } from "../../interfaces/IRequests";
 
@@ -38,12 +38,13 @@ export default function FileTable() {
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedFile, setSelectedFile] = useState<IFile | null>(null);
   const [openCaseStudyDialog, setOpenCaseStudyDialog] = useState(false);
+  const [re, setRE] = useState(false);
   const [openFolderDialog, setOpenFolderDialog] = useState(false);
   const [caseStudy, setCaseStudy] = useState<string>("");
-  const [folder, setFolder] = useState<string>("");
   const [caseStudies, setCaseStudies] = useState<CaseStudy[]>([]);
   const [folders, setFolders] = useState<IFolder[]>([]);
   const [selectedFolder, setSelectedFolder] = useState<IFolder | null>(null);
+  const user = getCurrentUser();
 
   const handleMenuClick = (
     event: React.MouseEvent<HTMLElement>,
@@ -59,6 +60,11 @@ export default function FileTable() {
 
   const handleCaseStudyDialogOpen = () => {
     setOpenCaseStudyDialog(true);
+    handleMenuClose();
+  };
+
+  const handleRequestDialogOpen = () => {
+    setRE(true);
     handleMenuClose();
   };
 
@@ -323,13 +329,21 @@ export default function FileTable() {
                     </MenuItem>
                     <Divider />
                     {file.status === "Available" ? (
-                      <MenuItem onClick={() => handleRequestCheckout(file)}>
+                      <MenuItem
+                        onClick={async () => {
+                          const returnDate = new Date();
+                          returnDate.setDate(returnDate.getDate() + 3);
+                          await handleRequestCheckout({
+                            files: file,
+                            returnDate: returnDate,
+                            createdBy: user.id,
+                          });
+                        }}
+                      >
                         Checkout
                       </MenuItem>
                     ) : (
-                      <MenuItem onClick={handleFolderDialogOpen}>
-                        Check-in
-                      </MenuItem>
+                      <MenuItem onClick={() => null}>Check-in</MenuItem>
                     )}
                   </Menu>
 

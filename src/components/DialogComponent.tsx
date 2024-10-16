@@ -1,6 +1,5 @@
 import { ModalClose, ModalDialog } from "@mui/joy";
 import { Modal } from "@mui/material";
-import React from "react";
 
 function DialogComponent({
   setOpen,
