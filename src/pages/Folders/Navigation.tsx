@@ -25,24 +25,9 @@ import { getAllFilesService } from "../Files/files_api";
 import { useFileContext } from "./FileContext";
 import { convertArrayToDate } from "../../utils/helpers";
 
-const getRandomColor = (() => {
-  let step = 0;
-  const baseColor = "#3498db";
-
-  return () => {
-    let r = parseInt(baseColor.slice(1, 3), 16);
-    let g = parseInt(baseColor.slice(3, 5), 16);
-    let b = parseInt(baseColor.slice(5, 7), 16);
-
-    r = (r + step * 30) % 256;
-    g = (g + step * 20) % 256;
-    b = (b + step * 10) % 256;
-
-    const newColor = `#${[r, g, b].map((c) => c.toString(16).padStart(2, "0")).join("")}`;
-    step++;
-    return newColor;
-  };
-})();
+const getRandomColor = () => {
+  return "#3498db";
+};
 
 export default function Navigation() {
   const { selectedTag, setSelectedTag, setFileData } = useFileContext();
@@ -163,10 +148,7 @@ export default function Navigation() {
                       width: "10px",
                       height: "10px",
                       borderRadius: "99px",
-                      bgcolor:
-                        folder.folderName === "All"
-                          ? "primary.main"
-                          : getRandomColor(),
+                      bgcolor: getRandomColor(),
                     }}
                   />
                 </ListItemDecorator>

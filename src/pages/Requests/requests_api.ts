@@ -1,8 +1,10 @@
 import { AxiosInstance } from "../../core/baseURL";
 import { IRequests } from "../../interfaces/IRequests";
 
-export const createRequest = async (file: File): Promise<IRequests> => {
-  const response = await AxiosInstance.post<IRequests>("/requests", file);
+export const createRequest = async (
+  requests: IRequests,
+): Promise<IRequests> => {
+  const response = await AxiosInstance.post<IRequests>("/requests", requests);
   return response.data;
 };
 

@@ -1,28 +1,26 @@
-import React, { useEffect, useState } from "react";
+import CancelIcon from "@mui/icons-material/Cancel";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import Box from "@mui/joy/Box";
-import Typography from "@mui/joy/Typography";
-import Input from "@mui/joy/Input";
-import IconButton from "@mui/joy/IconButton";
-import Table from "@mui/joy/Table";
+import Button from "@mui/joy/Button";
 import Checkbox from "@mui/joy/Checkbox";
-import Sheet from "@mui/joy/Sheet";
+import IconButton from "@mui/joy/IconButton";
+import Input from "@mui/joy/Input";
 import Menu from "@mui/joy/Menu";
 import MenuItem from "@mui/joy/MenuItem";
-import Modal from "@mui/joy/Modal";
-import ModalDialog from "@mui/joy/ModalDialog";
-import ModalClose from "@mui/joy/ModalClose";
-import FormControl from "@mui/joy/FormControl";
-import FormLabel from "@mui/joy/FormLabel";
-import Button from "@mui/joy/Button";
-import Stack from "@mui/joy/Stack";
-import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import CancelIcon from "@mui/icons-material/Cancel";
+import Sheet from "@mui/joy/Sheet";
+import Table from "@mui/joy/Table";
+import Typography from "@mui/joy/Typography";
+import { Divider } from "@mui/material";
+import React, { useEffect, useState } from "react";
+import DialogComponent from "../../components/DialogComponent";
 import { AxiosInstance } from "../../core/baseURL";
-import IFolder from "../../interfaces/IFolder";
 import IFile from "../../interfaces/IFile";
+import IFolder from "../../interfaces/IFolder";
 import { convertArrayToDate } from "../../utils/helpers";
+import { createRequest } from "../Requests/requests_api";
+import { IRequests } from "../../interfaces/IRequests";
 
 interface CaseStudy {
   id: number;
@@ -171,6 +169,17 @@ export default function FileTable() {
     handleDialogClose();
   };
 
+  const handleRequestCheckout = async (requests: IRequests) => {
+    try {
+      const res = await createRequest(requests);
+    } catch (error: any) {
+      console.error(
+        "Error requesting checkout:",
+        error.response?.data || error.message,
+      );
+    }
+  };
+
   useEffect(() => {
     fetchCaseStudies();
   }, []);
@@ -312,118 +321,96 @@ export default function FileTable() {
                     <MenuItem onClick={handleFolderDialogOpen}>
                       Assign to Folder
                     </MenuItem>
+                    <Divider />
+                    {file.status === "Available" ? (
+                      <MenuItem onClick={() => handleRequestCheckout(file)}>
+                        Checkout
+                      </MenuItem>
+                    ) : (
+                      <MenuItem onClick={handleFolderDialogOpen}>
+                        Check-in
+                      </MenuItem>
+                    )}
                   </Menu>
 
                   {/* Case Study Dialog */}
-                  <Modal open={openCaseStudyDialog} onClose={handleDialogClose}>
-                    <ModalDialog
-                      aria-labelledby="case-study-modal-title"
-                      aria-describedby="case-study-modal-description"
-                      sx={{
-                        maxWidth: "600px",
-                        maxHeight: "80vh",
-                        overflowY: "auto",
-                        borderRadius: "md",
-                        p: 3,
-                        boxShadow: "lg",
-                      }}
-                    >
-                      <ModalClose />
-                      <Typography
-                        level="h4"
-                        fontWeight="bold"
-                        textAlign="center"
-                      >
-                        Assign to Case Study
-                      </Typography>
-                      <Table hoverRow>
-                        <thead>
-                          <tr>
-                            <th>Case Study Name</th>
-                            <th>Enabled</th>
-                            <th>Select</th>
+                  <DialogComponent
+                    open={openCaseStudyDialog}
+                    setOpen={setOpenCaseStudyDialog}
+                  >
+                    <Typography level="h4" fontWeight="bold" textAlign="center">
+                      Assign to Case Study
+                    </Typography>
+                    <Table hoverRow>
+                      <thead>
+                        <tr>
+                          <th>Case Study Name</th>
+                          <th>Enabled</th>
+                          <th>Select</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {caseStudies.map((study) => (
+                          <tr key={study.id}>
+                            <td>{study.name}</td>
+                            <td>{study.enabled ? "Yes" : "No"}</td>
+                            <td>
+                              <Checkbox
+                                checked={caseStudy === study.name}
+                                onChange={() => setCaseStudy(study.name)}
+                              />
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {caseStudies.map((study) => (
-                            <tr key={study.id}>
-                              <td>{study.name}</td>
-                              <td>{study.enabled ? "Yes" : "No"}</td>
-                              <td>
-                                <Checkbox
-                                  checked={caseStudy === study.name}
-                                  onChange={() => setCaseStudy(study.name)}
-                                />
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </Table>
-                      <Button
-                        onClick={handleAssignCaseStudy}
-                        fullWidth
-                        sx={{ mt: 2 }}
-                      >
-                        Assign
-                      </Button>
-                    </ModalDialog>
-                  </Modal>
+                        ))}
+                      </tbody>
+                    </Table>
+                    <Button
+                      onClick={handleAssignCaseStudy}
+                      fullWidth
+                      sx={{ mt: 2 }}
+                    >
+                      Assign
+                    </Button>
+                  </DialogComponent>
 
                   {/* Folder Modal */}
-                  <Modal
+
+                  <DialogComponent
                     open={openFolderDialog}
-                    onClose={() => setOpenFolderDialog(false)}
+                    setOpen={setOpenFolderDialog}
                   >
-                    <ModalDialog
-                      aria-labelledby="folder-modal-title"
-                      aria-describedby="folder-modal-description"
-                      sx={{
-                        maxWidth: "600px",
-                        maxHeight: "80vh",
-                        overflowY: "auto",
-                        borderRadius: "md",
-                        p: 3,
-                        boxShadow: "lg",
-                      }}
-                    >
-                      <ModalClose />
-                      <Typography
-                        level="h4"
-                        fontWeight="bold"
-                        textAlign="center"
-                      >
-                        Assign to Folder
-                      </Typography>
-                      <Table hoverRow>
-                        <thead>
-                          <tr>
-                            <th>Select</th>
-                            <th>Folder Name</th>
+                    <Typography level="h4" fontWeight="bold" textAlign="center">
+                      Assign to Folder
+                    </Typography>
+                    <Table hoverRow>
+                      <thead>
+                        <tr>
+                          <th>Select</th>
+                          <th>Folder Name</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {folders.map((folder) => (
+                          <tr key={folder.id}>
+                            <td>
+                              <Checkbox
+                                checked={selectedFolder?.id === folder.id}
+                                onChange={() => setSelectedFolder(folder)}
+                              />
+                            </td>
+                            <td>{folder.folderName}</td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {folders.map((folder) => (
-                            <tr key={folder.id}>
-                              <td>
-                                <Checkbox
-                                  checked={selectedFolder?.id === folder.id}
-                                  onChange={() => setSelectedFolder(folder)}
-                                />
-                              </td>
-                              <td>{folder.folderName}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </Table>
-                      <Button
-                        onClick={handleAssignFolder}
-                        fullWidth
-                        sx={{ mt: 2 }}
-                      >
-                        Assign
-                      </Button>
-                    </ModalDialog>
-                  </Modal>
+                        ))}
+                      </tbody>
+                    </Table>
+                    <Button
+                      onClick={handleAssignFolder}
+                      fullWidth
+                      sx={{ mt: 2 }}
+                    >
+                      Assign
+                    </Button>
+                  </DialogComponent>
                 </td>
               </tr>
             ))}
