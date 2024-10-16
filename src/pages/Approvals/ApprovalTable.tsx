@@ -3,35 +3,58 @@ import Avatar from "@mui/joy/Avatar";
 import Box from "@mui/joy/Box";
 import Button from "@mui/joy/Button";
 import Checkbox from "@mui/joy/Checkbox";
-import Chip from "@mui/joy/Chip";
-import DialogActions from "@mui/joy/DialogActions";
-import DialogContent from "@mui/joy/DialogContent";
-import DialogTitle from "@mui/joy/DialogTitle";
 import Divider from "@mui/joy/Divider";
+import Dropdown from "@mui/joy/Dropdown";
+import FormControl from "@mui/joy/FormControl";
+import FormLabel from "@mui/joy/FormLabel";
+import IconButton from "@mui/joy/IconButton";
+import Input from "@mui/joy/Input";
+import Link from "@mui/joy/Link";
+import Menu from "@mui/joy/Menu";
+import MenuButton from "@mui/joy/MenuButton";
+import MenuItem from "@mui/joy/MenuItem";
 import Modal from "@mui/joy/Modal";
 import ModalClose from "@mui/joy/ModalClose";
 import ModalDialog from "@mui/joy/ModalDialog";
 import Sheet from "@mui/joy/Sheet";
 import Table from "@mui/joy/Table";
 import Typography from "@mui/joy/Typography";
-import Menu from "@mui/joy/Menu";
-import MenuButton from "@mui/joy/MenuButton";
-import MenuItem from "@mui/joy/MenuItem";
-import Dropdown from "@mui/joy/Dropdown";
-import IconButton from "@mui/joy/IconButton";
-import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
-import AutorenewRoundedIcon from "@mui/icons-material/AutorenewRounded";
-import BlockIcon from "@mui/icons-material/Block";
-import MoreHorizRoundedIcon from "@mui/icons-material/MoreHorizRounded";
 import * as React from "react";
 
-interface RowMenuProps {
-  onApprove: () => void;
-  fileName: string;
-  responsiblePerson: ResponsiblePerson;
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import FilterAltIcon from "@mui/icons-material/FilterAlt";
+import MoreHorizRoundedIcon from "@mui/icons-material/MoreHorizRounded";
+import SearchIcon from "@mui/icons-material/Search";
+import { IRequests } from "../../interfaces/IRequests";
+import { getAllRequests } from "../Requests/requests_api";
+import IUser from "../../interfaces/IUser";
+import { currentUser } from "../../utils/constants";
+
+function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
+  if (b[orderBy] < a[orderBy]) {
+    return -1;
+  }
+  if (b[orderBy] > a[orderBy]) {
+    return 1;
+  }
+  return 0;
 }
 
-const RowMenu: React.FC<RowMenuProps> = ({ onApprove }) => {
+type Order = "asc" | "desc";
+
+function getComparator<Key extends keyof any>(
+  order: Order,
+  orderBy: Key,
+): (
+  a: { [key in Key]: number | string },
+  b: { [key in Key]: number | string },
+) => number {
+  return order === "desc"
+    ? (a, b) => descendingComparator(a, b, orderBy)
+    : (a, b) => -descendingComparator(a, b, orderBy);
+}
+
+function RowMenu() {
   return (
     <Dropdown>
       <MenuButton
@@ -41,87 +64,107 @@ const RowMenu: React.FC<RowMenuProps> = ({ onApprove }) => {
         <MoreHorizRoundedIcon />
       </MenuButton>
       <Menu size="sm" sx={{ minWidth: 140 }}>
-        <MenuItem onClick={onApprove}>Approve</MenuItem>
+        <MenuItem>Forward to PI</MenuItem>
         <Divider />
-        <MenuItem color="danger">Reject</MenuItem>
+        <MenuItem color="danger">Delete</MenuItem>
       </Menu>
     </Dropdown>
   );
-};
-
-interface ResponsiblePerson {
-  initial: string;
-  name: string;
-  email: string;
 }
-
-interface Row {
-  id: string;
-  fileName: string;
-  responsiblePerson: ResponsiblePerson;
-  status: "Available" | "Unavailable" | "Checked Out";
-  dateModified: string;
-  dateUploaded: string;
-  statusColor: "success" | "danger" | "warning";
-}
-
-const rows: Row[] = [
-  {
-    id: "2",
-    fileName: "Budget Report.xlsx",
-    responsiblePerson: {
-      initial: "S",
-      name: "Steve Hampton",
-      email: "steve.hampton@email.com",
-    },
-    status: "Unavailable",
-    dateModified: "2024-09-20",
-    dateUploaded: "2024-09-10",
-    statusColor: "danger",
-  },
-];
-
 export default function ApprovalTable() {
-  const [order, setOrder] = React.useState<"asc" | "desc">("desc");
+  const [order, setOrder] = React.useState<Order>("desc");
   const [selected, setSelected] = React.useState<readonly string[]>([]);
+  const [open, setOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState<string>("");
-  const [openModal, setOpenModal] = React.useState(false);
-  const [selectedFile, setSelectedFile] = React.useState<Row | null>(null);
+  const [rows, setRows] = React.useState<IRequests[]>([]);
+  const [user] = React.useState<IUser>(
+    JSON.parse(localStorage.getItem(currentUser) || "{}"),
+  );
 
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle search input change
+  const handleSearchChange = (event: any) => {
     setSearchTerm(event.target.value);
   };
 
-  const handleApprovalClick = (file: Row) => {
-    setSelectedFile(file);
-    setOpenModal(true);
-  };
-
-  const handleApprove = () => {
-    // Handle approval logic here
-    setOpenModal(false);
-    setSelectedFile(null);
-  };
-
-  const handleReject = () => {
-    // Handle rejection logic here
-    setOpenModal(false);
-    setSelectedFile(null);
-  };
-
-  const filteredFiles = rows.filter((file) =>
-    file.fileName.toLowerCase().includes(searchTerm.toLowerCase()),
+  // Filter files based on search term
+  const filteredFiles = rows.filter((req) =>
+    req.files.PIDInfant.toLowerCase().includes(searchTerm.toLowerCase()),
   );
+
+  React.useEffect(() => {
+    (async () => {
+      let res = await getAllRequests();
+      setRows(res);
+    })();
+  });
 
   return (
     <React.Fragment>
       <Sheet
-        className="TableContainer"
+        className="SearchAndFilters-mobile"
+        sx={{ display: { xs: "flex", sm: "none" }, my: 1, gap: 1 }}
+      >
+        <Input
+          size="sm"
+          placeholder="Search"
+          startDecorator={<SearchIcon />}
+          sx={{ flexGrow: 1 }}
+        />
+        <IconButton
+          size="sm"
+          variant="outlined"
+          color="neutral"
+          onClick={() => setOpen(true)}
+        >
+          <FilterAltIcon />
+        </IconButton>
+        <Modal open={open} onClose={() => setOpen(false)}>
+          <ModalDialog aria-labelledby="filter-modal" layout="fullscreen">
+            <ModalClose />
+            <Typography id="filter-modal" level="h2">
+              Filters
+            </Typography>
+            <Divider sx={{ my: 2 }} />
+            <Sheet sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <Button color="primary" onClick={() => setOpen(false)}>
+                Submit
+              </Button>
+            </Sheet>
+          </ModalDialog>
+        </Modal>
+      </Sheet>
+      <Box
+        className="SearchAndFilters-tabletUp"
+        sx={{
+          borderRadius: "sm",
+          py: 2,
+          display: { xs: "none", sm: "flex" },
+          flexWrap: "wrap",
+          gap: 1.5,
+          "& > *": {
+            minWidth: { xs: "120px", md: "160px" },
+          },
+        }}
+      >
+        <FormControl sx={{ flex: 1 }} size="sm">
+          <FormLabel>Search for file</FormLabel>
+          <Input
+            size="sm"
+            placeholder="Search"
+            startDecorator={<SearchIcon />}
+            value={searchTerm}
+            onChange={handleSearchChange} // Update the search term
+          />
+        </FormControl>
+      </Box>
+      <Sheet
+        className="OrderTableContainer"
         variant="outlined"
         sx={{
+          display: { xs: "none", sm: "initial" },
           width: "100%",
-          borderRadius: "md",
-          flex: 1,
+          borderRadius: "sm",
+          flexShrink: 1,
           overflow: "auto",
           minHeight: 0,
         }}
@@ -131,123 +174,137 @@ export default function ApprovalTable() {
           stickyHeader
           hoverRow
           sx={{
-            "--TableCell-headBackground": (theme) =>
-              theme.vars.palette.background.level1,
+            "--TableCell-headBackground":
+              "var(--joy-palette-background-level1)",
             "--Table-headerUnderlineThickness": "1px",
-            "--TableRow-hoverBackground": (theme) =>
-              theme.vars.palette.background.level1,
+            "--TableRow-hoverBackground":
+              "var(--joy-palette-background-level1)",
+            "--TableCell-paddingY": "4px",
+            "--TableCell-paddingX": "8px",
           }}
         >
           <thead>
             <tr>
-              <th style={{ width: "40px", textAlign: "center" }}>
+              <th
+                style={{ width: 48, textAlign: "center", padding: "12px 6px" }}
+              >
                 <Checkbox
-                  checked={selected.length === rows.length}
+                  size="sm"
                   indeterminate={
-                    selected.length > 0 && selected.length < rows.length
+                    selected.length > 0 && selected.length !== rows.length
                   }
-                  onChange={(event) =>
+                  checked={selected.length === rows.length}
+                  onChange={(event) => {
                     setSelected(
-                      event.target.checked ? rows.map((row) => row.id) : [],
-                    )
+                      event.target.checked
+                        ? rows.map((row) => row.id.toString())
+                        : [],
+                    );
+                  }}
+                  color={
+                    selected.length > 0 || selected.length === rows.length
+                      ? "primary"
+                      : undefined
                   }
-                  color={selected.length > 0 ? "primary" : "neutral"}
-                  slotProps={{ checkbox: { sx: { mx: "auto" } } }}
                   sx={{ verticalAlign: "text-bottom" }}
                 />
               </th>
-              <th style={{ width: "40%" }}>File PID</th>
-              <th style={{ width: "20%" }}>Requester</th>
-              <th style={{ textAlign: "right" }}>Date Uploaded</th>
-              <th style={{ textAlign: "right" }}>Date Modified</th>
-              <th style={{ width: "48px" }} />
+              <th style={{ width: 120, padding: "12px 6px" }}>
+                <Link
+                  underline="none"
+                  color="primary"
+                  component="button"
+                  onClick={() => setOrder(order === "asc" ? "desc" : "asc")}
+                  endDecorator={<ArrowDropDownIcon />}
+                  sx={[
+                    {
+                      fontWeight: "lg",
+                      "& svg": {
+                        transition: "0.2s",
+                        transform:
+                          order === "desc" ? "rotate(0deg)" : "rotate(180deg)",
+                      },
+                    },
+                    order === "desc"
+                      ? { "& svg": { transform: "rotate(0deg)" } }
+                      : { "& svg": { transform: "rotate(180deg)" } },
+                  ]}
+                >
+                  File PID
+                </Link>
+              </th>
+              <th style={{ width: 240, padding: "12px 6px" }}>
+                Responsible Person
+              </th>
+              <th style={{ width: 140, padding: "12px 6px" }}>Date Modified</th>
+              <th style={{ width: 140, padding: "12px 6px" }}>Date Uploaded</th>
+              <th style={{ width: 140, padding: "12px 6px" }}></th>
             </tr>
           </thead>
           <tbody>
-            {filteredFiles.map((row) => (
+            {[...filteredFiles].sort(getComparator(order, "id")).map((row) => (
               <tr key={row.id}>
-                <td style={{ textAlign: "center" }}>
+                <td style={{ textAlign: "center", width: 120 }}>
                   <Checkbox
-                    checked={selected.includes(row.id)}
-                    onChange={(event) =>
+                    size="sm"
+                    checked={selected.includes(row.id.toString())}
+                    color={
+                      selected.includes(row.id.toString())
+                        ? "primary"
+                        : undefined
+                    }
+                    onChange={(event) => {
                       setSelected((ids) =>
                         event.target.checked
-                          ? [...ids, row.id]
-                          : ids.filter((id) => id !== row.id),
-                      )
-                    }
-                    slotProps={{ checkbox: { sx: { mx: "auto" } } }}
-                    color={selected.includes(row.id) ? "primary" : "neutral"}
+                          ? ids.concat(row.id.toString())
+                          : ids.filter(
+                              (itemId) => itemId !== row.id.toString(),
+                            ),
+                      );
+                    }}
+                    slotProps={{ checkbox: { sx: { textAlign: "left" } } }}
+                    sx={{ verticalAlign: "text-bottom" }}
                   />
                 </td>
                 <td>
-                  <Typography fontWeight="lg" textColor="text.primary">
-                    {row.fileName}
-                  </Typography>
+                  <Typography level="body-xs">{row.files.PIDInfant}</Typography>
                 </td>
                 <td>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                    <Avatar size="sm">{row.responsiblePerson.initial}</Avatar>
+                  <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+                    <Avatar size="sm">
+                      {row.user?.first_name.charAt(0) +
+                        " " +
+                        row.user?.last_name.charAt(0)}
+                    </Avatar>
                     <div>
-                      <Typography fontWeight="lg" level="body-sm">
-                        {row.responsiblePerson.name}
-                      </Typography>
                       <Typography level="body-xs">
-                        {row.responsiblePerson.email}
+                        {row.user?.first_name + " " + row.user?.last_name}
                       </Typography>
+                      <Typography level="body-xs">{row.user?.email}</Typography>
                     </div>
                   </Box>
                 </td>
-                <td align="right">
-                  <Typography level="body-sm">{row.dateUploaded}</Typography>
-                </td>
-                <td align="right">
-                  {" "}
-                  <Typography level="body-sm">{row.dateModified}</Typography>
+                <td>
+                  <Typography level="body-xs">
+                    {row.createdDate.toDateString()}
+                  </Typography>
                 </td>
                 <td>
-                  <RowMenu
-                    onApprove={() => handleApprovalClick(row)}
-                    fileName={row.fileName}
-                    responsiblePerson={row.responsiblePerson}
-                  />
+                  <Typography level="body-xs">
+                    {row.lastModifiedDateTime?.toDateString()}
+                  </Typography>
+                </td>
+
+                <td>
+                  <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+                    {row.user?.id === user.id ? <RowMenu /> : null}
+                  </Box>
                 </td>
               </tr>
             ))}
           </tbody>
         </Table>
       </Sheet>
-
-      <Modal open={openModal} onClose={() => setOpenModal(false)}>
-        <ModalDialog>
-          <ModalClose />
-          <DialogTitle>File Approval Request</DialogTitle>
-          <DialogContent>
-            {selectedFile && (
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <Typography level="body-md">
-                  <strong>File PID:</strong> {selectedFile.fileName}
-                </Typography>
-                <Typography level="body-md">
-                  <strong>Requesting Approval From:</strong>{" "}
-                  {selectedFile.responsiblePerson.name}
-                </Typography>
-                <Typography level="body-md">
-                  <strong>Request Time:</strong> {new Date().toLocaleString()}
-                </Typography>
-              </Box>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button variant="solid" color="danger" onClick={handleReject}>
-              Reject
-            </Button>
-            <Button variant="solid" color="primary" onClick={handleApprove}>
-              Approve
-            </Button>
-          </DialogActions>
-        </ModalDialog>
-      </Modal>
     </React.Fragment>
   );
 }

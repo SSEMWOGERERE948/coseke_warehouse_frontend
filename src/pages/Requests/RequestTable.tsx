@@ -25,144 +25,10 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import MoreHorizRoundedIcon from "@mui/icons-material/MoreHorizRounded";
 import SearchIcon from "@mui/icons-material/Search";
-
-interface ResponsiblePerson {
-  initial: string;
-  name: string;
-  email: string;
-}
-
-interface Row {
-  id: string;
-  fileName: string;
-  responsiblePerson: ResponsiblePerson;
-  dateModified: string;
-  dateUploaded: string;
-  statusColor: "success" | "error" | "warning"; // Color types
-}
-
-const rows: Row[] = [
-  {
-    id: "1",
-    fileName: "Project Proposal.docx",
-    responsiblePerson: {
-      initial: "O",
-      name: "Olivia Rhye",
-      email: "olivia.rhye@email.com",
-    },
-    dateModified: "2024-09-25",
-    dateUploaded: "2024-09-15",
-    statusColor: "success", // Color for Available
-  },
-  {
-    id: "2",
-    fileName: "Budget Report.xlsx",
-    responsiblePerson: {
-      initial: "S",
-      name: "Steve Hampton",
-      email: "steve.hampton@email.com",
-    },
-    dateModified: "2024-09-20",
-    dateUploaded: "2024-09-10",
-    statusColor: "error", // Color for Unavailable
-  },
-  {
-    id: "3",
-    fileName: "Meeting Notes.txt",
-    responsiblePerson: {
-      initial: "C",
-      name: "Ciaran Murray",
-      email: "ciaran.murray@email.com",
-    },
-    dateModified: "2024-09-23",
-    dateUploaded: "2024-09-12",
-    statusColor: "warning", // Color for Checked Out
-  },
-  {
-    id: "4",
-    fileName: "Design Mockups.zip",
-    responsiblePerson: {
-      initial: "M",
-      name: "Marina Macdonald",
-      email: "marina.macdonald@email.com",
-    },
-    dateModified: "2024-09-26",
-    dateUploaded: "2024-09-14",
-    statusColor: "success", // Color for Available
-  },
-  {
-    id: "5",
-    fileName: "Final Presentation.pptx",
-    responsiblePerson: {
-      initial: "C",
-      name: "Charles Fulton",
-      email: "charles.fulton@email.com",
-    },
-    dateModified: "2024-09-30",
-    dateUploaded: "2024-09-01",
-    statusColor: "error", // Color for Unavailable
-  },
-  {
-    id: "6",
-    fileName: "Sales Data.csv",
-    responsiblePerson: {
-      initial: "J",
-      name: "Jay Hoper",
-      email: "jay.hoper@email.com",
-    },
-    dateModified: "2024-09-28",
-    dateUploaded: "2024-09-05",
-    statusColor: "success", // Color for Available
-  },
-  {
-    id: "7",
-    fileName: "User Feedback.pdf",
-    responsiblePerson: {
-      initial: "O",
-      name: "Olivia Rhye",
-      email: "olivia.rhye@email.com",
-    },
-    dateModified: "2024-09-29",
-    dateUploaded: "2024-09-08",
-    statusColor: "warning", // Color for Checked Out
-  },
-  {
-    id: "8",
-    fileName: "Market Research.docx",
-    responsiblePerson: {
-      initial: "S",
-      name: "Steve Hampton",
-      email: "steve.hampton@email.com",
-    },
-    dateModified: "2024-09-27",
-    dateUploaded: "2024-09-03",
-    statusColor: "error", // Color for Unavailable
-  },
-  {
-    id: "9",
-    fileName: "Client Feedback.txt",
-    responsiblePerson: {
-      initial: "C",
-      name: "Ciaran Murray",
-      email: "ciaran.murray@email.com",
-    },
-    dateModified: "2024-09-24",
-    dateUploaded: "2024-09-02",
-    statusColor: "success", // Color for Available
-  },
-  {
-    id: "10",
-    fileName: "Product Roadmap.pptx",
-    responsiblePerson: {
-      initial: "M",
-      name: "Marina Macdonald",
-      email: "marina.macdonald@email.com",
-    },
-    dateModified: "2024-09-21",
-    dateUploaded: "2024-08-28",
-    statusColor: "warning", // Color for Checked Out
-  },
-];
+import { IRequests } from "../../interfaces/IRequests";
+import { getAllRequests } from "./requests_api";
+import IUser from "../../interfaces/IUser";
+import { currentUser } from "../../utils/constants";
 
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
   if (b[orderBy] < a[orderBy]) {
@@ -198,9 +64,7 @@ function RowMenu() {
         <MoreHorizRoundedIcon />
       </MenuButton>
       <Menu size="sm" sx={{ minWidth: 140 }}>
-        <MenuItem>Edit</MenuItem>
-        <MenuItem>Rename</MenuItem>
-        <MenuItem>Move</MenuItem>
+        <MenuItem>Forward to PI</MenuItem>
         <Divider />
         <MenuItem color="danger">Delete</MenuItem>
       </Menu>
@@ -212,6 +76,10 @@ export default function RequestTable() {
   const [selected, setSelected] = React.useState<readonly string[]>([]);
   const [open, setOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState<string>("");
+  const [rows, setRows] = React.useState<IRequests[]>([]);
+  const [user] = React.useState<IUser>(
+    JSON.parse(localStorage.getItem(currentUser) || "{}"),
+  );
 
   // Handle search input change
   const handleSearchChange = (event: any) => {
@@ -219,9 +87,16 @@ export default function RequestTable() {
   };
 
   // Filter files based on search term
-  const filteredFiles = rows.filter((file) =>
-    file.fileName.toLowerCase().includes(searchTerm.toLowerCase()),
+  const filteredFiles = rows.filter((req) =>
+    req.files.PIDInfant.toLowerCase().includes(searchTerm.toLowerCase()),
   );
+
+  React.useEffect(() => {
+    (async () => {
+      let res = await getAllRequests();
+      setRows(res);
+    })();
+  });
 
   return (
     <React.Fragment>
@@ -321,7 +196,9 @@ export default function RequestTable() {
                   checked={selected.length === rows.length}
                   onChange={(event) => {
                     setSelected(
-                      event.target.checked ? rows.map((row) => row.id) : [],
+                      event.target.checked
+                        ? rows.map((row) => row.id.toString())
+                        : [],
                     );
                   }}
                   color={
@@ -361,6 +238,7 @@ export default function RequestTable() {
               </th>
               <th style={{ width: 140, padding: "12px 6px" }}>Date Modified</th>
               <th style={{ width: 140, padding: "12px 6px" }}>Date Uploaded</th>
+              <th style={{ width: 140, padding: "12px 6px" }}></th>
             </tr>
           </thead>
           <tbody>
@@ -369,13 +247,19 @@ export default function RequestTable() {
                 <td style={{ textAlign: "center", width: 120 }}>
                   <Checkbox
                     size="sm"
-                    checked={selected.includes(row.id)}
-                    color={selected.includes(row.id) ? "primary" : undefined}
+                    checked={selected.includes(row.id.toString())}
+                    color={
+                      selected.includes(row.id.toString())
+                        ? "primary"
+                        : undefined
+                    }
                     onChange={(event) => {
                       setSelected((ids) =>
                         event.target.checked
-                          ? ids.concat(row.id)
-                          : ids.filter((itemId) => itemId !== row.id),
+                          ? ids.concat(row.id.toString())
+                          : ids.filter(
+                              (itemId) => itemId !== row.id.toString(),
+                            ),
                       );
                     }}
                     slotProps={{ checkbox: { sx: { textAlign: "left" } } }}
@@ -383,31 +267,37 @@ export default function RequestTable() {
                   />
                 </td>
                 <td>
-                  <Typography level="body-xs">{row.fileName}</Typography>
+                  <Typography level="body-xs">{row.files.PIDInfant}</Typography>
                 </td>
                 <td>
                   <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-                    <Avatar size="sm">{row.responsiblePerson.initial}</Avatar>
+                    <Avatar size="sm">
+                      {row.user?.first_name.charAt(0) +
+                        " " +
+                        row.user?.last_name.charAt(0)}
+                    </Avatar>
                     <div>
                       <Typography level="body-xs">
-                        {row.responsiblePerson.name}
+                        {row.user?.first_name + " " + row.user?.last_name}
                       </Typography>
-                      <Typography level="body-xs">
-                        {row.responsiblePerson.email}
-                      </Typography>
+                      <Typography level="body-xs">{row.user?.email}</Typography>
                     </div>
                   </Box>
                 </td>
                 <td>
-                  <Typography level="body-xs">{row.dateUploaded}</Typography>
+                  <Typography level="body-xs">
+                    {row.createdDate.toDateString()}
+                  </Typography>
                 </td>
                 <td>
-                  <Typography level="body-xs">{row.dateModified}</Typography>
+                  <Typography level="body-xs">
+                    {row.lastModifiedDateTime?.toDateString()}
+                  </Typography>
                 </td>
 
                 <td>
                   <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-                    <RowMenu />
+                    {row.user?.id === user.id ? <RowMenu /> : null}
                   </Box>
                 </td>
               </tr>
