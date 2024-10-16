@@ -88,7 +88,7 @@ export default function ApprovalTable() {
 
   // Filter files based on search term
   const filteredFiles = rows.filter((req) =>
-    req.files.PIDInfant.toLowerCase().includes(searchTerm.toLowerCase()),
+    req.files.pidinfant.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   React.useEffect(() => {
@@ -267,7 +267,7 @@ export default function ApprovalTable() {
                   />
                 </td>
                 <td>
-                  <Typography level="body-xs">{row.files.PIDInfant}</Typography>
+                  <Typography level="body-xs">{row.files.pidinfant}</Typography>
                 </td>
                 <td>
                   <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>

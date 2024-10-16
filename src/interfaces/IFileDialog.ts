@@ -1,15 +1,8 @@
+import IFile from "./IFile";
+
 interface FileUploadDialogProps {
   open: boolean;
   onClose: () => void;
-  onFileCreate: (fileData: {
-    fileName: string;
-    status: string;
-    responsiblePerson: string;
-    folder: number | null;
-    caseStudy: number | null;
-    boxNumber: string;
-    PIDInfant: string;
-    PIDMother: string;
-  }) => void;
+  onFileCreate: (fileData: IFile) => void;
 }
 export default FileUploadDialogProps;

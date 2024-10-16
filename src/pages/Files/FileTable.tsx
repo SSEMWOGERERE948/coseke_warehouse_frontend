@@ -20,45 +20,14 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import { AxiosInstance } from "../../core/baseURL";
-
-// Define the IUser, IFolder, ICaseStudy, and IFile interfaces
-interface IUser {
-  id: number;
-  email: string;
-}
-
-type Folder = {
-  id: number;
-  folderName: string;
-  createdDate: number[];
-  lastModifiedDateTime: number[];
-  lastModifiedBy: number;
-  createdBy: number;
-};
+import IFolder from "../../interfaces/IFolder";
+import IFile from "../../interfaces/IFile";
+import { convertArrayToDate } from "../../utils/helpers";
 
 interface CaseStudy {
   id: number;
   name: string;
   enabled: boolean;
-}
-
-interface IFile {
-  id?: number;
-  fileName: string;
-  responsiblePerson: string;
-  dateUploaded: string;
-  dateModified: string;
-  PIDInfant: string;
-  PIDMother: string;
-  boxNumber: number;
-  status: string;
-  responsibleUser?: IUser;
-  folder?: Folder;
-  caseStudy?: CaseStudy;
-  createdDate?: string;
-  lastModifiedDateTime?: string;
-  lastModifiedBy?: number;
-  createdBy: number;
 }
 
 export default function FileTable() {
@@ -75,8 +44,8 @@ export default function FileTable() {
   const [caseStudy, setCaseStudy] = useState<string>("");
   const [folder, setFolder] = useState<string>("");
   const [caseStudies, setCaseStudies] = useState<CaseStudy[]>([]);
-  const [folders, setFolders] = useState<Folder[]>([]);
-  const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
+  const [folders, setFolders] = useState<IFolder[]>([]);
+  const [selectedFolder, setSelectedFolder] = useState<IFolder | null>(null);
 
   const handleMenuClick = (
     event: React.MouseEvent<HTMLElement>,
@@ -111,8 +80,8 @@ export default function FileTable() {
         setLoading(true);
         setError(null);
         const response = await AxiosInstance.get("files/all");
-
         const data: IFile[] = Array.isArray(response.data) ? response.data : [];
+        console.log(data);
         setFiles(data);
       } catch (error) {
         console.error("Error fetching files:", error);
@@ -133,50 +102,9 @@ export default function FileTable() {
     );
   };
 
-  const formatDate = (dateString: string | number[] | undefined) => {
-    if (!dateString) return "N/A";
-
-    let date: Date;
-
-    if (typeof dateString === "string") {
-      // Try parsing as ISO string
-      date = new Date(dateString);
-
-      // If invalid, try parsing as a Unix timestamp (milliseconds)
-      if (isNaN(date.getTime())) {
-        date = new Date(parseInt(dateString));
-      }
-    } else if (Array.isArray(dateString)) {
-      // Handle array format [year, month, day, hour, minute, second]
-      date = new Date(
-        Date.UTC(
-          dateString[0],
-          dateString[1] - 1, // Month is 0-indexed
-          dateString[2],
-          dateString[3] || 0,
-          dateString[4] || 0,
-          dateString[5] || 0,
-        ),
-      );
-    } else {
-      return "Invalid Date";
-    }
-
-    return isNaN(date.getTime())
-      ? "Invalid Date"
-      : date.toLocaleDateString(undefined, {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-  };
-
-  // Filter files based on the search term
   const filteredFiles = files.filter((file) =>
-    file.fileName
-      ? file.fileName.toLowerCase().includes(search.toLowerCase())
+    file.id
+      ? file.pidinfant.toLowerCase().includes(search.toLowerCase())
       : false,
   );
 
@@ -238,7 +166,7 @@ export default function FileTable() {
 
   const handleAssignFolder = () => {
     if (selectedFile && selectedFolder) {
-      assignFileToFolder(selectedFile.id!, selectedFolder.id);
+      assignFileToFolder(selectedFile.id!, Number(selectedFolder.id));
     }
     handleDialogClose();
   };
@@ -340,17 +268,31 @@ export default function FileTable() {
                 <td>
                   <Checkbox />
                 </td>
-                <td>{file.fileName}</td>
+                <td>{file.pidinfant}</td>
                 <td>
-                  <Typography>{file.responsiblePerson}</Typography>
+                  <Typography>
+                    {file.responsibleUser?.first_name +
+                      " " +
+                      file.responsibleUser?.last_name}
+                  </Typography>
                   <Typography>{file.responsibleUser?.email}</Typography>
                 </td>
                 <td>
                   {getStatusIcon(file.status)}{" "}
                   <Typography>{file.status}</Typography>
                 </td>
-                <td>{formatDate(file.lastModifiedDateTime || "")}</td>
-                <td>{formatDate(file.createdDate || "")}</td>
+                <td>
+                  {file.lastModifiedDateTime
+                    ? convertArrayToDate(
+                        file.lastModifiedDateTime,
+                      )?.toDateString()
+                    : "N/A"}
+                </td>
+                <td>
+                  {Array.isArray(file.createdDate)
+                    ? convertArrayToDate(file.createdDate)?.toDateString()
+                    : "N/A"}
+                </td>
                 <td>
                   <IconButton
                     size="sm"

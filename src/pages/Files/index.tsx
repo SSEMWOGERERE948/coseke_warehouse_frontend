@@ -16,25 +16,8 @@ import FileTable from "./FileTable";
 import { AxiosInstance } from "../../core/baseURL";
 import { getCurrentUser } from "../../utils/helpers";
 import IUser from "../../interfaces/IUser";
-
-type FileData = {
-  fileName: string;
-  status: string;
-  folder: number | null;
-  caseStudy: number | null;
-  boxNumber: string;
-  PIDInfant: string;
-  PIDMother: string;
-};
-
-type Folder = {
-  id: number;
-  folderName: string;
-  createdDate: number[];
-  lastModifiedDateTime: number[];
-  lastModifiedBy: number;
-  createdBy: number;
-};
+import IFile from "../../interfaces/IFile";
+import IFolder from "../../interfaces/IFolder";
 
 interface CaseStudy {
   id: number;
@@ -47,19 +30,17 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
   onClose,
   onFileCreate,
 }) => {
-  const [fileData, setFileData] = useState<FileData>({
-    fileName: "",
+  const [fileData, setFileData] = useState<IFile>({
     status: "Available",
-    folder: null,
-    caseStudy: null,
-    boxNumber: "",
-    PIDInfant: "",
-    PIDMother: "",
+    boxNumber: 0,
+    pidinfant: "",
+    pidmother: "",
+    createdBy: 0,
   });
 
-  const [files, setFiles] = useState<FileData[]>([]);
+  const [files, setFiles] = useState<IFile[]>([]);
   const [caseStudies, setCaseStudies] = useState<CaseStudy[]>([]);
-  const [folders, setFolders] = useState<Folder[]>([]);
+  const [folders, setFolders] = useState<IFolder[]>([]);
 
   const handleInputChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -73,9 +54,11 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
 
   const handleSubmit = async () => {
     try {
-      const newFile = {
+      const newFile: IFile = {
         ...fileData,
       };
+
+      console.log("newFile", newFile);
 
       const response = await AxiosInstance.post("files/add", newFile);
       onFileCreate(response.data);
@@ -139,10 +122,18 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
         </Typography>
         <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
           <FormControl>
-            <FormLabel>File Name</FormLabel>
+            <FormLabel>PID Infant</FormLabel>
             <Input
-              name="fileName"
-              value={fileData.fileName}
+              name="pidinfant"
+              value={fileData.pidinfant}
+              onChange={handleInputChange}
+            />
+          </FormControl>
+          <FormControl>
+            <FormLabel>PID Mother</FormLabel>
+            <Input
+              name="pidmother"
+              value={fileData.pidmother}
               onChange={handleInputChange}
             />
           </FormControl>
@@ -160,7 +151,6 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
             >
               <Option value="Available">Available</Option>
               <Option value="Unavailable">Unavailable</Option>
-              <Option value="Checked Out">Checked Out</Option>
             </Select>
           </FormControl>
           <FormControl>
@@ -169,22 +159,6 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
               name="boxNumber"
               type="number"
               value={fileData.boxNumber}
-              onChange={handleInputChange}
-            />
-          </FormControl>
-          <FormControl>
-            <FormLabel>PID Infant</FormLabel>
-            <Input
-              name="PIDInfant"
-              value={fileData.PIDInfant}
-              onChange={handleInputChange}
-            />
-          </FormControl>
-          <FormControl>
-            <FormLabel>PID Mother</FormLabel>
-            <Input
-              name="PIDMother"
-              value={fileData.PIDMother}
               onChange={handleInputChange}
             />
           </FormControl>
@@ -206,10 +180,10 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
 
 function Index() {
   const [open, setOpen] = useState(false);
-  const [files, setFiles] = useState<FileData[]>([]); // State to store the list of files
+  const [files, setFiles] = useState<IFile[]>([]); // State to store the list of files
 
-  const handleFileCreate = (newFile: FileData) => {
-    // Add the new file (FileData) to the list of files
+  const handleFileCreate = (newFile: IFile) => {
+    // Add the new file (IFile) to the list of files
     setFiles((prevFiles) => [...prevFiles, newFile]);
   };
 

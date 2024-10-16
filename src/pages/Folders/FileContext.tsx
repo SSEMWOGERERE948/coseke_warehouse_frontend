@@ -1,13 +1,13 @@
-import React, { createContext, useState, useContext, ReactNode } from "react";
-import { IFileData } from "../../interfaces/IFileData";
+import React, { createContext, ReactNode, useContext, useState } from "react";
+import IFile from "../../interfaces/IFile";
 
 interface FileContextType {
   selectedTag: string;
   setSelectedTag: (tag: string) => void;
-  fileData: IFileData[];
-  setFileData: (data: IFileData[]) => void;
-  selectedFile: IFileData | null;
-  setSelectedFile: (file: IFileData | null) => void;
+  fileData: IFile[];
+  setFileData: (data: IFile[]) => void;
+  selectedFile: IFile | null;
+  setSelectedFile: (file: IFile | null) => void;
 }
 
 const FileContext = createContext<FileContextType | undefined>(undefined);
@@ -16,10 +16,10 @@ export const FileProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [selectedTag, setSelectedTag] = useState<string>("All");
-  const [fileData, setFileData] = useState<IFileData[]>([
+  const [fileData, setFileData] = useState<IFile[]>([
     // ... (initial file data)
   ]);
-  const [selectedFile, setSelectedFile] = useState<IFileData | null>(null);
+  const [selectedFile, setSelectedFile] = useState<IFile | null>(null);
 
   return (
     <FileContext.Provider

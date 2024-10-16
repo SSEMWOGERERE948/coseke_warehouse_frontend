@@ -3,9 +3,7 @@ import {
   CloseRounded,
   EditRounded,
   EmailRounded,
-  FolderRounded,
   PeopleAltRounded,
-  Search,
   ShareRounded,
 } from "@mui/icons-material";
 import {
@@ -16,17 +14,12 @@ import {
   Button,
   Chip,
   Divider,
-  FormControl,
-  FormLabel,
   IconButton,
-  Input,
   List,
   ListDivider,
   ListItem,
   ListItemButton,
   ListItemContent,
-  Option,
-  Select,
   Sheet,
   Stack,
   Tab,
@@ -38,51 +31,12 @@ import {
 import CssBaseline from "@mui/joy/CssBaseline";
 import { CssVarsProvider } from "@mui/joy/styles";
 import * as React from "react";
-
+import IFile from "../../interfaces/IFile";
+import { useFileContext } from "./FileContext";
 import Layout from "./Layout";
 import Navigation from "./Navigation";
 import TableFiles from "./TableFiles";
-import { useFileContext } from "./FileContext";
-import { IFileData } from "../../interfaces/IFileData";
-
-const renderFilters = () => (
-  <React.Fragment>
-    <FormControl size="sm">
-      <FormLabel>Status</FormLabel>
-      <Select
-        size="sm"
-        placeholder="Filter by status"
-        slotProps={{ button: { sx: { whiteSpace: "nowrap" } } }}
-      >
-        <Option value="paid">Paid</Option>
-        <Option value="pending">Pending</Option>
-        <Option value="refunded">Refunded</Option>
-        <Option value="cancelled">Cancelled</Option>
-      </Select>
-    </FormControl>
-    <FormControl size="sm">
-      <FormLabel>Category</FormLabel>
-      <Select size="sm" placeholder="All">
-        <Option value="all">All</Option>
-        <Option value="refund">Refund</Option>
-        <Option value="purchase">Purchase</Option>
-        <Option value="debit">Debit</Option>
-      </Select>
-    </FormControl>
-    <FormControl size="sm">
-      <FormLabel>Customer</FormLabel>
-      <Select size="sm" placeholder="All">
-        <Option value="all">All</Option>
-        <Option value="olivia">Olivia Rhye</Option>
-        <Option value="steve">Steve Hampton</Option>
-        <Option value="ciaran">Ciaran Murray</Option>
-        <Option value="marina">Marina Macdonald</Option>
-        <Option value="charles">Charles Fulton</Option>
-        <Option value="jay">Jay Hoper</Option>
-      </Select>
-    </FormControl>
-  </React.Fragment>
-);
+import { convertArrayToDate } from "../../utils/helpers";
 
 interface TabButtonProps {
   icon: React.ReactNode;
@@ -163,7 +117,7 @@ export default function FilesExample() {
   const [drawerOpen, setDrawerOpen] = React.useState<boolean>(false);
   const { fileData, selectedFile, setSelectedFile } = useFileContext();
 
-  const handleFileClick = (file: IFileData) => {
+  const handleFileClick = (file: IFile) => {
     setSelectedFile(file);
   };
 
@@ -277,7 +231,7 @@ export default function FilesExample() {
                               }
                               sx={{ alignItems: "flex-start" }}
                             >
-                              {file.folderName}
+                              {file.pidinfant}
                             </Typography>
                             <AvatarGroup
                               size="sm"
@@ -286,16 +240,7 @@ export default function FilesExample() {
                                 "--Avatar-size": "24px",
                               }}
                             >
-                              {file.avatars.map((avatar, avatarIndex) => (
-                                <Avatar
-                                  key={avatarIndex}
-                                  src={avatar}
-                                  srcSet={`${avatar.replace("24", "48")} 2x`}
-                                />
-                              ))}
-                              {file.avatars.length > 4 && (
-                                <Avatar>+{file.avatars.length - 4}</Avatar>
-                              )}
+                              <Avatar src={file.responsibleUser?.first_name} />
                             </AvatarGroup>
                           </Box>
                           <Box
@@ -305,9 +250,11 @@ export default function FilesExample() {
                               mt: 2,
                             }}
                           >
-                            <Typography level="body-sm">{file.size}</Typography>
                             <Typography level="body-sm">
-                              {file.lastModified}
+                              {file.status}
+                            </Typography>
+                            <Typography level="body-sm">
+                              {file.lastModifiedDateTime?.join("-")}
                             </Typography>
                           </Box>
                         </ListItemContent>
@@ -329,13 +276,14 @@ export default function FilesExample() {
         >
           <Box sx={{ p: 2, display: "flex", alignItems: "center" }}>
             <Typography level="title-md" sx={{ flex: 1 }}>
-              {selectedFile?.folderName}
+              {selectedFile?.folder?.folderName}
             </Typography>
             <IconButton
               component="span"
               variant="plain"
               color="neutral"
               size="sm"
+              onClick={() => setSelectedFile(null)}
             >
               <CloseRounded />
             </IconButton>
@@ -366,13 +314,11 @@ export default function FilesExample() {
                       Responsible Person
                     </Typography>
                     <AvatarGroup size="sm" sx={{ "--Avatar-size": "24px" }}>
-                      {selectedFile.avatars.map((avatar, index) => (
+                      {selectedFile.responsibleUser && (
                         <Avatar
-                          key={index}
-                          src={avatar}
-                          srcSet={`${avatar} 2x`}
+                          src={selectedFile.responsibleUser?.first_name}
                         />
-                      ))}
+                      )}
                     </AvatarGroup>
                   </Box>
                   <Divider />
@@ -387,16 +333,20 @@ export default function FilesExample() {
                   >
                     <DetailItem
                       label="File PID"
-                      value={selectedFile.folderName}
+                      value={selectedFile.pidinfant}
                     />
-                    <DetailItem label="Size" value={selectedFile.size} />
+                    <DetailItem label="Status" value={selectedFile.status} />
                     <DetailItem
                       label="Modified"
-                      value={selectedFile.lastModified}
+                      value={convertArrayToDate(
+                        selectedFile.lastModifiedDateTime!,
+                      )!.toDateString()}
                     />
                     <DetailItem
                       label="Created"
-                      value={selectedFile.lastModified}
+                      value={convertArrayToDate(
+                        selectedFile.createdDate!,
+                      )!.toDateString()}
                     />
                   </Box>
                   <Divider />

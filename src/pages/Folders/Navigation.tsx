@@ -1,4 +1,16 @@
-import React, { useEffect, useState } from "react";
+import AddIcon from "@mui/icons-material/Add";
+import {
+  Button,
+  FormControl,
+  FormLabel,
+  IconButton,
+  Input,
+  Modal,
+  ModalClose,
+  ModalDialog,
+  Stack,
+  Typography,
+} from "@mui/joy";
 import Box from "@mui/joy/Box";
 import List from "@mui/joy/List";
 import ListItem from "@mui/joy/ListItem";
@@ -6,114 +18,79 @@ import ListItemButton from "@mui/joy/ListItemButton";
 import ListItemContent from "@mui/joy/ListItemContent";
 import ListItemDecorator from "@mui/joy/ListItemDecorator";
 import ListSubheader from "@mui/joy/ListSubheader";
-import { useFileContext } from "./FileContext";
-import { getAllFoldersService } from "./folders_api";
+import React, { useEffect, useState } from "react";
 import { AxiosInstance } from "../../core/baseURL";
-import {
-  Button,
-  FormControl,
-  FormLabel,
-  Input,
-  Modal,
-  ModalClose,
-  ModalDialog,
-  Stack,
-  Typography,
-  IconButton,
-} from "@mui/joy";
-import AddIcon from "@mui/icons-material/Add"; // Importing Add Icon
+import IFolder from "../../interfaces/IFolder";
+import { getAllFilesService } from "../Files/files_api";
+import { useFileContext } from "./FileContext";
+import { convertArrayToDate } from "../../utils/helpers";
 
-type Folder = {
-  id: number;
-  folderName: string;
-  createdDate: number[];
-  lastModifiedDateTime: number[];
-  lastModifiedBy: number;
-  createdBy: number;
-};
+const getRandomColor = (() => {
+  let step = 0;
+  const baseColor = "#3498db";
 
-type IFileData = {
-  folderName: string;
-  lastModified: string;
-  size: string;
-  avatars: string[];
-};
+  return () => {
+    let r = parseInt(baseColor.slice(1, 3), 16);
+    let g = parseInt(baseColor.slice(3, 5), 16);
+    let b = parseInt(baseColor.slice(5, 7), 16);
 
-// Function to generate a random color
-const getRandomColor = () => {
-  const letters = "0123456789ABCDEF";
-  let color = "#";
-  for (let i = 0; i < 6; i++) {
-    color += letters[Math.floor(Math.random() * 16)];
-  }
-  return color;
-};
+    r = (r + step * 30) % 256;
+    g = (g + step * 20) % 256;
+    b = (b + step * 10) % 256;
 
-const formatDate = (dateArray: number[]): string => {
-  if (
-    dateArray.length >= 6 &&
-    !isNaN(
-      new Date(
-        dateArray[0],
-        dateArray[1] - 1,
-        dateArray[2],
-        dateArray[3],
-        dateArray[4],
-        dateArray[5],
-      ).getTime(),
-    )
-  ) {
-    return new Date(
-      dateArray[0],
-      dateArray[1] - 1,
-      dateArray[2],
-      dateArray[3],
-      dateArray[4],
-      dateArray[5],
-    ).toLocaleString();
-  }
-  return "Invalid Date";
-};
+    const newColor = `#${[r, g, b].map((c) => c.toString(16).padStart(2, "0")).join("")}`;
+    step++;
+    return newColor;
+  };
+})();
 
 export default function Navigation() {
   const { selectedTag, setSelectedTag, setFileData } = useFileContext();
-  const [folders, setFolders] = useState<Folder[]>([]);
+  const [folders, setFolders] = useState<IFolder[]>([]);
   const [isAddFolderOpen, setIsAddFolderOpen] = useState(false);
-  const [newFolder, setNewFolder] = useState<Folder>({
+  const [newFolder, setNewFolder] = useState<IFolder>({
     id: 0,
     folderName: "",
-    createdDate: [],
-    lastModifiedDateTime: [],
-    lastModifiedBy: 1,
-    createdBy: 1,
+    createdAt: new Date(),
+    updatedAt: new Date(),
   });
 
-  const handleTagClick = (folderName: string) => {
-    setSelectedTag(folderName);
-
-    const filteredFolders: IFileData[] = (folders || [])
-      .filter((folder) => folder.folderName === folderName)
-      .map((folder) => ({
-        folderName: folder.folderName,
-        lastModified: formatDate(folder.lastModifiedDateTime),
-        size: "Unknown size",
-        avatars: [],
-      }));
-
-    setFileData(filteredFolders);
+  const handleTagClick = async (name: string) => {
+    setSelectedTag(name);
+    try {
+      const files = await getAllFilesService();
+      let filteredFiles = files;
+      if (name !== "All") {
+        filteredFiles = files.filter(
+          (file) => file.folder?.folderName === name,
+        );
+      }
+      setFileData(filteredFiles);
+    } catch (error) {
+      console.error("Error fetching files:", error);
+    }
   };
 
   useEffect(() => {
     const fetchAllFolders = async () => {
       try {
         const response = await AxiosInstance.get("folders/all");
-        setFolders(response.data || []);
+        setFolders([
+          {
+            id: 0,
+            folderName: "All",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+          ...response.data,
+        ]);
       } catch (error) {
         console.error("Error fetching folders", error);
       }
     };
 
     fetchAllFolders();
+    handleTagClick("All"); // Load all files initially
   }, []);
 
   const handleSubmitNewFolder = async (event: React.FormEvent) => {
@@ -144,10 +121,8 @@ export default function Navigation() {
     setNewFolder({
       id: 0,
       folderName: "",
-      createdDate: [],
-      lastModifiedDateTime: [],
-      lastModifiedBy: 1,
-      createdBy: 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     });
   };
 
@@ -165,7 +140,7 @@ export default function Navigation() {
         >
           Folders
           <IconButton onClick={handleOpenAddFolder} color="primary">
-            <AddIcon /> {/* Add Icon instead of Button */}
+            <AddIcon />
           </IconButton>
         </ListSubheader>
         <List
@@ -176,7 +151,7 @@ export default function Navigation() {
             "& .JoyListItemButton-root": { p: "8px" },
           }}
         >
-          {(folders || []).map((folder) => (
+          {folders.map((folder) => (
             <ListItem key={folder.id}>
               <ListItemButton
                 selected={selectedTag === folder.folderName}
@@ -188,7 +163,10 @@ export default function Navigation() {
                       width: "10px",
                       height: "10px",
                       borderRadius: "99px",
-                      bgcolor: getRandomColor(), // Applying random color
+                      bgcolor:
+                        folder.folderName === "All"
+                          ? "primary.main"
+                          : getRandomColor(),
                     }}
                   />
                 </ListItemDecorator>
@@ -199,7 +177,6 @@ export default function Navigation() {
         </List>
       </ListItem>
 
-      {/* Modal for creating new folder */}
       <Modal open={isAddFolderOpen} onClose={handleCloseAddFolder}>
         <ModalDialog
           aria-labelledby="add-folder-modal-title"
