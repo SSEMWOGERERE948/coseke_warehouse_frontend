@@ -7,6 +7,7 @@ import Grid from "@mui/joy/Grid";
 import { AxiosInstance } from "../../core/baseURL";
 import {
   Modal,
+  ModalDialog,
   Box,
   Typography,
   FormControl,
@@ -16,6 +17,7 @@ import {
   Table,
   Checkbox,
   Chip,
+  ModalClose,
 } from "@mui/joy";
 
 interface CaseStudy {
@@ -229,16 +231,18 @@ export default function CaseStudiesScreen() {
           onClose={() => setModalOpen(false)}
           aria-labelledby="create-case-study-modal"
         >
-          <Box
+          <ModalDialog
             sx={{
-              p: 2,
-              bgcolor: "background.paper",
-              borderRadius: "sm",
-              width: "300px",
-              mx: "auto",
-              mt: "20%",
+              //maxHeight: "80vh",
+              overflowX: "auto",
+              overflowY: "auto",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
             }}
           >
+            <ModalClose />
+
             <Typography
               id="create-case-study-modal"
               level="h2"
@@ -247,35 +251,46 @@ export default function CaseStudiesScreen() {
             >
               Create New Case Study
             </Typography>
-            <FormControl>
-              <FormLabel>Name</FormLabel>
-              <Input
-                name="name"
-                value={newCaseStudy.name}
-                onChange={handleInputChange}
-                placeholder="Enter case study name"
-                size="sm"
-              />
-            </FormControl>
-            <FormControl sx={{ mt: 2 }}>
-              <FormLabel>Description</FormLabel>
-              <Input
-                name="description"
-                value={newCaseStudy.description}
-                onChange={handleInputChange}
-                placeholder="Enter description"
-                size="sm"
-              />
-            </FormControl>
-            <Button
-              sx={{ mt: 3, width: "100%" }}
-              onClick={submitNewCaseStudy}
-              color="success"
-              variant="solid"
+            <Box
+              sx={{
+                p: 2,
+                bgcolor: "background.paper",
+                borderRadius: "sm",
+                width: "300px",
+                mx: "auto",
+                mt: "20%",
+              }}
             >
-              Submit
-            </Button>
-          </Box>
+              <FormControl>
+                <FormLabel>Name</FormLabel>
+                <Input
+                  name="name"
+                  value={newCaseStudy.name}
+                  onChange={handleInputChange}
+                  placeholder="Enter case study name"
+                  size="sm"
+                />
+              </FormControl>
+              <FormControl sx={{ mt: 2 }}>
+                <FormLabel>Description</FormLabel>
+                <Input
+                  name="description"
+                  value={newCaseStudy.description}
+                  onChange={handleInputChange}
+                  placeholder="Enter description"
+                  size="sm"
+                />
+              </FormControl>
+              <Button
+                sx={{ mt: 3, width: "100%" }}
+                onClick={submitNewCaseStudy}
+                color="success"
+                variant="solid"
+              >
+                Submit
+              </Button>
+            </Box>
+          </ModalDialog>
         </Modal>
 
         {/* Grid displaying case studies */}

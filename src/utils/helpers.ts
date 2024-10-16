@@ -28,21 +28,21 @@ export const getTokenFromSessionStorage = (): string => {
   return token;
 };
 
-export function convertArrayToDate(dateArray: number[]): Date | null {
-  // Check if the array has at least 3 elements (year, month, day)
+export function convertArrayToDate(dateArray: number[]): Date {
+  // If the array has fewer than 3 elements, return the current date
   if (dateArray.length < 3) {
-    return null; // or handle it as you see fit
+    return new Date(); // Return current date and time
   }
 
   // Extract year, month, day, and other optional parts
   const year = dateArray[0];
   const month = dateArray[1] - 1; // Month is 0-indexed in JavaScript
-  const day = dateArray[2];
+  const day = dateArray[2] - 1;
   const hour = dateArray[3] || 0; // Defaults to 0 if not provided
   const minute = dateArray[4] || 0; // Defaults to 0 if not provided
   const second = dateArray[5] || 0; // Defaults to 0 if not provided
   const millisecond = dateArray[6] || 0; // Defaults to 0 if not provided
 
-  // Create a new Date object
+  // Create a new Date object from the array values
   return new Date(year, month, day, hour, minute, second, millisecond);
 }
