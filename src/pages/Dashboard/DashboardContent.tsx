@@ -25,6 +25,8 @@ import {
   PointElement,
 } from "chart.js";
 import { AxiosInstance } from "../../core/baseURL";
+import { getAllFilesService } from "../Files/files_api";
+import IFile from "../../interfaces/IFile";
 
 // Register the components for the chart
 ChartJS.register(
@@ -52,7 +54,11 @@ interface Log {
 export default function DashboardContent() {
   const [caseStudies, setCaseStudies] = useState<CaseStudy[]>([]);
   const [logs, setLogs] = useState<Log[]>([]);
-  const [caseStudyCount, setCaseStudyCount] = useState(0); // State for case study count
+  const [caseStudyCount, setCaseStudyCount] = useState(0);
+  const [fileCount, setFileCount] = useState(0);
+  const [files, setFiles] = useState<IFile[]>();
+  const [UnavailablefileCount, setUnavailableFileCount] = useState(0);
+  const [unavailableFile, setUnavailableFiles] = useState<IFile[]>();
 
   const filesData = {
     labels: ["5", "10", "15", "20", "25", "30"],
@@ -108,7 +114,7 @@ export default function DashboardContent() {
   const cardsData = [
     {
       title: "Available files",
-      value: "40,689",
+      value: fileCount,
       icon: <ContentPasteIcon sx={{ color: "white" }} />,
       color: "blue",
       change: "Available files in the system",
@@ -116,7 +122,7 @@ export default function DashboardContent() {
     },
     {
       title: "Unavailable Files",
-      value: "10",
+      value: UnavailablefileCount,
       icon: <ContentPasteOffIcon sx={{ color: "white" }} />,
       color: "red",
       change: "Files that have been checkedout",
@@ -184,6 +190,70 @@ export default function DashboardContent() {
     } catch (error: any) {
       console.error(
         "Error fetching case studies:",
+        error.response?.data || error.message,
+      );
+    }
+  };
+
+  useEffect(() => {
+    fetchFiles();
+  }, []);
+  const fetchFiles = async () => {
+    const payload = {
+      status: ["Available", "Unavailable"],
+    };
+    try {
+      const response = await getAllFilesService();
+
+      setFiles(response);
+      setFileCount(response.filter((f) => f.status === "Available").length);
+    } catch (error: any) {
+      console.error(
+        "Error fetching files:",
+        error.response?.data || error.message,
+      );
+    }
+  };
+
+  useEffect(() => {
+    fetchUnavailableFiles();
+  }, []);
+  const fetchUnavailableFiles = async () => {
+    const payload = {
+      status: ["Available", "Unavailable"],
+    };
+    try {
+      const response = await getAllFilesService();
+
+      setUnavailableFiles(response);
+      setUnavailableFileCount(
+        response.filter((f) => f.status === "Unavailable").length,
+      );
+    } catch (error: any) {
+      console.error(
+        "Error fetching unavailable files:",
+        error.response?.data || error.message,
+      );
+    }
+  };
+
+  useEffect(() => {
+    fetchApprovals();
+  }, []);
+  const fetchApprovals = async () => {
+    const payload = {
+      status: ["Approved", "Rejected"],
+    };
+    try {
+      const response = await getAllFilesService();
+
+      setUnavailableFiles(response);
+      setUnavailableFileCount(
+        response.filter((f) => f.status === "Unavailable").length,
+      );
+    } catch (error: any) {
+      console.error(
+        "Error fetching unavailable files:",
         error.response?.data || error.message,
       );
     }
