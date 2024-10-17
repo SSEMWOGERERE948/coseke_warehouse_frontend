@@ -29,6 +29,7 @@ import ColorSchemeToggle from "./ColorSchemeToggle";
 import { closeSidebar } from "./utils";
 import IUser from "../../interfaces/IUser";
 import { getCurrentUser } from "../../utils/helpers";
+import Images from "../../asset/images";
 
 function Toggler({
   defaultExpanded = false,
@@ -127,10 +128,12 @@ export default function Sidebar() {
         }}
         onClick={() => closeSidebar()}
       />
-      <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-        <IconButton variant="soft" color="primary" size="sm">
-          <BrightnessAutoRoundedIcon />
-        </IconButton>
+
+      <Box
+        sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+      >
+        <img src={Images.Logo} alt="" style={{ width: 40, height: 40 }} />
+
         <Typography level="title-lg">Baylor Foundation</Typography>
         <ColorSchemeToggle sx={{ ml: "auto" }} />
       </Box>
@@ -281,7 +284,7 @@ export default function Sidebar() {
               </List>
             </Toggler>
           </ListItem>
-          <ListItemButton
+          {/* <ListItemButton
             selected={selectedItem === routes.CASE_STUDIES}
             onClick={() => handleSelect(routes.CASE_STUDIES)}
           >
@@ -289,7 +292,7 @@ export default function Sidebar() {
             <ListItemContent>
               <Typography level="title-sm">Case Studies</Typography>
             </ListItemContent>
-          </ListItemButton>
+          </ListItemButton> */}
         </List>
         <List
           size="sm"

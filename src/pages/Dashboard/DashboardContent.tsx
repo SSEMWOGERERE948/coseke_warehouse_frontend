@@ -9,6 +9,10 @@ import PersonIcon from "@mui/icons-material/Person";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import PauseCircleOutlineTwoToneIcon from "@mui/icons-material/PauseCircleOutlineTwoTone";
+import ContentPasteIcon from "@mui/icons-material/ContentPaste";
+import ContentPasteOffIcon from "@mui/icons-material/ContentPasteOff";
+import BusinessCenterIcon from "@mui/icons-material/BusinessCenter";
+import AddTaskIcon from "@mui/icons-material/AddTask";
 
 // Import required Chart.js components
 import {
@@ -16,31 +20,37 @@ import {
   LineElement,
   CategoryScale,
   LinearScale,
+  Legend,
+  Title,
   PointElement,
 } from "chart.js";
 
 // Register the components for the chart
-ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement);
+ChartJS.register(
+  LineElement,
+  CategoryScale,
+  LinearScale,
+  Legend,
+  Title,
+  PointElement,
+);
 
 const filesData = {
-  labels: [
-    "10k",
-    "15k",
-    "20k",
-    "25k",
-    "30k",
-    "35k",
-    "40k",
-    "45k",
-    "50k",
-    "55k",
-  ],
+  labels: ["5", "10", "15", "20", "25", "30"],
   datasets: [
     {
-      label: "Files Details",
+      label: "File Requests",
       data: [40, 50, 60, 70, 80, 63.4, 70, 65, 78, 90],
       borderColor: "rgba(75, 192, 192, 1)",
       fill: true,
+      tension: 0.1,
+    },
+    {
+      label: "Approved Files",
+      data: [30, 40, 50, 65, 58],
+      borderColor: "rgba(255, 99, 132, 1)",
+      backgroundColor: "rgba(255, 99, 132, 0.2)",
+      fill: false,
       tension: 0.1,
     },
   ],
@@ -49,40 +59,64 @@ const filesData = {
 const chartOptions = {
   maintainAspectRatio: false,
   responsive: true,
+  plugins: {
+    legend: {
+      position: "right" as const,
+      display: true,
+    },
+    title: {
+      display: true,
+      text: "File Requests and Approvals",
+    },
+  },
+  scales: {
+    x: {
+      title: {
+        display: true,
+        text: "Days of the Month",
+      },
+    },
+    y: {
+      title: {
+        display: true,
+        text: "Number of Files",
+      },
+    },
+  },
 };
 
 // Card data
 const cardsData = [
   {
-    title: "Files",
+    title: "Available files",
     value: "40,689",
-    icon: <PersonIcon sx={{ color: "white" }} />,
+    icon: <ContentPasteIcon sx={{ color: "white" }} />,
     color: "blue",
-    change: "8.5% Up from yesterday",
+    change: "Available files in the system",
     changeColor: "success",
   },
   {
-    title: "Total Orders",
-    value: "10,293",
-    icon: <ShoppingCartIcon sx={{ color: "white" }} />,
-    color: "purple",
-    change: "1.3% Up from last week",
+    title: "Unavailable Files",
+    value: "10",
+    icon: <ContentPasteOffIcon sx={{ color: "white" }} />,
+    color: "red",
+    change: "Files that have been checkedout",
     changeColor: "success",
   },
   {
-    title: "Total Sales",
-    value: "$89,000",
-    icon: <AttachMoneyIcon sx={{ color: "green" }} />,
-    color: "palegreen",
-    change: "4.3% Down from yesterday",
+    title: "CaseStudies",
+    value: "10",
+    icon: <BusinessCenterIcon sx={{ color: "white" }} />,
+    color: "green",
+    change: "Active casestudies",
     changeColor: "danger",
   },
   {
-    title: "Total Pending",
-    value: "2040",
-    icon: <AttachMoneyIcon sx={{ color: "white" }} />,
+    title: "Approvals",
+    value: "5",
+    icon: <AddTaskIcon sx={{ color: "white" }} />,
     color: "blue",
-    change: "1.8% Up from yesterday",
+    change: "Current number of Approvals in the system",
     changeColor: "success",
   },
 ];
@@ -156,12 +190,14 @@ export default function DashboardContent() {
       </Grid>
 
       {/* Sales Details Line Chart */}
-      <Box sx={{ mt: 4 }}>
-        <Typography level="h4">Files Details</Typography>
-        <Box sx={{ height: "250px", width: "100%" }}>
-          <Line data={filesData} options={chartOptions} />
+      {
+        <Box sx={{ mt: 4 }}>
+          <Typography level="h4">Request and approved files</Typography>
+          <Box sx={{ height: "250px", width: "100%" }}>
+            <Line data={filesData} options={chartOptions} />
+          </Box>
         </Box>
-      </Box>
+      }
 
       {/* Table Section */}
       <Box sx={{ mt: 4, overflowX: "auto" }}>

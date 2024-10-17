@@ -1,12 +1,11 @@
-import React from "react";
-import ApprovalTable from "./ApprovalTable";
 import Box from "@mui/joy/Box";
 import Button from "@mui/joy/Button";
 import Typography from "@mui/joy/Typography";
 
 import { UploadRounded } from "@mui/icons-material";
+import ApprovalTable from "./ApprovalTable";
 
-const Approvals = () => {
+function index() {
   return (
     <Box
       component="main"
@@ -39,12 +38,12 @@ const Approvals = () => {
         }}
       >
         <Typography level="h2" component="h1">
-          Approvals page
+          Approvals
         </Typography>
       </Box>
       <ApprovalTable />
     </Box>
   );
-};
+}
 
-export default Approvals;
+export default index;

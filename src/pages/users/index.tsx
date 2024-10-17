@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Search, ChevronDown, MoreVertical, ChevronUp } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, Trash2, Edit } from "lucide-react";
 import {
   Avatar,
   Button,
-  Checkbox,
   Input,
   Modal,
   ModalDialog,
@@ -15,9 +14,18 @@ import {
   Box,
   Table,
   Sheet,
+  Checkbox,
+  List,
+  ListItem,
 } from "@mui/joy";
 import { AxiosInstance } from "../../core/baseURL";
 import { useNavigate } from "react-router-dom";
+import { FormGroup } from "@mui/material";
+
+interface Role {
+  id: number;
+  name: string;
+}
 
 interface User {
   id: number;
@@ -40,8 +48,6 @@ const Index: React.FC = () => {
     password: string;
     phone: string;
     address: string;
-    roles: number[]; // Roles represented as an array of numbers
-    userType: string; // User type field
   }>({
     first_name: "",
     last_name: "",
@@ -49,26 +55,38 @@ const Index: React.FC = () => {
     password: "",
     phone: "",
     address: "",
-    roles: [], // Initialize roles as empty array
-    userType: "", // Initialize userType
   });
 
-  const navigate = useNavigate(); // Initialize navigate hook
+  const [isEditUserOpen, setIsEditUserOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
+  const [selectedRoleIds, setSelectedRoleIds] = useState<number[]>([]);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const response = await AxiosInstance.get("/users");
-        setUsers(response.data); // Set the fetched users
+        setUsers(response.data);
       } catch (error) {
         console.error("Error fetching users:", error);
       }
     };
 
+    const fetchRoles = async () => {
+      try {
+        const response = await AxiosInstance.get("/roles/all");
+        setAvailableRoles(response.data);
+      } catch (error) {
+        console.error("Error fetching roles:", error);
+      }
+    };
+
     fetchUsers();
+    fetchRoles();
   }, []);
 
-  // Sorting functionality
   const handleSort = (column: keyof User) => {
     if (sortColumn === column) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -85,7 +103,6 @@ const Index: React.FC = () => {
     return 0;
   });
 
-  // Handle modal opening and closing
   const handleAddUser = () => {
     setIsAddUserOpen(true);
   };
@@ -99,12 +116,9 @@ const Index: React.FC = () => {
       password: "",
       phone: "",
       address: "",
-      roles: [], // Reset roles
-      userType: "", // Reset userType
     });
   };
 
-  // Handle form submission for adding a new user
   const handleSubmitNewUser = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -113,8 +127,8 @@ const Index: React.FC = () => {
     };
 
     try {
-      const response = await AxiosInstance.post("/create-users", userData);
-      const newUserId = response.data.id; // Assuming the response contains the new user's id
+      const response = await AxiosInstance.post("users/create-users", userData);
+      const newUserId = response.data.id;
 
       setUsers((prev) => [
         ...prev,
@@ -124,29 +138,60 @@ const Index: React.FC = () => {
         },
       ]);
 
-      // Close the modal
       handleCloseAddUser();
-
-      // Navigate to the roles-and-permissions page with the new user's id
-      navigate(`/roles-and-permissions/${newUserId}`);
     } catch (error) {
       console.error("Error adding user:", error);
     }
   };
 
-  // Handle role selection
-  const handleRoleChange = (roleId: number) => {
-    setNewUser((prev) => ({
-      ...prev,
-      roles: prev.roles.includes(roleId)
-        ? prev.roles.filter((id) => id !== roleId) // Remove role if unchecked
-        : [...prev.roles, roleId], // Add role if checked
-    }));
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user);
+    setSelectedRoleIds([]); // Clear previously selected roles
+    setIsEditUserOpen(true);
   };
 
-  // Navigate to roles and permissions when clicking a row
-  const handleRowClick = (userId: number) => {
-    navigate(`/roles-and-permissions/${userId}`);
+  const handleRemoveUser = async (userId: number) => {
+    try {
+      await AxiosInstance.delete(`/users/${userId}`);
+      setUsers(users.filter((user) => user.id !== userId));
+    } catch (error) {
+      console.error("Error removing user:", error);
+    }
+  };
+
+  const handleRoleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const roleId = parseInt(event.target.value);
+    setSelectedRoleIds((prev) =>
+      prev.includes(roleId)
+        ? prev.filter((id) => id !== roleId)
+        : [...prev, roleId],
+    );
+  };
+
+  const handleCloseEditUser = () => {
+    setIsEditUserOpen(false);
+    setSelectedUser(null);
+  };
+
+  const handleSubmitRoles = async () => {
+    if (!selectedUser || selectedRoleIds.length === 0) {
+      console.error("No roles selected or user data missing.");
+      return;
+    }
+
+    try {
+      const payload = {
+        userId: selectedUser.id,
+        userTypes: selectedRoleIds.map(
+          (id) => availableRoles.find((role) => role.id === id)?.name,
+        ),
+      };
+
+      await AxiosInstance.post(`assign-userType`, payload);
+      setIsEditUserOpen(false);
+    } catch (error) {
+      console.error("Error assigning user roles:", error);
+    }
   };
 
   return (
@@ -181,45 +226,28 @@ const Index: React.FC = () => {
         <Table stickyHeader hoverRow>
           <thead>
             <tr>
-              <th style={{ width: 40 }}>
-                <Checkbox size="sm" />
-              </th>
+              <th style={{ width: 40 }} />
               <th
                 onClick={() => handleSort("first_name")}
                 style={{ cursor: "pointer" }}
               >
                 <Stack direction="row" alignItems="center">
-                  First Name
+                  Name
                   {sortColumn === "first_name" &&
                     (sortDirection === "asc" ? <ChevronUp /> : <ChevronDown />)}
                 </Stack>
               </th>
-              <th
-                onClick={() => handleSort("last_name")}
-                style={{ cursor: "pointer" }}
-              >
-                <Stack direction="row" alignItems="center">
-                  Last Name
-                  {sortColumn === "last_name" &&
-                    (sortDirection === "asc" ? <ChevronUp /> : <ChevronDown />)}
-                </Stack>
-              </th>
+
               <th>Email</th>
               <th>Phone</th>
               <th>Address</th>
-              <th style={{ width: 60 }} />
+              <th style={{ width: 120 }} />
             </tr>
           </thead>
           <tbody>
             {sortedUsers.map((user) => (
-              <tr
-                key={user.id}
-                onClick={() => handleRowClick(user.id)} // Pass user ID on row click
-                style={{ cursor: "pointer" }}
-              >
-                <td>
-                  <Checkbox size="sm" />
-                </td>
+              <tr key={user.id} style={{ cursor: "pointer" }}>
+                <td />
                 <td>
                   <Stack direction="row" spacing={2} alignItems="center">
                     <Avatar size="sm">{user.first_name.charAt(0)}</Avatar>
@@ -233,9 +261,7 @@ const Index: React.FC = () => {
                     </Stack>
                   </Stack>
                 </td>
-                <td>
-                  <Typography level="body-sm">{user.last_name}</Typography>
-                </td>
+
                 <td>
                   <Typography level="body-sm">{user.email}</Typography>
                 </td>
@@ -246,9 +272,23 @@ const Index: React.FC = () => {
                   <Typography level="body-sm">{user.address}</Typography>
                 </td>
                 <td>
-                  <Button variant="plain" color="neutral" size="sm">
-                    <MoreVertical />
-                  </Button>
+                  <Stack direction="row" spacing={1}>
+                    <Button
+                      variant="plain"
+                      size="sm"
+                      onClick={() => handleEditUser(user)} // Trigger edit modal with user details
+                    >
+                      <Edit />
+                    </Button>
+                    <Button
+                      variant="plain"
+                      color="danger"
+                      size="sm"
+                      onClick={() => handleRemoveUser(user.id)} // Remove user
+                    >
+                      <Trash2 />
+                    </Button>
+                  </Stack>
                 </td>
               </tr>
             ))}
@@ -270,13 +310,7 @@ const Index: React.FC = () => {
             boxShadow: "lg",
           }}
         >
-          <ModalClose
-            variant="outlined"
-            sx={{
-              top: "calc(-1/4 * var(--IconButton-size))",
-              right: "calc(-1/4 * var(--IconButton-size))",
-            }}
-          />
+          <ModalClose />
           <Typography level="h4" fontWeight="bold" textAlign="center">
             Add New User
           </Typography>
@@ -308,7 +342,6 @@ const Index: React.FC = () => {
               <FormControl>
                 <FormLabel>Email</FormLabel>
                 <Input
-                  type="email"
                   required
                   value={newUser.email}
                   onChange={(e) =>
@@ -320,8 +353,8 @@ const Index: React.FC = () => {
               <FormControl>
                 <FormLabel>Password</FormLabel>
                 <Input
-                  type="password"
                   required
+                  type="password"
                   value={newUser.password}
                   onChange={(e) =>
                     setNewUser({ ...newUser, password: e.target.value })
@@ -351,41 +384,117 @@ const Index: React.FC = () => {
                 />
               </FormControl>
 
-              <FormControl>
-                <FormLabel>Roles</FormLabel>
-                <Checkbox
-                  label="Admin"
-                  checked={newUser.roles.includes(3)}
-                  onChange={() => handleRoleChange(3)}
-                />
-                <Checkbox
-                  label="User"
-                  checked={newUser.roles.includes(4)}
-                  onChange={() => handleRoleChange(4)}
-                />
-              </FormControl>
-
-              <FormControl>
-                <FormLabel>User Type</FormLabel>
-                <Stack direction="row" spacing={2}>
-                  {["ADMIN", "USER"].map((type) => (
-                    <Checkbox
-                      key={type}
-                      label={type}
-                      checked={newUser.userType === type}
-                      onChange={() =>
-                        setNewUser((prev) => ({ ...prev, userType: type }))
-                      }
-                    />
-                  ))}
-                </Stack>
-              </FormControl>
-
-              <Button type="submit" fullWidth variant="solid" color="primary">
+              <Button type="submit" fullWidth>
                 Add User
               </Button>
             </Stack>
           </form>
+        </ModalDialog>
+      </Modal>
+
+      {/* Modal for Editing User and Assigning Roles */}
+      <Modal open={isEditUserOpen} onClose={handleCloseEditUser}>
+        <ModalDialog
+          sx={{
+            maxHeight: "80vh",
+            overflowY: "auto",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+          }}
+        >
+          <ModalClose />
+          <Box sx={{ maxWidth: 500, margin: "auto", p: 3 }}>
+            <Typography level="h2" sx={{ mb: 3 }}>
+              Edit User and Assign Roles
+            </Typography>
+            {/* Form for editing user details */}
+            <FormControl>
+              <FormLabel>First Name</FormLabel>
+              <Input
+                type="text"
+                value={selectedUser?.first_name || ""}
+                onChange={(e) =>
+                  setSelectedUser({
+                    ...selectedUser!,
+                    first_name: e.target.value,
+                  })
+                }
+              />
+            </FormControl>
+            <FormControl sx={{ mt: 2 }}>
+              <FormLabel>Last Name</FormLabel>
+              <Input
+                type="text"
+                value={selectedUser?.last_name || ""}
+                onChange={(e) =>
+                  setSelectedUser({
+                    ...selectedUser!,
+                    last_name: e.target.value,
+                  })
+                }
+              />
+            </FormControl>
+            <FormControl sx={{ mt: 2 }}>
+              <FormLabel>Email</FormLabel>
+              <Input
+                type="email"
+                value={selectedUser?.email || ""}
+                onChange={(e) =>
+                  setSelectedUser({ ...selectedUser!, email: e.target.value })
+                }
+              />
+            </FormControl>
+            <FormControl sx={{ mt: 2 }}>
+              <FormLabel>Phone</FormLabel>
+              <Input
+                type="phone"
+                value={selectedUser?.phone || ""}
+                onChange={(e) =>
+                  setSelectedUser({ ...selectedUser!, phone: e.target.value })
+                }
+              />
+            </FormControl>
+            <FormControl sx={{ mt: 2 }}>
+              <FormLabel>Address</FormLabel>
+              <Input
+                type="text"
+                value={selectedUser?.address || ""}
+                onChange={(e) =>
+                  setSelectedUser({ ...selectedUser!, address: e.target.value })
+                }
+              />
+            </FormControl>
+
+            {/* Roles selection */}
+            <FormControl component="fieldset" sx={{ mt: 3 }}>
+              <FormLabel component="legend">Select Roles</FormLabel>
+              <FormGroup>
+                <List>
+                  {availableRoles.map((role) => (
+                    <ListItem key={role.id}>
+                      <Checkbox
+                        value={role.id.toString()}
+                        checked={selectedRoleIds.includes(role.id)}
+                        onChange={handleRoleChange}
+                      />
+                      <Typography>{role.name}</Typography>
+                    </ListItem>
+                  ))}
+                </List>
+              </FormGroup>
+            </FormControl>
+
+            <Button
+              fullWidth
+              variant="solid"
+              color="primary"
+              onClick={handleSubmitRoles}
+              sx={{ mt: 3 }}
+            >
+              Update User and Roles
+            </Button>
+          </Box>
         </ModalDialog>
       </Modal>
     </Box>

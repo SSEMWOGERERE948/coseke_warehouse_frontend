@@ -4,17 +4,12 @@ import Table from "@mui/joy/Table";
 import Typography from "@mui/joy/Typography";
 import { ArticleRounded } from "@mui/icons-material";
 import ArrowDropDownRoundedIcon from "@mui/icons-material/ArrowDropDownRounded";
-
-interface FileData {
-  folderName: string;
-  lastModified: string;
-  size: string;
-  avatars: string[];
-}
+import IFile from "../../interfaces/IFile";
+import { convertArrayToDate } from "../../utils/helpers";
 
 interface TableFilesProps {
-  data: FileData[];
-  onFileClick: (file: FileData) => void;
+  data: IFile[];
+  onFileClick: (file: IFile) => void;
 }
 
 export default function TableFiles({ data, onFileClick }: TableFilesProps) {
@@ -43,14 +38,14 @@ export default function TableFiles({ data, onFileClick }: TableFilesProps) {
                 level="title-sm"
                 endDecorator={<ArrowDropDownRoundedIcon />}
               >
-                Last modified
+                Last Modified
               </Typography>
             </th>
             <th>
-              <Typography level="title-sm">Size</Typography>
+              <Typography level="title-sm">Status</Typography>
             </th>
             <th>
-              <Typography level="title-sm">Users</Typography>
+              <Typography level="title-sm">Responsible User</Typography>
             </th>
           </tr>
         </thead>
@@ -63,43 +58,25 @@ export default function TableFiles({ data, onFileClick }: TableFilesProps) {
                   startDecorator={<ArticleRounded color="primary" />}
                   sx={{ alignItems: "flex-start" }}
                 >
-                  {file.folderName}
+                  {file.pidinfant}
                 </Typography>
               </td>
               <td>
-                <Typography level="body-sm">{file.lastModified}</Typography>
+                <Typography level="body-sm">
+                  {Array.isArray(file.lastModifiedDateTime)
+                    ? convertArrayToDate(
+                        file.lastModifiedDateTime,
+                      )?.toDateString()
+                    : ""}
+                </Typography>
               </td>
               <td>
-                <Typography level="body-sm">{file.size}</Typography>
+                <Typography level="body-sm">{file.status}</Typography>
               </td>
               <td>
-                {file.avatars.length > 1 ? (
-                  <AvatarGroup
-                    size="sm"
-                    sx={{
-                      "--AvatarGroup-gap": "-8px",
-                      "--Avatar-size": "24px",
-                    }}
-                  >
-                    {file.avatars.map((src, avatarIndex) => (
-                      <Avatar
-                        key={avatarIndex}
-                        src={src}
-                        srcSet={`${src} 2x`}
-                      />
-                    ))}
-                    {file.avatars.length > 3 && (
-                      <Avatar>+{file.avatars.length - 3}</Avatar>
-                    )}
-                  </AvatarGroup>
-                ) : (
-                  <Avatar
-                    size="sm"
-                    src={file.avatars[0]}
-                    srcSet={`${file.avatars[0]} 2x`}
-                    sx={{ "--Avatar-size": "24px" }}
-                  />
-                )}
+                {file.responsibleUser?.first_name +
+                  " " +
+                  file.responsibleUser?.last_name}
               </td>
             </tr>
           ))}

@@ -50,14 +50,6 @@ function Index() {
         <Typography level="h2" component="h1">
           Requests
         </Typography>
-        <Button
-          color="primary"
-          startDecorator={<UploadRounded />}
-          size="sm"
-          onClick={handleOpen} // Open the modal
-        >
-          Add Request
-        </Button>
       </Box>
       <RequestTable />
 
