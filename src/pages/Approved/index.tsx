@@ -1,8 +1,6 @@
 import Box from "@mui/joy/Box";
-import Button from "@mui/joy/Button";
 import Typography from "@mui/joy/Typography";
 
-import { UploadRounded } from "@mui/icons-material";
 import ApprovalTable from "./ApprovalTable";
 
 function index() {
@@ -38,7 +36,7 @@ function index() {
         }}
       >
         <Typography level="h2" component="h1">
-          Approvals
+          Approved
         </Typography>
       </Box>
       <ApprovalTable />

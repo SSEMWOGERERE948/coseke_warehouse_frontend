@@ -26,10 +26,8 @@ import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import MoreHorizRoundedIcon from "@mui/icons-material/MoreHorizRounded";
 import SearchIcon from "@mui/icons-material/Search";
 import { IRequests } from "../../interfaces/IRequests";
-import { getAllRequests } from "../Requests/requests_api";
-import IUser from "../../interfaces/IUser";
-import { currentUser } from "../../utils/constants";
 import { convertArrayToDate, getCurrentUser } from "../../utils/helpers";
+import { getAllRequests } from "../Requests/requests_api";
 
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
   if (b[orderBy] < a[orderBy]) {
@@ -72,7 +70,7 @@ function RowMenu() {
     </Dropdown>
   );
 }
-export default function ApprovalTable() {
+export default function RejectedTable() {
   const [order, setOrder] = React.useState<Order>("desc");
   const [selected, setSelected] = React.useState<readonly string[]>([]);
   const [open, setOpen] = React.useState(false);
@@ -93,9 +91,9 @@ export default function ApprovalTable() {
   React.useEffect(() => {
     (async () => {
       let res = await getAllRequests();
-      setRows(res.filter((req) => req.stage !== "PI Review"));
+      setRows(res.filter((req) => req.state === "Rejected"));
     })();
-  });
+  }, []);
 
   return (
     <React.Fragment>
@@ -235,7 +233,11 @@ export default function ApprovalTable() {
               <th style={{ width: 240, padding: "12px 6px" }}>
                 Responsible Person
               </th>
-              <th style={{ width: 140, padding: "12px 6px" }}>Date Modified</th>
+              <th style={{ width: 240, padding: "12px 6px" }}>Status</th>
+              <th style={{ width: 240, padding: "12px 6px" }}>Stage</th>
+              <th style={{ width: 140, padding: "12px 6px" }}>
+                Date of Return
+              </th>
               <th style={{ width: 140, padding: "12px 6px" }}>Date Uploaded</th>
               <th style={{ width: 140, padding: "12px 6px" }}></th>
             </tr>
@@ -292,22 +294,28 @@ export default function ApprovalTable() {
                     </Box>
                   </td>
                   <td>
+                    <Typography level="body-xs">{row.state}</Typography>
+                  </td>
+                  <td>
+                    <Typography level="body-xs">{row.stage}</Typography>
+                  </td>
+                  <td>
+                    <Typography level="body-xs">
+                      {Array.isArray(row.returnDate)
+                        ? convertArrayToDate(row.returnDate).toDateString()
+                        : row.returnDate.toDateString()}
+                    </Typography>
+                  </td>
+                  <td>
                     <Typography level="body-xs">
                       {convertArrayToDate(row.createdDate!).toDateString()}
                     </Typography>
                   </td>
-                  <td>
-                    <Typography level="body-xs">
-                      {convertArrayToDate(
-                        row.lastModifiedDateTime!,
-                      ).toDateString()}
-                    </Typography>
-                  </td>
 
                   <td>
-                    <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-                      {row.user?.email == user.email ? <RowMenu /> : null}
-                    </Box>
+                    <Box
+                      sx={{ display: "flex", gap: 2, alignItems: "center" }}
+                    ></Box>
                   </td>
                 </tr>
               ))}

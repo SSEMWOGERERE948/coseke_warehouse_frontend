@@ -21,6 +21,7 @@ import IFolder from "../../interfaces/IFolder";
 import { convertArrayToDate, getCurrentUser } from "../../utils/helpers";
 import { createRequest } from "../Requests/requests_api";
 import { IRequests } from "../../interfaces/IRequests";
+import { Chip } from "@mui/joy";
 
 interface CaseStudy {
   id: number;
@@ -98,11 +99,15 @@ export default function FileTable() {
     fetchFiles();
   }, []);
 
-  const getStatusIcon = (status: string) => {
+  const getStatusChip = (status: string) => {
     return status === "Available" ? (
-      <CheckCircleIcon sx={{ color: "green" }} />
+      <Chip variant="soft" color="success">
+        Available
+      </Chip>
     ) : (
-      <CancelIcon sx={{ color: "red" }} />
+      <Chip variant="soft" color="danger">
+        Unavailable
+      </Chip>
     );
   };
 
@@ -292,10 +297,7 @@ export default function FileTable() {
                   </Typography>
                   <Typography>{file.responsibleUser?.email}</Typography>
                 </td>
-                <td>
-                  {getStatusIcon(file.status)}{" "}
-                  <Typography>{file.status}</Typography>
-                </td>
+                <td>{getStatusChip(file.status)}</td>
                 <td>
                   {file.lastModifiedDateTime
                     ? convertArrayToDate(

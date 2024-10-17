@@ -26,8 +26,14 @@ import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import MoreHorizRoundedIcon from "@mui/icons-material/MoreHorizRounded";
 import SearchIcon from "@mui/icons-material/Search";
 import { IRequests } from "../../interfaces/IRequests";
+import {
+  approveRequest,
+  getAllRequests,
+  rejectRequest,
+} from "../Requests/requests_api";
+import IUser from "../../interfaces/IUser";
+import { currentUser } from "../../utils/constants";
 import { convertArrayToDate, getCurrentUser } from "../../utils/helpers";
-import { changeStage, getAllRequests, rejectRequest } from "./requests_api";
 
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
   if (b[orderBy] < a[orderBy]) {
@@ -40,6 +46,18 @@ function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
 }
 
 type Order = "asc" | "desc";
+
+function getComparator<Key extends keyof any>(
+  order: Order,
+  orderBy: Key,
+): (
+  a: { [key in Key]: number | string },
+  b: { [key in Key]: number | string },
+) => number {
+  return order === "desc"
+    ? (a, b) => descendingComparator(a, b, orderBy)
+    : (a, b) => -descendingComparator(a, b, orderBy);
+}
 
 function RowMenu({
   request,
@@ -60,24 +78,24 @@ function RowMenu({
         <MenuItem
           onClick={async () => {
             try {
-              // Forward the request to the PI
-              await changeStage(request.id!, "PI Review");
-              await handleGetAllRequests();
+              // Approve the request
+              await approveRequest(request.id!);
+              handleGetAllRequests();
             } catch (error) {
               console.error(error);
             }
           }}
         >
-          Forward to PI
+          Checkout
         </MenuItem>
         <Divider />
         <MenuItem
           color="danger"
-          onClick={async () => {
+          onClick={() => async () => {
             try {
-              // Forward the request to the PI
+              // Approve the request
               await rejectRequest(request.id!);
-              await handleGetAllRequests();
+              handleGetAllRequests();
             } catch (error) {
               console.error(error);
             }
@@ -89,7 +107,7 @@ function RowMenu({
     </Dropdown>
   );
 }
-export default function RequestTable() {
+export default function PITable() {
   const [order, setOrder] = React.useState<Order>("desc");
   const [selected, setSelected] = React.useState<readonly string[]>([]);
   const [open, setOpen] = React.useState(false);
@@ -109,13 +127,7 @@ export default function RequestTable() {
 
   const handleGetAllRequests = async () => {
     let res = await getAllRequests();
-    setRows(
-      res.filter(
-        (req) =>
-          req.files.responsibleUser?.email === user.email &&
-          req.stage === "Officer",
-      ),
-    );
+    setRows(res.filter((req) => req.stage === "PI Review"));
   };
   React.useEffect(() => {
     handleGetAllRequests();
@@ -330,7 +342,7 @@ export default function RequestTable() {
 
                   <td>
                     <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-                      {row.user!.email!.toString() == user.email!.toString() ? (
+                      {row.user?.email == user.email ? (
                         <RowMenu
                           request={row}
                           handleGetAllRequests={handleGetAllRequests}
