@@ -58,6 +58,8 @@ export default function DashboardContent() {
   const [currentPage, setCurrentPage] = useState(1); // Current page
   const [totalLogs, setTotalLogs] = useState(0); // Total number of logs
   const [loadingLogs, setLoadingLogs] = useState(false);
+  const [scale, setScale] = useState("months");
+  const [chartData, setChartData] = useState<any>(null);
 
   const filesData = {
     labels: ["5", "10", "15", "20", "25", "30"],
@@ -116,7 +118,6 @@ export default function DashboardContent() {
 
   useEffect(() => {
     fetchCaseStudies();
-    fetchFiles();
     fetchUnavailableFiles();
     fetchApprovals();
     fetchLogs();
@@ -143,20 +144,6 @@ export default function DashboardContent() {
     fetchCaseStudies();
     fetchLogs();
   }, [pageSize, currentPage]);
-  const fetchFiles = async () => {
-    try {
-      const response = await getAllFilesService();
-      setFileCount(
-        response.filter((f: IFile) => f.status === "Available").length,
-      );
-      setAllFilesCount(response.length);
-    } catch (error: any) {
-      console.error(
-        "Error fetching files:",
-        error.response?.data || error.message,
-      );
-    }
-  };
 
   const fetchUnavailableFiles = async () => {
     try {
@@ -239,118 +226,92 @@ export default function DashboardContent() {
     },
   ];
 
-  const DynamicFileChart = () => {
-    const [scale, setScale] = useState("months");
-    const [chartData, setChartData] = useState<any>(null);
+  // Helper function to group files by month
+  const groupFilesByMonth = (files: any[]) => {
+    const monthlyCounts = Array(12).fill(0); // Array of 12 months initialized to 0
+    files.forEach((file) => {
+      const createdDate = new Date(
+        file.createdDate[0], // Year
+        file.createdDate[1] - 1, // Month (0-indexed)
+        file.createdDate[2], // Day
+        file.createdDate[3], // Hour
+        file.createdDate[4], // Minute
+        file.createdDate[5], // Second
+      );
+      const month = createdDate.getMonth(); // Get the month (0-11)
+      monthlyCounts[month]++; // Increment the count for the month
+    });
+    return monthlyCounts;
+  };
 
-    useEffect(() => {
-      const fetchChartData = async (scale: string) => {
-        // Simulating API call with mock data
-        return new Promise((resolve) => {
-          setTimeout(() => {
-            if (scale === "days") {
-              resolve({
-                labels: Array.from({ length: 30 }, (_, i) => i + 1),
-                data: Array.from({ length: 30 }, () =>
-                  Math.floor(Math.random() * 100),
-                ),
-              });
-            } else if (scale === "months") {
-              resolve({
-                labels: [
-                  "Jan",
-                  "Feb",
-                  "Mar",
-                  "Apr",
-                  "May",
-                  "Jun",
-                  "Jul",
-                  "Aug",
-                  "Sep",
-                  "Oct",
-                  "Nov",
-                  "Dec",
-                ],
-                data: Array.from({ length: 12 }, () =>
-                  Math.floor(Math.random() * 1000),
-                ),
-              });
-            } else if (scale === "years") {
-              const currentYear = new Date().getFullYear();
-              resolve({
-                labels: Array.from(
-                  { length: 5 },
-                  (_, i) => currentYear - 4 + i,
-                ),
-                data: Array.from({ length: 5 }, () =>
-                  Math.floor(Math.random() * 10000),
-                ),
-              });
-            }
-          }, 500);
-        });
-      };
+  // Fetch the files and generate chart data
+  const fetchFiles = async () => {
+    try {
+      const response = await getAllFilesService();
+      const monthlyFileCounts = groupFilesByMonth(response);
 
-      const loadData = async () => {
-        const data: any = await fetchChartData(scale);
-        setChartData({
-          labels: data.labels,
-          datasets: [
-            {
-              label: "Total Files",
-              data: data.data,
-              borderColor: "rgb(75, 192, 192)",
-              backgroundColor: "rgba(75, 192, 192, 0.5)",
-            },
-          ],
-        });
-      };
+      setChartData({
+        labels: [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ],
+        datasets: [
+          {
+            label: "Files Created",
+            data: monthlyFileCounts,
+            borderColor: "rgb(75, 192, 192)",
+            backgroundColor: "rgba(75, 192, 192, 0.5)",
+          },
+        ],
+      });
+    } catch (error: any) {
+      console.error(
+        "Error fetching files:",
+        error.response?.data || error.message,
+      );
+    }
+  };
 
-      loadData();
-    }, [scale]);
+  useEffect(() => {
+    fetchFiles();
+  }, [scale]);
 
-    const options = {
-      responsive: true,
-      plugins: {
-        legend: {
-          position: "top" as const,
-        },
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: "top" as const,
+      },
+      title: {
+        display: true,
+        text: "Total Files Created Per Month",
+      },
+    },
+    scales: {
+      x: {
         title: {
           display: true,
-          text: "Total Files in System Over Time",
+          text: "Months",
         },
       },
-      scales: {
-        x: {
-          title: {
-            display: true,
-            text: scale.charAt(0).toUpperCase() + scale.slice(1),
-          },
+      y: {
+        title: {
+          display: true,
+          text: "Number of Files",
         },
-        y: {
-          title: {
-            display: true,
-            text: "Number of Files",
-          },
-          beginAtZero: true,
-        },
+        beginAtZero: true,
       },
-    };
-
-    return (
-      <div className="w-full max-w-3xl mx-auto p-4">
-        <Select
-          value={scale}
-          onChange={(e, newValue) => setScale(newValue as string)}
-          className="mb-4"
-        >
-          <option value="days">Days</option>
-          <option value="months">Months</option>
-          <option value="years">Years</option>
-        </Select>
-        {chartData && <Line options={options} data={chartData} />}
-      </div>
-    );
+    },
   };
 
   return (
@@ -393,7 +354,18 @@ export default function DashboardContent() {
 
       <Box sx={{ mt: 4 }}>
         <Typography level="h4">Request and approved files</Typography>
-        <DynamicFileChart />
+        <div className="w-full max-w-3xl mx-auto p-4">
+          <Select
+            value={scale}
+            onChange={(e, newValue) => setScale(newValue as string)}
+            className="mb-4"
+          >
+            <option value="days">Days</option>
+            <option value="months">Months</option>
+            <option value="years">Years</option>
+          </Select>
+          {chartData && <Line options={options} data={chartData} />}
+        </div>{" "}
       </Box>
 
       {/* Logs Table Section */}

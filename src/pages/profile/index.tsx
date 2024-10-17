@@ -24,20 +24,77 @@ import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import EmailRoundedIcon from "@mui/icons-material/EmailRounded";
 import AccessTimeFilledRoundedIcon from "@mui/icons-material/AccessTimeFilledRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
+import { AxiosInstance } from "../../core/baseURL";
+import { getCurrentUser } from "../../utils/helpers";
 
 function Index() {
   const [selectedImage, setSelectedImage] = React.useState<string | null>(null);
+  const [userDetails, setUserDetails] = React.useState({
+    first_name: "",
+    last_name: "",
+    email: "",
+    phone: "",
+    address: "",
+    password: "",
+  });
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files && event.target.files[0];
+  const currentUser = getCurrentUser();
+  console.log("currentuser", currentUser);
+
+  // Handle input change
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setUserDetails((prevDetails) => ({
+      ...prevDetails,
+      [name]: value,
+    }));
+  };
+
+  // Save profile details
+  const handleSave = async () => {
+    try {
+      // Sending PUT request to update the user
+      const response = await AxiosInstance.put(
+        `/users/update/${currentUser.id}`,
+        userDetails,
+      );
+      console.log("User updated successfully:", response.data);
+      // Optionally: Show success notification here
+    } catch (error) {
+      console.error("Error updating user:", error);
+      // Optionally: Show error notification here
+    }
+  };
+
+  // Fetch stored image from local storage on component mount
+  React.useEffect(() => {
+    const storedImage = localStorage.getItem("profileImage");
+    if (storedImage) {
+      setSelectedImage(storedImage);
+    }
+    // Set user details
+    setUserDetails({
+      first_name: currentUser.first_name || "",
+      last_name: currentUser.last_name || "",
+      email: currentUser.email || "",
+      phone: currentUser.phone || "",
+      address: currentUser.address || "",
+      password: "",
+    });
+  }, [currentUser]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        if (e.target && typeof e.target.result === "string") {
-          setSelectedImage(e.target.result);
-        }
+      reader.onloadend = () => {
+        setSelectedImage(reader.result as string);
+        localStorage.setItem("profileImage", reader.result as string); // Save image in local storage
+        console.log("Image uploaded:", reader.result); // Debugging line
       };
       reader.readAsDataURL(file);
+    } else {
+      console.error("No file selected"); // Debugging line
     }
   };
 
@@ -114,9 +171,8 @@ function Index() {
                     selectedImage ||
                     "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=286"
                   }
-                  srcSet="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=286&dpr=2 2x"
                   loading="lazy"
-                  alt=""
+                  alt="Profile"
                 />
               </AspectRatio>
               <IconButton
@@ -131,7 +187,6 @@ function Index() {
                   borderRadius: "50%",
                   left: 100,
                   top: 170,
-                  boxShadow: "sm",
                 }}
                 component="label"
               >
@@ -140,45 +195,74 @@ function Index() {
                   hidden
                   accept="image/*"
                   type="file"
-                  onChange={handleFileChange}
+                  onChange={handleImageChange}
                 />
               </IconButton>
             </Stack>
             <Stack spacing={2} sx={{ flexGrow: 1 }}>
               <Stack spacing={1}>
-                <FormLabel>Name</FormLabel>
-                <FormControl
-                  sx={{
-                    display: { sm: "flex-column", md: "flex-row" },
-                    gap: 2,
-                  }}
-                >
-                  <Input size="sm" placeholder="First name" />
-                  <Input
-                    size="sm"
-                    placeholder="Last name"
-                    sx={{ flexGrow: 1 }}
-                  />
-                </FormControl>
+                <FormLabel>First Name</FormLabel>
+                <Input
+                  name="first_name"
+                  size="sm"
+                  placeholder="First name"
+                  value={userDetails.first_name}
+                  onChange={handleChange}
+                />
               </Stack>
-              <Stack direction="row" spacing={2}>
-                <FormControl>
-                  <FormLabel>Role</FormLabel>
-                  <Input size="sm" defaultValue="UI Developer" />
-                </FormControl>
-                <FormControl sx={{ flexGrow: 1 }}>
-                  <FormLabel>Email</FormLabel>
-                  <Input
-                    size="sm"
-                    type="email"
-                    startDecorator={<EmailRoundedIcon />}
-                    placeholder="email"
-                    defaultValue="siriwatk@test.com"
-                    sx={{ flexGrow: 1 }}
-                  />
-                </FormControl>
+              <Stack spacing={1}>
+                <FormLabel>Last Name</FormLabel>
+                <Input
+                  name="last_name"
+                  size="sm"
+                  placeholder="Last name"
+                  value={userDetails.last_name}
+                  onChange={handleChange}
+                />
               </Stack>
-              <div>
+
+              <Stack spacing={1}>
+                <FormLabel>Email</FormLabel>
+                <Input
+                  name="email"
+                  size="sm"
+                  placeholder="Email"
+                  value={userDetails.email}
+                  onChange={handleChange}
+                />
+              </Stack>
+              <Stack spacing={1}>
+                <FormLabel>Phone</FormLabel>
+                <Input
+                  name="phone"
+                  size="sm"
+                  placeholder="Phone"
+                  value={userDetails.phone}
+                  onChange={handleChange}
+                />
+              </Stack>
+              <Stack spacing={1}>
+                <FormLabel>Address</FormLabel>
+                <Input
+                  name="address"
+                  size="sm"
+                  placeholder="Address"
+                  value={userDetails.address}
+                  onChange={handleChange}
+                />
+              </Stack>
+              <Stack spacing={1}>
+                <FormLabel>Password</FormLabel>
+                <Input
+                  name="password"
+                  type="password"
+                  size="sm"
+                  placeholder="Password"
+                  value={userDetails.password}
+                  onChange={handleChange}
+                />
+              </Stack>
+              {/* <div>
                 <FormControl sx={{ display: { sm: "contents" } }}>
                   <FormLabel>Timezone</FormLabel>
                   <Select
@@ -200,7 +284,7 @@ function Index() {
                     </Option>
                   </Select>
                 </FormControl>
-              </div>
+              </div> */}
             </Stack>
           </Stack>
           <CardOverflow sx={{ borderTop: "1px solid", borderColor: "divider" }}>
@@ -208,13 +292,13 @@ function Index() {
               <Button size="sm" variant="outlined" color="neutral">
                 Cancel
               </Button>
-              <Button size="sm" variant="solid">
+              <Button size="sm" variant="solid" onClick={handleSave}>
                 Save
               </Button>
             </CardActions>
           </CardOverflow>
         </Card>
-        <Card>
+        {/* <Card>
           <Box sx={{ mb: 1 }}>
             <Typography level="title-md">Change Password</Typography>
             <Typography level="body-sm">
@@ -240,7 +324,7 @@ function Index() {
               </Button>
             </CardActions>
           </CardOverflow>
-        </Card>
+        </Card> */}
       </Stack>
     </Box>
   );

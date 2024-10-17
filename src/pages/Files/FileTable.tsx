@@ -23,12 +23,6 @@ import { createRequest } from "../Requests/requests_api";
 import { IRequests } from "../../interfaces/IRequests";
 import { Chip } from "@mui/joy";
 
-interface CaseStudy {
-  id: number;
-  name: string;
-  enabled: boolean;
-}
-
 export default function FileTable() {
   const [files, setFiles] = useState<IFile[]>([]);
   const [search, setSearch] = useState("");
@@ -41,10 +35,6 @@ export default function FileTable() {
   const [openCaseStudyDialog, setOpenCaseStudyDialog] = useState(false);
   const [re, setRE] = useState(false);
   const [openFolderDialog, setOpenFolderDialog] = useState(false);
-  const [caseStudy, setCaseStudy] = useState<string>("");
-  const [caseStudies, setCaseStudies] = useState<CaseStudy[]>([]);
-  const [folders, setFolders] = useState<IFolder[]>([]);
-  const [selectedFolder, setSelectedFolder] = useState<IFolder | null>(null);
   const user = getCurrentUser();
 
   const handleMenuClick = (
@@ -117,122 +107,12 @@ export default function FileTable() {
       : false,
   );
 
-  const assignFileToCaseStudy = async (fileId: number, caseStudyId: number) => {
-    try {
-      const response = await AxiosInstance.put(
-        `files/${fileId}/assign-case-study/${caseStudyId}`,
-      );
-      const updatedFile = response.data;
-      setFiles((prevFiles) =>
-        prevFiles.map((file) =>
-          file.id === updatedFile.id ? updatedFile : file,
-        ),
-      );
-      console.log(
-        `File ${updatedFile.fileName} assigned to case study ${caseStudyId}`,
-      );
-    } catch (error: any) {
-      console.error(
-        "Error assigning file to case study:",
-        error.response?.data || error.message,
-      );
-    }
-  };
-
-  const assignFileToFolder = async (fileId: number, folderId: number) => {
-    try {
-      const response = await AxiosInstance.put(
-        `files/${fileId}/assign-folder/${folderId}`,
-      );
-      const updatedFile = response.data;
-      setFiles((prevFiles) =>
-        prevFiles.map((file) =>
-          file.id === updatedFile.id ? updatedFile : file,
-        ),
-      );
-      console.log(
-        `File ${updatedFile.fileName} assigned to folder ${folderId}`,
-      );
-    } catch (error: any) {
-      console.error(
-        "Error assigning file to folder:",
-        error.response?.data || error.message,
-      );
-    }
-  };
-
-  const handleAssignCaseStudy = () => {
-    if (selectedFile && caseStudy) {
-      const selectedCaseStudy = caseStudies.find(
-        (study) => study.name === caseStudy,
-      );
-      if (selectedCaseStudy) {
-        assignFileToCaseStudy(selectedFile.id!, selectedCaseStudy.id);
-      }
-    }
-    handleDialogClose();
-  };
-
-  const handleAssignFolder = () => {
-    if (selectedFile && selectedFolder) {
-      assignFileToFolder(selectedFile.id!, Number(selectedFolder.id));
-    }
-    handleDialogClose();
-  };
-
   const handleRequestCheckout = async (requests: IRequests) => {
     try {
       const res = await createRequest(requests);
     } catch (error: any) {
       console.error(
         "Error requesting checkout:",
-        error.response?.data || error.message,
-      );
-    }
-  };
-
-  useEffect(() => {
-    fetchCaseStudies();
-  }, []);
-
-  const fetchCaseStudies = async () => {
-    try {
-      const response = await AxiosInstance.get("case-studies/all");
-
-      const fetchedCaseStudies = response.data.map((study: any) => ({
-        id: study.id,
-        name: study.name,
-        enabled: true,
-      }));
-
-      setCaseStudies(fetchedCaseStudies);
-    } catch (error: any) {
-      console.error(
-        "Error fetching case studies:",
-        error.response?.data || error.message,
-      );
-    }
-  };
-
-  useEffect(() => {
-    fetchFolders();
-  }, []);
-
-  const fetchFolders = async () => {
-    try {
-      const response = await AxiosInstance.get("folders/all");
-      const fetchedFolders = response.data.map((folder: any) => ({
-        id: folder.id,
-        folderName: folder.folderName,
-        createdDate: folder.createdDate,
-        lastModifiedDateTime: folder.lastModifiedDateTime,
-        lastModifiedBy: folder.lastModifiedBy,
-        createdBy: folder.createdBy,
-      }));
-      setFolders(fetchedFolders);
-    } catch (error: any) {
-      console.error(
-        "Error fetching folders:",
         error.response?.data || error.message,
       );
     }
@@ -323,12 +203,6 @@ export default function FileTable() {
                     open={Boolean(menuAnchorEl)}
                     onClose={handleMenuClose}
                   >
-                    <MenuItem onClick={handleCaseStudyDialogOpen}>
-                      Assign to Case Study
-                    </MenuItem>
-                    <MenuItem onClick={handleFolderDialogOpen}>
-                      Assign to Folder
-                    </MenuItem>
                     <Divider />
                     {file.status === "Available" ? (
                       <MenuItem
@@ -348,85 +222,6 @@ export default function FileTable() {
                       <MenuItem onClick={() => null}>Check-in</MenuItem>
                     )}
                   </Menu>
-
-                  {/* Case Study Dialog */}
-                  <DialogComponent
-                    open={openCaseStudyDialog}
-                    setOpen={setOpenCaseStudyDialog}
-                  >
-                    <Typography level="h4" fontWeight="bold" textAlign="center">
-                      Assign to Case Study
-                    </Typography>
-                    <Table hoverRow>
-                      <thead>
-                        <tr>
-                          <th>Case Study Name</th>
-                          <th>Enabled</th>
-                          <th>Select</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {caseStudies.map((study) => (
-                          <tr key={study.id}>
-                            <td>{study.name}</td>
-                            <td>{study.enabled ? "Yes" : "No"}</td>
-                            <td>
-                              <Checkbox
-                                checked={caseStudy === study.name}
-                                onChange={() => setCaseStudy(study.name)}
-                              />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </Table>
-                    <Button
-                      onClick={handleAssignCaseStudy}
-                      fullWidth
-                      sx={{ mt: 2 }}
-                    >
-                      Assign
-                    </Button>
-                  </DialogComponent>
-
-                  {/* Folder Modal */}
-
-                  <DialogComponent
-                    open={openFolderDialog}
-                    setOpen={setOpenFolderDialog}
-                  >
-                    <Typography level="h4" fontWeight="bold" textAlign="center">
-                      Assign to Folder
-                    </Typography>
-                    <Table hoverRow>
-                      <thead>
-                        <tr>
-                          <th>Select</th>
-                          <th>Folder Name</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {folders.map((folder) => (
-                          <tr key={folder.id}>
-                            <td>
-                              <Checkbox
-                                checked={selectedFolder?.id === folder.id}
-                                onChange={() => setSelectedFolder(folder)}
-                              />
-                            </td>
-                            <td>{folder.folderName}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </Table>
-                    <Button
-                      onClick={handleAssignFolder}
-                      fullWidth
-                      sx={{ mt: 2 }}
-                    >
-                      Assign
-                    </Button>
-                  </DialogComponent>
                 </td>
               </tr>
             ))}
