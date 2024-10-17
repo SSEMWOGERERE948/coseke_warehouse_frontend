@@ -26,7 +26,7 @@ import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import MoreHorizRoundedIcon from "@mui/icons-material/MoreHorizRounded";
 import SearchIcon from "@mui/icons-material/Search";
 import { IRequests } from "../../interfaces/IRequests";
-import { getAllRequests } from "./requests_api";
+import { getAllRequests } from "../Requests/requests_api";
 import IUser from "../../interfaces/IUser";
 import { currentUser } from "../../utils/constants";
 import { convertArrayToDate, getCurrentUser } from "../../utils/helpers";
@@ -43,6 +43,18 @@ function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
 
 type Order = "asc" | "desc";
 
+function getComparator<Key extends keyof any>(
+  order: Order,
+  orderBy: Key,
+): (
+  a: { [key in Key]: number | string },
+  b: { [key in Key]: number | string },
+) => number {
+  return order === "desc"
+    ? (a, b) => descendingComparator(a, b, orderBy)
+    : (a, b) => -descendingComparator(a, b, orderBy);
+}
+
 function RowMenu() {
   return (
     <Dropdown>
@@ -53,14 +65,14 @@ function RowMenu() {
         <MoreHorizRoundedIcon />
       </MenuButton>
       <Menu size="sm" sx={{ minWidth: 140 }}>
-        <MenuItem onClick={() => null}>Forward to PI</MenuItem>
+        <MenuItem>Checkout</MenuItem>
         <Divider />
         <MenuItem color="danger">Decline</MenuItem>
       </Menu>
     </Dropdown>
   );
 }
-export default function RequestTable() {
+export default function PITable() {
   const [order, setOrder] = React.useState<Order>("desc");
   const [selected, setSelected] = React.useState<readonly string[]>([]);
   const [open, setOpen] = React.useState(false);
@@ -81,9 +93,7 @@ export default function RequestTable() {
   React.useEffect(() => {
     (async () => {
       let res = await getAllRequests();
-      setRows(
-        res.filter((req) => req.files.responsibleUser?.email === user.email),
-      );
+      setRows(res.filter((req) => req.stage === "PI Review"));
     })();
   }, []);
 
@@ -296,9 +306,7 @@ export default function RequestTable() {
 
                   <td>
                     <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-                      {row.user!.email!.toString() == user.email!.toString() ? (
-                        <RowMenu />
-                      ) : null}
+                      {row.user?.email == user.email ? <RowMenu /> : null}
                     </Box>
                   </td>
                 </tr>
