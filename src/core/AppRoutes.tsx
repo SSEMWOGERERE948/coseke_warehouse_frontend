@@ -1,5 +1,5 @@
 import { Route, Routes } from "react-router";
-import Approvals from "../pages/Approvals";
+import MyRequests from "../pages/My Requests";
 import Dashboard from "../pages/Dashboard";
 import Files from "../pages/Files";
 import Folders from "../pages/Folders";
@@ -11,6 +11,9 @@ import RolesAndPermissions from "../pages/Roles And Permissions";
 import Users from "../pages/users";
 import { PrivateRoute } from "./PrivateRoute";
 import routes from "./routes";
+import PI from "../pages/Principal Investigator";
+import Approved from "../pages/Approved";
+import Rejected from "../pages/Rejected";
 
 function AppRoutes() {
   return (
@@ -25,14 +28,23 @@ function AppRoutes() {
             <Route path={routes.FOLDERS} element={<PrivateRoute />}>
               <Route path={routes.FOLDERS} element={<Folders />} />
             </Route>
-            <Route path={routes.APPROVALS} element={<PrivateRoute />}>
-              <Route path={routes.APPROVALS} element={<Approvals />} />
+            <Route path={routes.MYREQUESTS} element={<PrivateRoute />}>
+              <Route path={routes.MYREQUESTS} element={<MyRequests />} />
             </Route>
             <Route path={routes.REQUESTS} element={<PrivateRoute />}>
               <Route path={routes.REQUESTS} element={<Requests />} />
             </Route>
+            <Route path={routes.APPROVED} element={<PrivateRoute />}>
+              <Route path={routes.APPROVED} element={<Approved />} />
+            </Route>
+            <Route path={routes.REJECTED} element={<PrivateRoute />}>
+              <Route path={routes.REJECTED} element={<Rejected />} />
+            </Route>
             <Route path={routes.PROFILE} element={<PrivateRoute />}>
               <Route path={routes.PROFILE} element={<Profile />} />
+            </Route>
+            <Route path={routes.PI} element={<PrivateRoute />}>
+              <Route path={routes.PI} element={<PI />} />
             </Route>
             <Route path={routes.USERS} element={<PrivateRoute />}>
               <Route path={routes.USERS} element={<Users />} />

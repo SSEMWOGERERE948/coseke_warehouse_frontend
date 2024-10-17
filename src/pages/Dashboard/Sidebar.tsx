@@ -198,7 +198,7 @@ export default function Sidebar() {
                 <ListItemButton onClick={() => setOpen(!open)}>
                   <AssignmentRoundedIcon />
                   <ListItemContent>
-                    <Typography level="title-sm">Tasks</Typography>
+                    <Typography level="title-sm">Requests</Typography>
                   </ListItemContent>
                   <KeyboardArrowDownIcon
                     sx={[
@@ -217,10 +217,10 @@ export default function Sidebar() {
               <List sx={{ gap: 0.5 }}>
                 <ListItem sx={{ mt: 0.5 }}>
                   <ListItemButton
-                    selected={selectedItem === routes.APPROVALS}
-                    onClick={() => handleSelect(routes.APPROVALS)}
+                    selected={selectedItem === routes.PI}
+                    onClick={() => handleSelect(routes.PI)}
                   >
-                    Approvals
+                    Principal Investigator
                   </ListItemButton>
                 </ListItem>
                 <ListItem>
@@ -229,6 +229,30 @@ export default function Sidebar() {
                     onClick={() => handleSelect(routes.REQUESTS)}
                   >
                     Requests
+                  </ListItemButton>
+                </ListItem>
+                <ListItem sx={{ mt: 0.5 }}>
+                  <ListItemButton
+                    selected={selectedItem === routes.MYREQUESTS}
+                    onClick={() => handleSelect(routes.MYREQUESTS)}
+                  >
+                    My Requests
+                  </ListItemButton>
+                </ListItem>
+                <ListItem sx={{ mt: 0.5 }}>
+                  <ListItemButton
+                    selected={selectedItem === routes.APPROVED}
+                    onClick={() => handleSelect(routes.APPROVED)}
+                  >
+                    Approved
+                  </ListItemButton>
+                </ListItem>
+                <ListItem sx={{ mt: 0.5 }}>
+                  <ListItemButton
+                    selected={selectedItem === routes.REJECTED}
+                    onClick={() => handleSelect(routes.REJECTED)}
+                  >
+                    Rejected
                   </ListItemButton>
                 </ListItem>
               </List>
