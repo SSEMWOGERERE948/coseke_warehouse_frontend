@@ -25,17 +25,30 @@ interface CaseStudy {
   enabled: boolean;
 }
 
+interface FileAssignmentDialogProps {
+  open: boolean;
+  onClose: () => void;
+  selectedFile: IFile | null;
+  caseStudies: CaseStudy[];
+  folders: IFolder[];
+  onAssign: () => void;
+}
+
 const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
   open,
   onClose,
   onFileCreate,
 }) => {
-  const [fileData, setFileData] = useState<IFile>({
+  const [fileData, setFileData] = useState<
+    IFile & { caseStudyId?: number; folderId?: number }
+  >({
     status: "Available",
     boxNumber: 0,
     pidinfant: "",
     pidmother: "",
     createdBy: 0,
+    caseStudyId: undefined,
+    folderId: undefined,
   });
 
   const [files, setFiles] = useState<IFile[]>([]);
@@ -61,6 +74,16 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
       console.log("newFile", newFile);
 
       const response = await AxiosInstance.post("files/add", newFile);
+
+      const createdFile = response.data;
+      // Assign the file to the selected case study and folder after creation
+      if (fileData.caseStudyId) {
+        await assignFileToCaseStudy(createdFile.id, fileData.caseStudyId);
+      }
+      if (fileData.folderId) {
+        await assignFileToFolder(createdFile.id, fileData.folderId);
+      }
+
       onFileCreate(response.data);
       fetchAllFolders();
       onClose();
@@ -71,6 +94,7 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
 
   useEffect(() => {
     fetchCaseStudies();
+    fetchAllFolders();
   }, []);
 
   const fetchCaseStudies = async () => {
@@ -101,9 +125,51 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
     }
   };
 
-  useEffect(() => {
-    fetchAllFolders();
-  }, []);
+  const handleSelectChange = (
+    value: number | null,
+    name: "caseStudyId" | "folderId",
+  ) => {
+    setFileData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
+
+  // API to assign the file to a selected case study
+  const assignFileToCaseStudy = async (fileId: number, caseStudyId: number) => {
+    try {
+      const response = await AxiosInstance.put(
+        `files/${fileId}/assign-case-study/${caseStudyId}`,
+      );
+      const updatedFile = response.data;
+      console.log(
+        `File ${updatedFile.fileName} assigned to case study ${caseStudyId}`,
+      );
+    } catch (error: any) {
+      console.error(
+        "Error assigning file to case study:",
+        error.response?.data || error.message,
+      );
+    }
+  };
+
+  // API to assign the file to a selected folder
+  const assignFileToFolder = async (fileId: number, folderId: number) => {
+    try {
+      const response = await AxiosInstance.put(
+        `files/${fileId}/assign-folder/${folderId}`,
+      );
+      const updatedFile = response.data;
+      console.log(
+        `File ${updatedFile.fileName} assigned to folder ${folderId}`,
+      );
+    } catch (error: any) {
+      console.error(
+        "Error assigning file to folder:",
+        error.response?.data || error.message,
+      );
+    }
+  };
 
   return (
     <Modal open={open} onClose={onClose}>
@@ -161,6 +227,38 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
               value={fileData.boxNumber}
               onChange={handleInputChange}
             />
+          </FormControl>
+          <FormControl>
+            <FormLabel>Case Study</FormLabel>
+            <Select
+              name="caseStudyId"
+              value={fileData.caseStudyId ?? null}
+              onChange={(_, value) =>
+                handleSelectChange(value as number | null, "caseStudyId")
+              }
+            >
+              {caseStudies.map((study) => (
+                <Option key={study.id} value={study.id}>
+                  {study.name}
+                </Option>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl>
+            <FormLabel>Folder</FormLabel>
+            <Select
+              name="folderId"
+              value={fileData.folderId ?? null}
+              onChange={(_, value) =>
+                handleSelectChange(value as number | null, "folderId")
+              }
+            >
+              {folders.map((folder) => (
+                <Option key={folder.id} value={folder.id}>
+                  {folder.folderName}
+                </Option>
+              ))}
+            </Select>
           </FormControl>
         </Box>
         <Box

@@ -13,6 +13,7 @@ import ContentPasteIcon from "@mui/icons-material/ContentPaste";
 import ContentPasteOffIcon from "@mui/icons-material/ContentPasteOff";
 import BusinessCenterIcon from "@mui/icons-material/BusinessCenter";
 import AddTaskIcon from "@mui/icons-material/AddTask";
+import { Button, Option } from "@mui/joy";
 
 // Import required Chart.js components
 import {
@@ -25,6 +26,7 @@ import {
   PointElement,
 } from "chart.js";
 import { AxiosInstance } from "../../core/baseURL";
+import { Select } from "@mui/joy";
 
 // Register the components for the chart
 ChartJS.register(
@@ -53,6 +55,9 @@ export default function DashboardContent() {
   const [caseStudies, setCaseStudies] = useState<CaseStudy[]>([]);
   const [logs, setLogs] = useState<Log[]>([]);
   const [caseStudyCount, setCaseStudyCount] = useState(0); // State for case study count
+  const [pageSize, setPageSize] = useState(10); // Logs per page
+  const [currentPage, setCurrentPage] = useState(1); // Current page
+  const [totalLogs, setTotalLogs] = useState(0); // Total number of logs
   const [loadingLogs, setLoadingLogs] = useState(false);
 
   const filesData = {
@@ -191,21 +196,29 @@ export default function DashboardContent() {
   };
 
   useEffect(() => {
+    fetchCaseStudies();
     fetchLogs();
-  }, []);
+  }, [pageSize, currentPage]);
 
   const fetchLogs = async () => {
     setLoadingLogs(true);
     try {
-      const response = await AxiosInstance.get("logging/all");
-      setLogs(
-        Array.isArray(response.data.content) ? response.data.content : [],
-      );
+      const response = await AxiosInstance.get(`logging/all`, {
+        params: {
+          page: currentPage - 1, // API pages are usually 0-indexed
+          size: pageSize,
+        },
+      });
+      setLogs(response.data.content);
+      setTotalLogs(response.data.totalElements);
     } catch (error) {
       console.error("Error fetching logs:", error);
     }
     setLoadingLogs(false);
   };
+
+  const totalPages = Math.ceil(totalLogs / pageSize);
+
   return (
     <Box sx={{ p: 3, width: "100%" }}>
       {/* Grid container for cards */}
@@ -255,9 +268,8 @@ export default function DashboardContent() {
         </Box>
       }
 
-      {/* Table Section */}
-      <Box sx={{ mt: 4, overflowX: "auto" }}>
-        <Typography level="h4">Recent Logs</Typography>
+      {/* Logs Table Section */}
+      <Box sx={{ mt: 2, overflowX: "auto" }}>
         <table
           style={{ width: "100%", border: "1px solid #ddd", marginTop: "10px" }}
         >
@@ -280,6 +292,59 @@ export default function DashboardContent() {
             ))}
           </tbody>
         </table>
+      </Box>
+
+      {/* Pagination Section */}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          mt: 3,
+          alignItems: "center",
+        }}
+      >
+        <Typography>
+          Showing {Math.min(logs.length, pageSize)} of {totalLogs} logs
+        </Typography>
+
+        {/* Page Size Selector */}
+        {/* <Box>
+          <Typography>Select logs per page:</Typography>
+          <Select
+            value={pageSize.toString()}
+            onChange={(_, value) => {
+              if (value) {
+                setPageSize(Number(value));
+                setCurrentPage(1); // Reset to the first page when page size changes
+              }
+            }}
+          >
+            <Option value="10">10</Option>
+            <Option value="25">25</Option>
+            <Option value="50">50</Option>
+          </Select>
+        </Box> */}
+
+        {/* Page Navigation */}
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <Button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            Prev
+          </Button>
+          <Typography>
+            {currentPage} / {totalPages}
+          </Typography>
+          <Button
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </Button>
+        </Box>
       </Box>
     </Box>
   );
