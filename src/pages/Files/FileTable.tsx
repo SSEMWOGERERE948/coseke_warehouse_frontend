@@ -108,7 +108,7 @@ export default function FileTable() {
 
   const filteredFiles = files.filter((file) =>
     file.id
-      ? file.pidinfant.toLowerCase().includes(search.toLowerCase())
+      ? file.pidinfant?.toLowerCase().includes(search.toLowerCase())
       : false,
   );
 
