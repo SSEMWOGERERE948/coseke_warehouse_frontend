@@ -5,16 +5,12 @@ import Typography from "@mui/joy/Typography";
 import Grid from "@mui/joy/Grid";
 import Card from "@mui/joy/Card";
 import CardContent from "@mui/joy/CardContent";
-import PersonIcon from "@mui/icons-material/Person";
-import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
-import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
-import PauseCircleOutlineTwoToneIcon from "@mui/icons-material/PauseCircleOutlineTwoTone";
 import ContentPasteIcon from "@mui/icons-material/ContentPaste";
 import ContentPasteOffIcon from "@mui/icons-material/ContentPasteOff";
 import BusinessCenterIcon from "@mui/icons-material/BusinessCenter";
 import AddTaskIcon from "@mui/icons-material/AddTask";
+import { Select } from "@mui/joy";
 
-// Import required Chart.js components
 import {
   Chart as ChartJS,
   LineElement,
@@ -22,19 +18,21 @@ import {
   LinearScale,
   Legend,
   Title,
+  Tooltip,
   PointElement,
 } from "chart.js";
+
 import { AxiosInstance } from "../../core/baseURL";
 import { getAllFilesService } from "../Files/files_api";
 import IFile from "../../interfaces/IFile";
 
-// Register the components for the chart
 ChartJS.register(
   LineElement,
   CategoryScale,
   LinearScale,
   Legend,
   Title,
+  Tooltip,
   PointElement,
 );
 
@@ -56,61 +54,87 @@ export default function DashboardContent() {
   const [logs, setLogs] = useState<Log[]>([]);
   const [caseStudyCount, setCaseStudyCount] = useState(0);
   const [fileCount, setFileCount] = useState(0);
-  const [files, setFiles] = useState<IFile[]>();
-  const [UnavailablefileCount, setUnavailableFileCount] = useState(0);
-  const [unavailableFile, setUnavailableFiles] = useState<IFile[]>();
+  const [unavailableFileCount, setUnavailableFileCount] = useState(0);
+  const [approvalsCount, setApprovalsCount] = useState(0);
+  const [allFilesCount, setAllFilesCount] = useState(0);
 
-  const filesData = {
-    labels: ["5", "10", "15", "20", "25", "30"],
-    datasets: [
-      {
-        label: "File Requests",
-        data: [40, 50, 60, 70, 80, 63.4, 70, 65, 78, 90],
-        borderColor: "rgba(75, 192, 192, 1)",
-        fill: true,
-        tension: 0.1,
-      },
-      {
-        label: "Approved Files",
-        data: [30, 40, 50, 65, 58],
-        borderColor: "rgba(255, 99, 132, 1)",
-        backgroundColor: "rgba(255, 99, 132, 0.2)",
-        fill: false,
-        tension: 0.1,
-      },
-    ],
+  useEffect(() => {
+    fetchCaseStudies();
+    fetchFiles();
+    fetchUnavailableFiles();
+    fetchApprovals();
+    fetchLogs();
+  }, []);
+
+  const fetchCaseStudies = async () => {
+    try {
+      const response = await AxiosInstance.get("case-studies/all");
+      const fetchedCaseStudies = response.data.map((study: any) => ({
+        id: study.id,
+        name: study.name,
+      }));
+      setCaseStudies(fetchedCaseStudies);
+      setCaseStudyCount(fetchedCaseStudies.length);
+    } catch (error: any) {
+      console.error(
+        "Error fetching case studies:",
+        error.response?.data || error.message,
+      );
+    }
   };
 
-  const chartOptions = {
-    maintainAspectRatio: false,
-    responsive: true,
-    plugins: {
-      legend: {
-        position: "right" as const,
-        display: true,
-      },
-      title: {
-        display: true,
-        text: "File Requests and Approvals",
-      },
-    },
-    scales: {
-      x: {
-        title: {
-          display: true,
-          text: "Days of the Month",
-        },
-      },
-      y: {
-        title: {
-          display: true,
-          text: "Number of Files",
-        },
-      },
-    },
+  const fetchFiles = async () => {
+    try {
+      const response = await getAllFilesService();
+      setFileCount(
+        response.filter((f: IFile) => f.status === "Available").length,
+      );
+      setAllFilesCount(response.length);
+    } catch (error: any) {
+      console.error(
+        "Error fetching files:",
+        error.response?.data || error.message,
+      );
+    }
   };
 
-  // Card data
+  const fetchUnavailableFiles = async () => {
+    try {
+      const response = await getAllFilesService();
+      setUnavailableFileCount(
+        response.filter((f: IFile) => f.status === "Unavailable").length,
+      );
+    } catch (error: any) {
+      console.error(
+        "Error fetching unavailable files:",
+        error.response?.data || error.message,
+      );
+    }
+  };
+
+  const fetchApprovals = async () => {
+    try {
+      const response = await getAllFilesService();
+      setApprovalsCount(
+        response.filter((f: IFile) => f.status === "Approved").length,
+      );
+    } catch (error: any) {
+      console.error(
+        "Error fetching approvals:",
+        error.response?.data || error.message,
+      );
+    }
+  };
+
+  const fetchLogs = async () => {
+    try {
+      const response = await AxiosInstance.get("logging/all");
+      setLogs(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      console.error("Error fetching logs:", error);
+    }
+  };
+
   const cardsData = [
     {
       title: "Available files",
@@ -122,23 +146,23 @@ export default function DashboardContent() {
     },
     {
       title: "Unavailable Files",
-      value: UnavailablefileCount,
+      value: unavailableFileCount,
       icon: <ContentPasteOffIcon sx={{ color: "white" }} />,
       color: "red",
-      change: "Files that have been checkedout",
+      change: "Files that have been checked out",
       changeColor: "success",
     },
     {
-      title: "CaseStudies",
-      value: caseStudyCount.toString(),
+      title: "Case Studies",
+      value: caseStudyCount,
       icon: <BusinessCenterIcon sx={{ color: "white" }} />,
       color: "green",
-      change: "Active casestudies",
+      change: "Active case studies",
       changeColor: "danger",
     },
     {
       title: "Approvals",
-      value: "5",
+      value: approvalsCount,
       icon: <AddTaskIcon sx={{ color: "white" }} />,
       color: "blue",
       change: "Current number of Approvals in the system",
@@ -146,136 +170,122 @@ export default function DashboardContent() {
     },
   ];
 
-  // Table data
-  const tableData = [
-    {
-      fileName: "Pharmacy records",
-      fileID: "PH001",
-      user: "Pharmacist",
-      action: "Edited and removed some fields",
-    },
-    {
-      fileName: "Medicine requests",
-      fileID: "ME101",
-      user: "Doctor Bushira",
-      action: "Created",
-    },
-    {
-      fileName: "Supplies",
-      fileID: "PH200",
-      user: "Data Inspector",
-      action: "Edited",
-    },
-    {
-      fileName: "Medicine Supplies",
-      fileID: "ME005",
-      user: "Manager",
-      action: "Completed",
-    },
-  ];
+  const DynamicFileChart = () => {
+    const [scale, setScale] = useState("months");
+    const [chartData, setChartData] = useState<any>(null);
 
-  useEffect(() => {
-    fetchCaseStudies();
-  }, []);
+    useEffect(() => {
+      const fetchChartData = async (scale: string) => {
+        // Simulating API call with mock data
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            if (scale === "days") {
+              resolve({
+                labels: Array.from({ length: 30 }, (_, i) => i + 1),
+                data: Array.from({ length: 30 }, () =>
+                  Math.floor(Math.random() * 100),
+                ),
+              });
+            } else if (scale === "months") {
+              resolve({
+                labels: [
+                  "Jan",
+                  "Feb",
+                  "Mar",
+                  "Apr",
+                  "May",
+                  "Jun",
+                  "Jul",
+                  "Aug",
+                  "Sep",
+                  "Oct",
+                  "Nov",
+                  "Dec",
+                ],
+                data: Array.from({ length: 12 }, () =>
+                  Math.floor(Math.random() * 1000),
+                ),
+              });
+            } else if (scale === "years") {
+              const currentYear = new Date().getFullYear();
+              resolve({
+                labels: Array.from(
+                  { length: 5 },
+                  (_, i) => currentYear - 4 + i,
+                ),
+                data: Array.from({ length: 5 }, () =>
+                  Math.floor(Math.random() * 10000),
+                ),
+              });
+            }
+          }, 500);
+        });
+      };
 
-  const fetchCaseStudies = async () => {
-    try {
-      const response = await AxiosInstance.get("case-studies/all");
-      const fetchedCaseStudies = response.data.map((study: any) => ({
-        id: study.id,
-        name: study.name,
-      }));
-      setCaseStudies(fetchedCaseStudies);
-      setCaseStudyCount(fetchedCaseStudies.length); // Update the case study count
-    } catch (error: any) {
-      console.error(
-        "Error fetching case studies:",
-        error.response?.data || error.message,
-      );
-    }
-  };
+      const loadData = async () => {
+        const data: any = await fetchChartData(scale);
+        setChartData({
+          labels: data.labels,
+          datasets: [
+            {
+              label: "Total Files",
+              data: data.data,
+              borderColor: "rgb(75, 192, 192)",
+              backgroundColor: "rgba(75, 192, 192, 0.5)",
+            },
+          ],
+        });
+      };
 
-  useEffect(() => {
-    fetchFiles();
-  }, []);
-  const fetchFiles = async () => {
-    const payload = {
-      status: ["Available", "Unavailable"],
+      loadData();
+    }, [scale]);
+
+    const options = {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: "top" as const,
+        },
+        title: {
+          display: true,
+          text: "Total Files in System Over Time",
+        },
+      },
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: scale.charAt(0).toUpperCase() + scale.slice(1),
+          },
+        },
+        y: {
+          title: {
+            display: true,
+            text: "Number of Files",
+          },
+          beginAtZero: true,
+        },
+      },
     };
-    try {
-      const response = await getAllFilesService();
 
-      setFiles(response);
-      setFileCount(response.filter((f) => f.status === "Available").length);
-    } catch (error: any) {
-      console.error(
-        "Error fetching files:",
-        error.response?.data || error.message,
-      );
-    }
+    return (
+      <div className="w-full max-w-3xl mx-auto p-4">
+        <Select
+          value={scale}
+          onChange={(e, newValue) => setScale(newValue as string)}
+          className="mb-4"
+        >
+          <option value="days">Days</option>
+          <option value="months">Months</option>
+          <option value="years">Years</option>
+        </Select>
+        {chartData && <Line options={options} data={chartData} />}
+      </div>
+    );
   };
-
-  useEffect(() => {
-    fetchUnavailableFiles();
-  }, []);
-  const fetchUnavailableFiles = async () => {
-    const payload = {
-      status: ["Available", "Unavailable"],
-    };
-    try {
-      const response = await getAllFilesService();
-
-      setUnavailableFiles(response);
-      setUnavailableFileCount(
-        response.filter((f) => f.status === "Unavailable").length,
-      );
-    } catch (error: any) {
-      console.error(
-        "Error fetching unavailable files:",
-        error.response?.data || error.message,
-      );
-    }
-  };
-
-  useEffect(() => {
-    fetchApprovals();
-  }, []);
-  const fetchApprovals = async () => {
-    const payload = {
-      status: ["Approved", "Rejected"],
-    };
-    try {
-      const response = await getAllFilesService();
-
-      setUnavailableFiles(response);
-      setUnavailableFileCount(
-        response.filter((f) => f.status === "Unavailable").length,
-      );
-    } catch (error: any) {
-      console.error(
-        "Error fetching unavailable files:",
-        error.response?.data || error.message,
-      );
-    }
-  };
-
-  const fetchLogs = async () => {
-    try {
-      const response = await AxiosInstance.get("logging/all");
-      console.log(response.data); // Check the actual response
-      setLogs(Array.isArray(response.data) ? response.data : []); // Ensure it's an array
-    } catch (error) {
-      console.error("Error fetching logs:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchLogs();
-  }, []);
 
   return (
     <Box sx={{ p: 3, width: "100%" }}>
-      {/* Grid container for cards */}
       <Grid container spacing={3}>
         {cardsData.map((card, index) => (
           <Grid xs={12} sm={6} md={3} key={index}>
@@ -312,17 +322,11 @@ export default function DashboardContent() {
         ))}
       </Grid>
 
-      {/* Sales Details Line Chart */}
-      {
-        <Box sx={{ mt: 4 }}>
-          <Typography level="h4">Request and approved files</Typography>
-          <Box sx={{ height: "250px", width: "100%" }}>
-            <Line data={filesData} options={chartOptions} />
-          </Box>
-        </Box>
-      }
+      <Box sx={{ mt: 4 }}>
+        <Typography level="h4">Request and approved files</Typography>
+        <DynamicFileChart />
+      </Box>
 
-      {/* Table Section */}
       <Box sx={{ mt: 4, overflowX: "auto" }}>
         <Typography level="h4">Recent Logs</Typography>
         <table
@@ -337,15 +341,14 @@ export default function DashboardContent() {
             </tr>
           </thead>
           <tbody>
-            {Array.isArray(logs) &&
-              logs.map((log, index) => (
-                <tr key={index}>
-                  <td style={{ padding: "8px" }}>{log.date}</td>
-                  <td style={{ padding: "8px" }}>{log.type}</td>
-                  <td style={{ padding: "8px" }}>{log.message}</td>
-                  <td style={{ padding: "8px" }}>{log.user || "N/A"}</td>
-                </tr>
-              ))}
+            {logs.map((log, index) => (
+              <tr key={index}>
+                <td style={{ padding: "8px" }}>{log.date}</td>
+                <td style={{ padding: "8px" }}>{log.type}</td>
+                <td style={{ padding: "8px" }}>{log.message}</td>
+                <td style={{ padding: "8px" }}>{log.user || "N/A"}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </Box>
