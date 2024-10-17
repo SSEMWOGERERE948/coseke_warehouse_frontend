@@ -90,11 +90,17 @@ export default function ApprovalTable() {
     req.files.pidinfant.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
+  const handleGetAllRequests = async () => {
+    let res = await getAllRequests();
+    setRows(
+      res.filter(
+        (req) => req.state === "Approved" && req.user?.email === user.email,
+      ),
+    );
+  };
+
   React.useEffect(() => {
-    (async () => {
-      let res = await getAllRequests();
-      setRows(res.filter((req) => req.state !== "Approved"));
-    })();
+    handleGetAllRequests();
   }, []);
 
   return (

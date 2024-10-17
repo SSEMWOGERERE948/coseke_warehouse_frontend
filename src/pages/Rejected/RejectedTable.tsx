@@ -91,7 +91,7 @@ export default function RejectedTable() {
   React.useEffect(() => {
     (async () => {
       let res = await getAllRequests();
-      setRows(res.filter((req) => req.stage !== "PI Review"));
+      setRows(res.filter((req) => req.state === "Rejected"));
     })();
   }, []);
 
