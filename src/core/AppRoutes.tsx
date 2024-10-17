@@ -1,19 +1,19 @@
-import React from "react";
 import { Route, Routes } from "react-router";
-import Login from "../pages/Login";
-import routes from "./routes";
+import MyRequests from "../pages/My Requests";
 import Dashboard from "../pages/Dashboard";
-import { PrivateRoute } from "./PrivateRoute";
 import Files from "../pages/Files";
 import Folders from "../pages/Folders";
-import Approvals from "../pages/Approvals";
-import Requests from "../pages/Requests";
-import Profile from "../pages/Profile";
-import Users from "../pages/users";
-import RolesAndPermissions from "../pages/Roles And Permissions";
-import CaseStudies from "../pages/case_studies";
-import UserRoles from "../pages/roles";
 import { FileProvider } from "../pages/Folders/FileContext";
+import Login from "../pages/Login";
+import Profile from "../pages/Profile";
+import Requests from "../pages/Requests";
+import RolesAndPermissions from "../pages/Roles And Permissions";
+import Users from "../pages/users";
+import { PrivateRoute } from "./PrivateRoute";
+import routes from "./routes";
+import PI from "../pages/Principal Investigator";
+import Approved from "../pages/Approved";
+import Rejected from "../pages/Rejected";
 
 function AppRoutes() {
   return (
@@ -28,14 +28,23 @@ function AppRoutes() {
             <Route path={routes.FOLDERS} element={<PrivateRoute />}>
               <Route path={routes.FOLDERS} element={<Folders />} />
             </Route>
-            <Route path={routes.APPROVALS} element={<PrivateRoute />}>
-              <Route path={routes.APPROVALS} element={<Approvals />} />
+            <Route path={routes.MYREQUESTS} element={<PrivateRoute />}>
+              <Route path={routes.MYREQUESTS} element={<MyRequests />} />
             </Route>
             <Route path={routes.REQUESTS} element={<PrivateRoute />}>
               <Route path={routes.REQUESTS} element={<Requests />} />
             </Route>
+            <Route path={routes.APPROVED} element={<PrivateRoute />}>
+              <Route path={routes.APPROVED} element={<Approved />} />
+            </Route>
+            <Route path={routes.REJECTED} element={<PrivateRoute />}>
+              <Route path={routes.REJECTED} element={<Rejected />} />
+            </Route>
             <Route path={routes.PROFILE} element={<PrivateRoute />}>
               <Route path={routes.PROFILE} element={<Profile />} />
+            </Route>
+            <Route path={routes.PI} element={<PrivateRoute />}>
+              <Route path={routes.PI} element={<PI />} />
             </Route>
             <Route path={routes.USERS} element={<PrivateRoute />}>
               <Route path={routes.USERS} element={<Users />} />
@@ -55,14 +64,6 @@ function AppRoutes() {
           path="/roles-and-permissions/:userId"
           element={<RolesAndPermissions />}
         />
-        <Route path={routes.CASE_STUDIES} element={<PrivateRoute />}>
-          <Route path={routes.CASE_STUDIES} element={<CaseStudies />} />
-        </Route>
-        <Route path="/case-studies" element={<CaseStudies />} />
-        <Route path="/roles/:id" element={<UserRoles />} />
-        <Route path={routes.ROLES} element={<PrivateRoute />}>
-          <Route path={routes.ROLES} element={<UserRoles />} />
-        </Route>
       </Routes>
     </FileProvider>
   );

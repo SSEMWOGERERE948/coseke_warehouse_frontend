@@ -27,7 +27,7 @@ import MoreHorizRoundedIcon from "@mui/icons-material/MoreHorizRounded";
 import SearchIcon from "@mui/icons-material/Search";
 import { IRequests } from "../../interfaces/IRequests";
 import { convertArrayToDate, getCurrentUser } from "../../utils/helpers";
-import { changeStage, getAllRequests, rejectRequest } from "./requests_api";
+import { getAllRequests } from "../Requests/requests_api";
 
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
   if (b[orderBy] < a[orderBy]) {
@@ -41,13 +41,19 @@ function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
 
 type Order = "asc" | "desc";
 
-function RowMenu({
-  request,
-  handleGetAllRequests,
-}: {
-  request: IRequests;
-  handleGetAllRequests: () => Promise<void>;
-}) {
+function getComparator<Key extends keyof any>(
+  order: Order,
+  orderBy: Key,
+): (
+  a: { [key in Key]: number | string },
+  b: { [key in Key]: number | string },
+) => number {
+  return order === "desc"
+    ? (a, b) => descendingComparator(a, b, orderBy)
+    : (a, b) => -descendingComparator(a, b, orderBy);
+}
+
+function RowMenu() {
   return (
     <Dropdown>
       <MenuButton
@@ -57,39 +63,14 @@ function RowMenu({
         <MoreHorizRoundedIcon />
       </MenuButton>
       <Menu size="sm" sx={{ minWidth: 140 }}>
-        <MenuItem
-          onClick={async () => {
-            try {
-              // Forward the request to the PI
-              await changeStage(request.id!, "PI Review");
-              await handleGetAllRequests();
-            } catch (error) {
-              console.error(error);
-            }
-          }}
-        >
-          Forward to PI
-        </MenuItem>
+        <MenuItem>Forward to PI</MenuItem>
         <Divider />
-        <MenuItem
-          color="danger"
-          onClick={async () => {
-            try {
-              // Forward the request to the PI
-              await rejectRequest(request.id!);
-              await handleGetAllRequests();
-            } catch (error) {
-              console.error(error);
-            }
-          }}
-        >
-          Decline
-        </MenuItem>
+        <MenuItem color="danger">Delete</MenuItem>
       </Menu>
     </Dropdown>
   );
 }
-export default function RequestTable() {
+export default function RejectedTable() {
   const [order, setOrder] = React.useState<Order>("desc");
   const [selected, setSelected] = React.useState<readonly string[]>([]);
   const [open, setOpen] = React.useState(false);
@@ -107,18 +88,11 @@ export default function RequestTable() {
     req.files.pidinfant.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  const handleGetAllRequests = async () => {
-    let res = await getAllRequests();
-    setRows(
-      res.filter(
-        (req) =>
-          req.files.responsibleUser?.email === user.email &&
-          req.stage === "Officer",
-      ),
-    );
-  };
   React.useEffect(() => {
-    handleGetAllRequests();
+    (async () => {
+      let res = await getAllRequests();
+      setRows(res.filter((req) => req.state === "Rejected"));
+    })();
   }, []);
 
   return (
@@ -259,7 +233,11 @@ export default function RequestTable() {
               <th style={{ width: 240, padding: "12px 6px" }}>
                 Responsible Person
               </th>
-              <th style={{ width: 140, padding: "12px 6px" }}>Date Modified</th>
+              <th style={{ width: 240, padding: "12px 6px" }}>Status</th>
+              <th style={{ width: 240, padding: "12px 6px" }}>Stage</th>
+              <th style={{ width: 140, padding: "12px 6px" }}>
+                Date of Return
+              </th>
               <th style={{ width: 140, padding: "12px 6px" }}>Date Uploaded</th>
               <th style={{ width: 140, padding: "12px 6px" }}></th>
             </tr>
@@ -316,27 +294,28 @@ export default function RequestTable() {
                     </Box>
                   </td>
                   <td>
+                    <Typography level="body-xs">{row.state}</Typography>
+                  </td>
+                  <td>
+                    <Typography level="body-xs">{row.stage}</Typography>
+                  </td>
+                  <td>
+                    <Typography level="body-xs">
+                      {Array.isArray(row.returnDate)
+                        ? convertArrayToDate(row.returnDate).toDateString()
+                        : row.returnDate.toDateString()}
+                    </Typography>
+                  </td>
+                  <td>
                     <Typography level="body-xs">
                       {convertArrayToDate(row.createdDate!).toDateString()}
                     </Typography>
                   </td>
-                  <td>
-                    <Typography level="body-xs">
-                      {convertArrayToDate(
-                        row.lastModifiedDateTime!,
-                      ).toDateString()}
-                    </Typography>
-                  </td>
 
                   <td>
-                    <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-                      {row.user!.email!.toString() == user.email!.toString() ? (
-                        <RowMenu
-                          request={row}
-                          handleGetAllRequests={handleGetAllRequests}
-                        />
-                      ) : null}
-                    </Box>
+                    <Box
+                      sx={{ display: "flex", gap: 2, alignItems: "center" }}
+                    ></Box>
                   </td>
                 </tr>
               ))}

@@ -1,9 +1,7 @@
 import Box from "@mui/joy/Box";
-import Button from "@mui/joy/Button";
 import Typography from "@mui/joy/Typography";
 
-import { UploadRounded } from "@mui/icons-material";
-import RequestTable from "./RequestTable";
+import MyRequestTable from "./MyRequestTable";
 
 function index() {
   return (
@@ -38,10 +36,10 @@ function index() {
         }}
       >
         <Typography level="h2" component="h1">
-          Requests
+          My Requests
         </Typography>
       </Box>
-      <RequestTable />
+      <MyRequestTable />
     </Box>
   );
 }

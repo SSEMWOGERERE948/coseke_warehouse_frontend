@@ -1,9 +1,9 @@
-import React from "react";
 import Box from "@mui/joy/Box";
 import Typography from "@mui/joy/Typography";
-import ApprovalTable from "./ApprovalTable"; // Import your table component
 
-function App() {
+import ApprovalTable from "./ApprovalTable";
+
+function index() {
   return (
     <Box
       component="main"
@@ -36,12 +36,12 @@ function App() {
         }}
       >
         <Typography level="h2" component="h1">
-          Approvals
+          Approved
         </Typography>
       </Box>
-      <ApprovalTable /> {/* Render the approval table here */}
+      <ApprovalTable />
     </Box>
   );
 }
 
-export default App;
+export default index;
