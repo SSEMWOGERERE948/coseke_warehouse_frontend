@@ -53,6 +53,7 @@ export default function DashboardContent() {
   const [caseStudies, setCaseStudies] = useState<CaseStudy[]>([]);
   const [logs, setLogs] = useState<Log[]>([]);
   const [caseStudyCount, setCaseStudyCount] = useState(0); // State for case study count
+  const [loadingLogs, setLoadingLogs] = useState(false);
 
   const filesData = {
     labels: ["5", "10", "15", "20", "25", "30"],
@@ -189,20 +190,22 @@ export default function DashboardContent() {
     }
   };
 
-  const fetchLogs = async () => {
-    try {
-      const response = await AxiosInstance.get("logging/all");
-      console.log(response.data); // Check the actual response
-      setLogs(Array.isArray(response.data) ? response.data : []); // Ensure it's an array
-    } catch (error) {
-      console.error("Error fetching logs:", error);
-    }
-  };
-
   useEffect(() => {
     fetchLogs();
   }, []);
 
+  const fetchLogs = async () => {
+    setLoadingLogs(true);
+    try {
+      const response = await AxiosInstance.get("logging/all");
+      setLogs(
+        Array.isArray(response.data.content) ? response.data.content : [],
+      );
+    } catch (error) {
+      console.error("Error fetching logs:", error);
+    }
+    setLoadingLogs(false);
+  };
   return (
     <Box sx={{ p: 3, width: "100%" }}>
       {/* Grid container for cards */}
@@ -267,15 +270,14 @@ export default function DashboardContent() {
             </tr>
           </thead>
           <tbody>
-            {Array.isArray(logs) &&
-              logs.map((log, index) => (
-                <tr key={index}>
-                  <td style={{ padding: "8px" }}>{log.date}</td>
-                  <td style={{ padding: "8px" }}>{log.type}</td>
-                  <td style={{ padding: "8px" }}>{log.message}</td>
-                  <td style={{ padding: "8px" }}>{log.user || "N/A"}</td>
-                </tr>
-              ))}
+            {logs.map((log, index) => (
+              <tr key={index}>
+                <td style={{ padding: "8px" }}>{log.date}</td>
+                <td style={{ padding: "8px" }}>{log.type}</td>
+                <td style={{ padding: "8px" }}>{log.message}</td>
+                <td style={{ padding: "8px" }}>{log.user || "N/A"}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </Box>
