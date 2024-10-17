@@ -12,7 +12,7 @@ export const changeStage = async (
   requestId: number,
   newStage: string,
 ): Promise<IRequests> => {
-  const response = await AxiosInstance.patch<IRequests>(
+  const response = await AxiosInstance.put<IRequests>(
     `/requests/${requestId}/stage`,
     null,
     {
@@ -23,8 +23,15 @@ export const changeStage = async (
 };
 
 export const approveRequest = async (requestId: number): Promise<IRequests> => {
-  const response = await AxiosInstance.patch<IRequests>(
+  const response = await AxiosInstance.put<IRequests>(
     `/requests/${requestId}/approve`,
+  );
+  return response.data;
+};
+
+export const rejectRequest = async (requestId: number): Promise<IRequests> => {
+  const response = await AxiosInstance.put<IRequests>(
+    `/requests/${requestId}/reject`,
   );
   return response.data;
 };

@@ -5,7 +5,7 @@ import Files from "../pages/Files";
 import Folders from "../pages/Folders";
 import { FileProvider } from "../pages/Folders/FileContext";
 import Login from "../pages/Login";
-import Profile from "../pages/profile";
+import Profile from "../pages/Profile";
 import Requests from "../pages/Requests";
 import RolesAndPermissions from "../pages/Roles And Permissions";
 import Users from "../pages/users";

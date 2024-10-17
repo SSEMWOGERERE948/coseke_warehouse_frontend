@@ -5,17 +5,12 @@ import Typography from "@mui/joy/Typography";
 import Grid from "@mui/joy/Grid";
 import Card from "@mui/joy/Card";
 import CardContent from "@mui/joy/CardContent";
-import PersonIcon from "@mui/icons-material/Person";
-import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
-import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
-import PauseCircleOutlineTwoToneIcon from "@mui/icons-material/PauseCircleOutlineTwoTone";
 import ContentPasteIcon from "@mui/icons-material/ContentPaste";
 import ContentPasteOffIcon from "@mui/icons-material/ContentPasteOff";
 import BusinessCenterIcon from "@mui/icons-material/BusinessCenter";
 import AddTaskIcon from "@mui/icons-material/AddTask";
 import { Button, Option } from "@mui/joy";
 
-// Import required Chart.js components
 import {
   Chart as ChartJS,
   LineElement,
@@ -23,18 +18,22 @@ import {
   LinearScale,
   Legend,
   Title,
+  Tooltip,
   PointElement,
 } from "chart.js";
-import { AxiosInstance } from "../../core/baseURL";
 import { Select } from "@mui/joy";
 
-// Register the components for the chart
+import { AxiosInstance } from "../../core/baseURL";
+import { getAllFilesService } from "../Files/files_api";
+import IFile from "../../interfaces/IFile";
+
 ChartJS.register(
   LineElement,
   CategoryScale,
   LinearScale,
   Legend,
   Title,
+  Tooltip,
   PointElement,
 );
 
@@ -110,72 +109,17 @@ export default function DashboardContent() {
     },
   };
 
-  // Card data
-  const cardsData = [
-    {
-      title: "Available files",
-      value: "40,689",
-      icon: <ContentPasteIcon sx={{ color: "white" }} />,
-      color: "blue",
-      change: "Available files in the system",
-      changeColor: "success",
-    },
-    {
-      title: "Unavailable Files",
-      value: "10",
-      icon: <ContentPasteOffIcon sx={{ color: "white" }} />,
-      color: "red",
-      change: "Files that have been checkedout",
-      changeColor: "success",
-    },
-    {
-      title: "CaseStudies",
-      value: caseStudyCount.toString(),
-      icon: <BusinessCenterIcon sx={{ color: "white" }} />,
-      color: "green",
-      change: "Active casestudies",
-      changeColor: "danger",
-    },
-    {
-      title: "Approvals",
-      value: "5",
-      icon: <AddTaskIcon sx={{ color: "white" }} />,
-      color: "blue",
-      change: "Current number of Approvals in the system",
-      changeColor: "success",
-    },
-  ];
-
-  // Table data
-  const tableData = [
-    {
-      fileName: "Pharmacy records",
-      fileID: "PH001",
-      user: "Pharmacist",
-      action: "Edited and removed some fields",
-    },
-    {
-      fileName: "Medicine requests",
-      fileID: "ME101",
-      user: "Doctor Bushira",
-      action: "Created",
-    },
-    {
-      fileName: "Supplies",
-      fileID: "PH200",
-      user: "Data Inspector",
-      action: "Edited",
-    },
-    {
-      fileName: "Medicine Supplies",
-      fileID: "ME005",
-      user: "Manager",
-      action: "Completed",
-    },
-  ];
+  const [fileCount, setFileCount] = useState(0);
+  const [unavailableFileCount, setUnavailableFileCount] = useState(0);
+  const [approvalsCount, setApprovalsCount] = useState(0);
+  const [allFilesCount, setAllFilesCount] = useState(0);
 
   useEffect(() => {
     fetchCaseStudies();
+    fetchFiles();
+    fetchUnavailableFiles();
+    fetchApprovals();
+    fetchLogs();
   }, []);
 
   const fetchCaseStudies = async () => {
@@ -186,7 +130,7 @@ export default function DashboardContent() {
         name: study.name,
       }));
       setCaseStudies(fetchedCaseStudies);
-      setCaseStudyCount(fetchedCaseStudies.length); // Update the case study count
+      setCaseStudyCount(fetchedCaseStudies.length);
     } catch (error: any) {
       console.error(
         "Error fetching case studies:",
@@ -199,6 +143,48 @@ export default function DashboardContent() {
     fetchCaseStudies();
     fetchLogs();
   }, [pageSize, currentPage]);
+  const fetchFiles = async () => {
+    try {
+      const response = await getAllFilesService();
+      setFileCount(
+        response.filter((f: IFile) => f.status === "Available").length,
+      );
+      setAllFilesCount(response.length);
+    } catch (error: any) {
+      console.error(
+        "Error fetching files:",
+        error.response?.data || error.message,
+      );
+    }
+  };
+
+  const fetchUnavailableFiles = async () => {
+    try {
+      const response = await getAllFilesService();
+      setUnavailableFileCount(
+        response.filter((f: IFile) => f.status === "Unavailable").length,
+      );
+    } catch (error: any) {
+      console.error(
+        "Error fetching unavailable files:",
+        error.response?.data || error.message,
+      );
+    }
+  };
+
+  const fetchApprovals = async () => {
+    try {
+      const response = await getAllFilesService();
+      setApprovalsCount(
+        response.filter((f: IFile) => f.status === "Approved").length,
+      );
+    } catch (error: any) {
+      console.error(
+        "Error fetching approvals:",
+        error.response?.data || error.message,
+      );
+    }
+  };
 
   const fetchLogs = async () => {
     setLoadingLogs(true);
@@ -218,10 +204,157 @@ export default function DashboardContent() {
   };
 
   const totalPages = Math.ceil(totalLogs / pageSize);
+  const cardsData = [
+    {
+      title: "Available files",
+      value: fileCount,
+      icon: <ContentPasteIcon sx={{ color: "white" }} />,
+      color: "blue",
+      change: "Available files in the system",
+      changeColor: "success",
+    },
+    {
+      title: "Unavailable Files",
+      value: unavailableFileCount,
+      icon: <ContentPasteOffIcon sx={{ color: "white" }} />,
+      color: "red",
+      change: "Files that have been checked out",
+      changeColor: "success",
+    },
+    {
+      title: "Case Studies",
+      value: caseStudyCount,
+      icon: <BusinessCenterIcon sx={{ color: "white" }} />,
+      color: "green",
+      change: "Active case studies",
+      changeColor: "danger",
+    },
+    {
+      title: "Approvals",
+      value: approvalsCount,
+      icon: <AddTaskIcon sx={{ color: "white" }} />,
+      color: "blue",
+      change: "Current number of Approvals in the system",
+      changeColor: "success",
+    },
+  ];
+
+  const DynamicFileChart = () => {
+    const [scale, setScale] = useState("months");
+    const [chartData, setChartData] = useState<any>(null);
+
+    useEffect(() => {
+      const fetchChartData = async (scale: string) => {
+        // Simulating API call with mock data
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            if (scale === "days") {
+              resolve({
+                labels: Array.from({ length: 30 }, (_, i) => i + 1),
+                data: Array.from({ length: 30 }, () =>
+                  Math.floor(Math.random() * 100),
+                ),
+              });
+            } else if (scale === "months") {
+              resolve({
+                labels: [
+                  "Jan",
+                  "Feb",
+                  "Mar",
+                  "Apr",
+                  "May",
+                  "Jun",
+                  "Jul",
+                  "Aug",
+                  "Sep",
+                  "Oct",
+                  "Nov",
+                  "Dec",
+                ],
+                data: Array.from({ length: 12 }, () =>
+                  Math.floor(Math.random() * 1000),
+                ),
+              });
+            } else if (scale === "years") {
+              const currentYear = new Date().getFullYear();
+              resolve({
+                labels: Array.from(
+                  { length: 5 },
+                  (_, i) => currentYear - 4 + i,
+                ),
+                data: Array.from({ length: 5 }, () =>
+                  Math.floor(Math.random() * 10000),
+                ),
+              });
+            }
+          }, 500);
+        });
+      };
+
+      const loadData = async () => {
+        const data: any = await fetchChartData(scale);
+        setChartData({
+          labels: data.labels,
+          datasets: [
+            {
+              label: "Total Files",
+              data: data.data,
+              borderColor: "rgb(75, 192, 192)",
+              backgroundColor: "rgba(75, 192, 192, 0.5)",
+            },
+          ],
+        });
+      };
+
+      loadData();
+    }, [scale]);
+
+    const options = {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: "top" as const,
+        },
+        title: {
+          display: true,
+          text: "Total Files in System Over Time",
+        },
+      },
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: scale.charAt(0).toUpperCase() + scale.slice(1),
+          },
+        },
+        y: {
+          title: {
+            display: true,
+            text: "Number of Files",
+          },
+          beginAtZero: true,
+        },
+      },
+    };
+
+    return (
+      <div className="w-full max-w-3xl mx-auto p-4">
+        <Select
+          value={scale}
+          onChange={(e, newValue) => setScale(newValue as string)}
+          className="mb-4"
+        >
+          <option value="days">Days</option>
+          <option value="months">Months</option>
+          <option value="years">Years</option>
+        </Select>
+        {chartData && <Line options={options} data={chartData} />}
+      </div>
+    );
+  };
 
   return (
     <Box sx={{ p: 3, width: "100%" }}>
-      {/* Grid container for cards */}
       <Grid container spacing={3}>
         {cardsData.map((card, index) => (
           <Grid xs={12} sm={6} md={3} key={index}>
@@ -258,15 +391,10 @@ export default function DashboardContent() {
         ))}
       </Grid>
 
-      {/* Sales Details Line Chart */}
-      {
-        <Box sx={{ mt: 4 }}>
-          <Typography level="h4">Request and approved files</Typography>
-          <Box sx={{ height: "250px", width: "100%" }}>
-            <Line data={filesData} options={chartOptions} />
-          </Box>
-        </Box>
-      }
+      <Box sx={{ mt: 4 }}>
+        <Typography level="h4">Request and approved files</Typography>
+        <DynamicFileChart />
+      </Box>
 
       {/* Logs Table Section */}
       <Box sx={{ mt: 2, overflowX: "auto" }}>
