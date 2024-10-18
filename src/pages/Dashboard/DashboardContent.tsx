@@ -245,7 +245,7 @@ export default function DashboardContent() {
   };
 
   // Fetch the files and generate chart data
-  const fetchFiles = async () => {
+  const fetchFilesForGraph = async () => {
     try {
       const response = await getAllFilesService();
       const monthlyFileCounts = groupFilesByMonth(response);
@@ -283,7 +283,7 @@ export default function DashboardContent() {
   };
 
   useEffect(() => {
-    fetchFiles();
+    fetchFilesForGraph();
   }, [scale]);
 
   const options = {
@@ -312,6 +312,25 @@ export default function DashboardContent() {
         beginAtZero: true,
       },
     },
+  };
+
+  useEffect(() => {
+    fetchFiles();
+  }, []);
+
+  const fetchFiles = async () => {
+    try {
+      const response = await getAllFilesService();
+      setFileCount(
+        response.filter((f: IFile) => f.status === "Available").length,
+      );
+      setAllFilesCount(response.length);
+    } catch (error: any) {
+      console.error(
+        "Error fetching files:",
+        error.response?.data || error.message,
+      );
+    }
   };
 
   return (
