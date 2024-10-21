@@ -1,28 +1,41 @@
-import CancelIcon from "@mui/icons-material/Cancel";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
-import Box from "@mui/joy/Box";
-import Button from "@mui/joy/Button";
-import Checkbox from "@mui/joy/Checkbox";
-import IconButton from "@mui/joy/IconButton";
-import Input from "@mui/joy/Input";
-import Menu from "@mui/joy/Menu";
-import MenuItem from "@mui/joy/MenuItem";
-import Sheet from "@mui/joy/Sheet";
-import Table from "@mui/joy/Table";
-import Typography from "@mui/joy/Typography";
-import { Divider } from "@mui/material";
 import React, { useEffect, useState } from "react";
-import DialogComponent from "../../components/DialogComponent";
+import {
+  Box,
+  Button,
+  Checkbox,
+  IconButton,
+  Input,
+  Menu,
+  MenuItem,
+  Sheet,
+  Table,
+  Typography,
+  Chip,
+  Modal,
+  ModalDialog,
+  ModalClose,
+  Stack,
+  FormControl,
+  FormLabel,
+} from "@mui/joy";
+import {
+  CheckCircle,
+  MoreVert,
+  SearchRounded,
+  Mediation,
+} from "@mui/icons-material";
+import { Divider } from "@mui/material";
 import { AxiosInstance } from "../../core/baseURL";
 import IFile from "../../interfaces/IFile";
-import IFolder from "../../interfaces/IFolder";
 import { convertArrayToDate, getCurrentUser } from "../../utils/helpers";
 import { createRequest } from "../Requests/requests_api";
 import { IRequests } from "../../interfaces/IRequests";
-import { Chip } from "@mui/joy";
-import { checkInFileService } from "./files_api";
+import {
+  checkInFileService,
+  updateFileService,
+  deleteFileService,
+} from "./files_api";
+import { EditIcon, DeleteIcon } from "lucide-react";
 
 export default function FileTable() {
   const [files, setFiles] = useState<IFile[]>([]);
@@ -33,8 +46,9 @@ export default function FileTable() {
   // State for menu and dialogs
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedFile, setSelectedFile] = useState<IFile | null>(null);
-  const [openCaseStudyDialog, setOpenCaseStudyDialog] = useState(false);
-  const [openFolderDialog, setOpenFolderDialog] = useState(false);
+  const [openUpdateDialog, setOpenUpdateDialog] = useState(false);
+  const [updatedFile, setUpdatedFile] = useState<IFile | null>(null);
+
   const user = getCurrentUser();
 
   const handleMenuClick = (
@@ -50,30 +64,28 @@ export default function FileTable() {
   };
 
   const handleDialogClose = () => {
-    setOpenCaseStudyDialog(false);
-    setOpenFolderDialog(false);
+    setOpenUpdateDialog(false);
+    setUpdatedFile(null);
   };
 
   const currentUser = getCurrentUser();
   const userRoles = currentUser?.roles || [];
 
-  // Extract the role names into an array
   const roleNames = userRoles
     .map((role: { name: any }) => role.name)
     .filter(Boolean);
+
   useEffect(() => {
     const fetchFiles = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Check for role access and handle fetching logic accordingly
         if (roleNames.includes("SUPER_ADMIN")) {
           const response = await AxiosInstance.get("files/all");
           const data: IFile[] = Array.isArray(response.data)
             ? response.data
             : [];
-          console.log(data);
           setFiles(data);
         } else if (roleNames.includes("ADMIN") || roleNames.includes("USER")) {
           const id = currentUser?.id;
@@ -144,6 +156,53 @@ export default function FileTable() {
     }
   };
 
+  const handleUpdateFile = async () => {
+    if (!updatedFile) return;
+    try {
+      await updateFileService(updatedFile.id!, updatedFile);
+      alert("File updated successfully");
+      handleDialogClose();
+      // Refresh the file list
+      const updatedFiles = files.map((file) =>
+        file.id === updatedFile.id ? updatedFile : file,
+      );
+      setFiles(updatedFiles);
+    } catch (error: any) {
+      console.error(
+        "Error updating file:",
+        error.response?.data || error.message,
+      );
+    }
+  };
+
+  const handleDeleteFile = async (id: number) => {
+    if (window.confirm("Are you sure you want to delete this file?")) {
+      try {
+        await deleteFileService(id);
+        alert("File deleted successfully");
+        // Remove the deleted file from the list
+        setFiles(files.filter((file) => file.id !== id));
+      } catch (error: any) {
+        console.error(
+          "Error deleting file:",
+          error.response?.data || error.message,
+        );
+      }
+    }
+  };
+
+  // Flatten all the permissions from the user's roles
+  const userPermissions = userRoles.flatMap(
+    (role: { permissions: any }) => role.permissions || [],
+  );
+
+  // Function to check if the user has a specific permission
+  const hasPermission = (permissionName: string) => {
+    return userPermissions.some(
+      (permission: { name: string }) => permission.name === permissionName,
+    );
+  };
+
   return (
     <Box sx={{ p: 3 }}>
       <Typography level="h2" sx={{ mb: 2 }}>
@@ -158,7 +217,7 @@ export default function FileTable() {
         }}
       >
         <Input
-          startDecorator={<SearchRoundedIcon />}
+          startDecorator={<SearchRounded />}
           placeholder="Search for file"
           size="md"
           sx={{ width: 300 }}
@@ -185,7 +244,7 @@ export default function FileTable() {
               <th>Status</th>
               <th>Date Modified</th>
               <th>Date Uploaded</th>
-              <th></th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -217,13 +276,26 @@ export default function FileTable() {
                     : "N/A"}
                 </td>
                 <td>
-                  <IconButton
-                    size="sm"
-                    onClick={(e) => handleMenuClick(e, file)}
-                  >
-                    <MoreVertIcon />
-                  </IconButton>
-
+                  {hasPermission("UPDATE_FILES") && (
+                    <IconButton
+                      size="sm"
+                      onClick={() => {
+                        setSelectedFile(file);
+                        setUpdatedFile(file);
+                        setOpenUpdateDialog(true);
+                      }}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                  )}
+                  {hasPermission("DELETE_FILES") && (
+                    <IconButton
+                      size="sm"
+                      onClick={() => handleDeleteFile(file.id!)}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  )}
                   <Menu
                     anchorEl={menuAnchorEl}
                     open={Boolean(menuAnchorEl)}
@@ -258,6 +330,49 @@ export default function FileTable() {
           </tbody>
         </Table>
       </Sheet>
+
+      <Modal open={openUpdateDialog} onClose={handleDialogClose}>
+        <ModalDialog>
+          <ModalClose />
+          <Typography level="h4" sx={{ mb: 2 }}>
+            Update File
+          </Typography>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleUpdateFile();
+            }}
+          >
+            <Stack spacing={2}>
+              <FormControl>
+                <FormLabel>File Name</FormLabel>
+                <Input
+                  value={updatedFile?.pidinfant || ""}
+                  onChange={(e) =>
+                    setUpdatedFile((prev) => ({
+                      ...prev!,
+                      pidinfant: e.target.value,
+                    }))
+                  }
+                />
+              </FormControl>
+              <FormControl>
+                <FormLabel>Status</FormLabel>
+                <Input
+                  value={updatedFile?.status || ""}
+                  onChange={(e) =>
+                    setUpdatedFile((prev) => ({
+                      ...prev!,
+                      status: e.target.value,
+                    }))
+                  }
+                />
+              </FormControl>
+              <Button type="submit">Update File</Button>
+            </Stack>
+          </form>
+        </ModalDialog>
+      </Modal>
     </Box>
   );
 }

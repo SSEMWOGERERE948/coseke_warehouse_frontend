@@ -1,3 +1,5 @@
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import {
   Button,
@@ -21,9 +23,10 @@ import ListSubheader from "@mui/joy/ListSubheader";
 import React, { useEffect, useState } from "react";
 import { AxiosInstance } from "../../core/baseURL";
 import IFolder from "../../interfaces/IFolder";
-import { getAllFilesService } from "../Files/files_api";
+import { updateFolderService, deleteFolderService } from "./folders_api";
 import { useFileContext } from "./FileContext";
-import { convertArrayToDate } from "../../utils/helpers";
+import { getAllFilesService } from "../Files/files_api";
+import { getCurrentUser } from "../../utils/helpers";
 
 const getRandomColor = () => {
   return "#3498db";
@@ -33,12 +36,18 @@ export default function Navigation() {
   const { selectedTag, setSelectedTag, setFileData } = useFileContext();
   const [folders, setFolders] = useState<IFolder[]>([]);
   const [isAddFolderOpen, setIsAddFolderOpen] = useState(false);
+  const [isEditFolderOpen, setIsEditFolderOpen] = useState(false);
   const [newFolder, setNewFolder] = useState<IFolder>({
     id: 0,
     folderName: "",
     createdAt: new Date(),
     updatedAt: new Date(),
   });
+
+  // Track which folder is being edited
+  const [currentEditFolder, setCurrentEditFolder] = useState<IFolder | null>(
+    null,
+  );
 
   const handleTagClick = async (name: string) => {
     setSelectedTag(name);
@@ -97,6 +106,47 @@ export default function Navigation() {
     }
   };
 
+  const handleEditFolder = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    // Ensure currentEditFolder is defined and has a valid id before proceeding
+    if (!currentEditFolder || typeof currentEditFolder.id === "undefined") {
+      console.error("No folder selected for editing or folder ID is missing.");
+      return;
+    }
+
+    try {
+      const updatedFolder = await updateFolderService(
+        currentEditFolder.id,
+        currentEditFolder,
+      );
+      setFolders((prevFolders) =>
+        prevFolders.map((folder) =>
+          folder.id === currentEditFolder.id ? updatedFolder : folder,
+        ),
+      );
+      handleCloseEditFolder();
+    } catch (error) {
+      console.error("Error updating folder:", error);
+    }
+  };
+
+  const handleDeleteFolder = async (id: number | undefined) => {
+    if (typeof id === "undefined") {
+      console.error("Folder ID is undefined, cannot delete folder.");
+      return;
+    }
+
+    try {
+      await deleteFolderService(id);
+      setFolders((prevFolders) =>
+        prevFolders.filter((folder) => folder.id !== id),
+      );
+    } catch (error) {
+      console.error("Error deleting folder:", error);
+    }
+  };
+
   const handleOpenAddFolder = () => {
     setIsAddFolderOpen(true);
   };
@@ -109,6 +159,32 @@ export default function Navigation() {
       createdAt: new Date(),
       updatedAt: new Date(),
     });
+  };
+
+  const handleOpenEditFolder = (folder: IFolder) => {
+    setCurrentEditFolder(folder);
+    setIsEditFolderOpen(true);
+  };
+
+  const handleCloseEditFolder = () => {
+    setIsEditFolderOpen(false);
+    setCurrentEditFolder(null);
+  };
+
+  // Get the current user and their permissions
+  const currentUser = getCurrentUser();
+  const userRoles = currentUser?.roles || [];
+
+  // Flatten all the permissions from the user's roles
+  const userPermissions = userRoles.flatMap(
+    (role: { permissions: any }) => role.permissions || [],
+  );
+
+  // Function to check if the user has a specific permission
+  const hasPermission = (permissionName: string) => {
+    return userPermissions.some(
+      (permission: { name: string }) => permission.name === permissionName,
+    );
   };
 
   return (
@@ -124,9 +200,12 @@ export default function Navigation() {
           }}
         >
           Folders
-          <IconButton onClick={handleOpenAddFolder} color="primary">
-            <AddIcon />
-          </IconButton>
+          {/* Add Button - visible only if the user has CREATE_FOLDERS permission */}
+          {hasPermission("CREATE_FOLDERS") && (
+            <IconButton onClick={handleOpenAddFolder} color="primary">
+              <AddIcon />
+            </IconButton>
+          )}
         </ListSubheader>
         <List
           aria-labelledby="nav-list-tags"
@@ -137,10 +216,18 @@ export default function Navigation() {
           }}
         >
           {folders.map((folder) => (
-            <ListItem key={folder.id}>
+            <ListItem
+              key={folder.id}
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
               <ListItemButton
                 selected={selectedTag === folder.folderName}
                 onClick={() => handleTagClick(folder.folderName)}
+                sx={{ flexGrow: 1, mr: 6.5 }}
               >
                 <ListItemDecorator>
                   <Box
@@ -154,35 +241,48 @@ export default function Navigation() {
                 </ListItemDecorator>
                 <ListItemContent>{folder.folderName}</ListItemContent>
               </ListItemButton>
+
+              <Box sx={{ display: "flex", alignItems: "center", ml: 2 }}>
+                {/* Edit Button - visible only if the user has UPDATE_FOLDER permission */}
+                {hasPermission("UPDATE_FOLDERS") && (
+                  <IconButton
+                    aria-label="edit"
+                    onClick={() => handleOpenEditFolder(folder)}
+                    sx={{
+                      padding: 0.5, // Smaller padding for smaller icon
+                      fontSize: "small", // Reduces icon size
+                    }}
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                )}
+
+                {/* Delete Button - visible only if the user has DELETE_FOLDERS permission */}
+                {hasPermission("DELETE_FOLDERS") && (
+                  <IconButton
+                    aria-label="delete"
+                    onClick={() => handleDeleteFolder(folder.id)}
+                    sx={{
+                      padding: 0.5, // Smaller padding for smaller icon
+                      fontSize: "small", // Reduces icon size
+                    }}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                )}
+              </Box>
             </ListItem>
           ))}
         </List>
       </ListItem>
 
+      {/* Modal for Adding Folder */}
       <Modal open={isAddFolderOpen} onClose={handleCloseAddFolder}>
-        <ModalDialog
-          aria-labelledby="add-folder-modal-title"
-          aria-describedby="add-folder-modal-description"
-          sx={{
-            maxWidth: "400px",
-            maxHeight: "80vh",
-            overflowY: "auto",
-            borderRadius: "md",
-            p: 3,
-            boxShadow: "lg",
-          }}
-        >
-          <ModalClose
-            variant="outlined"
-            sx={{
-              top: "calc(-1/4 * var(--IconButton-size))",
-              right: "calc(-1/4 * var(--IconButton-size))",
-            }}
-          />
+        <ModalDialog>
+          <ModalClose />
           <Typography level="h4" fontWeight="bold" textAlign="center">
             Create New Folder
           </Typography>
-
           <form onSubmit={handleSubmitNewFolder}>
             <Stack spacing={2}>
               <FormControl>
@@ -195,7 +295,6 @@ export default function Navigation() {
                   }
                 />
               </FormControl>
-
               <Button type="submit" fullWidth>
                 Create Folder
               </Button>
@@ -203,6 +302,38 @@ export default function Navigation() {
           </form>
         </ModalDialog>
       </Modal>
+
+      {/* Modal for Editing Folder */}
+      {currentEditFolder && (
+        <Modal open={isEditFolderOpen} onClose={handleCloseEditFolder}>
+          <ModalDialog>
+            <ModalClose />
+            <Typography level="h4" fontWeight="bold" textAlign="center">
+              Edit Folder
+            </Typography>
+            <form onSubmit={handleEditFolder}>
+              <Stack spacing={2}>
+                <FormControl>
+                  <FormLabel>Folder Name</FormLabel>
+                  <Input
+                    required
+                    value={currentEditFolder.folderName}
+                    onChange={(e) =>
+                      setCurrentEditFolder({
+                        ...currentEditFolder,
+                        folderName: e.target.value,
+                      })
+                    }
+                  />
+                </FormControl>
+                <Button type="submit" fullWidth>
+                  Save Changes
+                </Button>
+              </Stack>
+            </form>
+          </ModalDialog>
+        </Modal>
+      )}
     </List>
   );
 }
