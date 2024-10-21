@@ -21,6 +21,7 @@ import { loginService } from "./auth_api";
 import { accessTokenKey, currentUser } from "../../utils/constants";
 
 import Images from "../../asset/images";
+import routes from "../../core/routes";
 
 interface FormElements extends HTMLFormControlsCollection {
   email: HTMLInputElement;
@@ -143,7 +144,24 @@ export default function Login() {
                     sessionStorage.setItem(accessTokenKey, res?.token);
                     delete res.token;
                     sessionStorage.setItem(currentUser, JSON.stringify(res));
-                    navigate("/dashboard");
+                    const userRoles = res.roles || [];
+                    const roleNames = userRoles.map(
+                      (role: { name: string }) => role.name,
+                    );
+
+                    if (
+                      roleNames.includes("SUPER_ADMIN") ||
+                      roleNames.includes("ADMIN")
+                    ) {
+                      navigate("/dashboard");
+                    } else if (
+                      roleNames.includes("USER") ||
+                      roleNames.includes("ADMIN")
+                    ) {
+                      navigate(routes.FILES);
+                    } else {
+                      alert("No valid role found for this user");
+                    }
                   } catch (e) {
                     alert(`An error has occured!: ${e}`);
                   }

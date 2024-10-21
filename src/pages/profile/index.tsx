@@ -66,12 +66,31 @@ function Index() {
     }
   };
 
-  // Fetch stored image from local storage on component mount
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const imageBase64 = reader.result as string;
+        setSelectedImage(imageBase64);
+
+        // Save the image specifically for the current user using their unique ID or email
+        localStorage.setItem(`profileImage_${currentUser.id}`, imageBase64);
+        console.log("Image uploaded:", imageBase64); // Debugging line
+      };
+      reader.readAsDataURL(file);
+    } else {
+      console.error("No file selected"); // Debugging line
+    }
+  };
+
+  // Fetch stored image associated with the current user on component mount
   React.useEffect(() => {
-    const storedImage = localStorage.getItem("profileImage");
+    const storedImage = localStorage.getItem(`profileImage_${currentUser.id}`);
     if (storedImage) {
       setSelectedImage(storedImage);
     }
+
     // Set user details
     setUserDetails({
       first_name: currentUser.first_name || "",
@@ -82,21 +101,6 @@ function Index() {
       password: "",
     });
   }, [currentUser]);
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setSelectedImage(reader.result as string);
-        localStorage.setItem("profileImage", reader.result as string); // Save image in local storage
-        console.log("Image uploaded:", reader.result); // Debugging line
-      };
-      reader.readAsDataURL(file);
-    } else {
-      console.error("No file selected"); // Debugging line
-    }
-  };
 
   return (
     <Box sx={{ flex: 1, width: "100%" }}>
