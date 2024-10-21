@@ -18,21 +18,12 @@ import { getCurrentUser } from "../../utils/helpers";
 import IUser from "../../interfaces/IUser";
 import IFile from "../../interfaces/IFile";
 import IFolder from "../../interfaces/IFolder";
-import ICaseStudy from "../../interfaces/ICaseStudy";
 
 interface CaseStudy {
+  users: any;
   id: number;
   name: string;
   enabled: boolean;
-}
-
-export interface IFileFormData {
-  PIDInfant: string;
-  PIDMother: string;
-  boxNumber: number;
-  status: string;
-  folderId?: number;
-  caseStudyId?: number;
 }
 
 interface FileAssignmentDialogProps {
@@ -64,6 +55,8 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
   const [files, setFiles] = useState<IFile[]>([]);
   const [caseStudies, setCaseStudies] = useState<CaseStudy[]>([]);
   const [folders, setFolders] = useState<IFolder[]>([]);
+  const currentUser = getCurrentUser();
+  const userEmails = [currentUser?.email]; // Store the user's email
 
   const handleInputChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -77,25 +70,22 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
 
   const handleSubmit = async () => {
     try {
-      // fileData is of type IFileFormData
-      const { folderId, caseStudyId, ...fileDataWithoutIds } = fileData;
-
       const newFile: IFile = {
-        ...fileDataWithoutIds,
-        folder: folderId ? ({ id: folderId } as IFolder) : undefined,
-        caseStudy: caseStudyId
-          ? ({ id: caseStudyId } as ICaseStudy)
-          : undefined,
+        ...fileData,
       };
 
       console.log("Creating new file:", newFile);
 
-      const response = await AxiosInstance.post<IFile>("files/add", newFile);
+      const response = await AxiosInstance.post("files/add", {
+        ...newFile,
+        caseStudy: fileData.caseStudy,
+        folder: fileData.folder,
+      });
 
       const createdFile = response.data;
       console.log("File created:", createdFile);
 
-      onFileCreate(createdFile);
+      onFileCreate(response.data);
       fetchAllFolders();
       onClose();
     } catch (error) {
@@ -111,14 +101,17 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
   const fetchCaseStudies = async () => {
     try {
       const response = await AxiosInstance.get("case-studies/all");
+      const fetchedCaseStudies = response.data;
 
-      const fetchedCaseStudies = response.data.map((study: any) => ({
-        id: study.id,
-        name: study.name,
-        enabled: true, // Assuming all case studies are enabled by default
-      }));
+      // Filter case studies assigned to the current user's email
+      const assignedCaseStudies = fetchedCaseStudies.filter(
+        (study: CaseStudy) =>
+          study.users.some((user: { email: any }) =>
+            userEmails.includes(user.email),
+          ),
+      );
 
-      setCaseStudies(fetchedCaseStudies);
+      setCaseStudies(assignedCaseStudies);
     } catch (error: any) {
       console.error(
         "Error fetching case studies:",
