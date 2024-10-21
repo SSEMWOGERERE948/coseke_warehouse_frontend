@@ -91,3 +91,13 @@ export const deleteMultipleFilesService = async (
     );
   }
 };
+
+export const checkInFileService = async (id: number): Promise<void> => {
+  try {
+    await AxiosInstance.post(`files/${id}/check-in`);
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message || `Failed to check in file with ID: ${id}`,
+    );
+  }
+};

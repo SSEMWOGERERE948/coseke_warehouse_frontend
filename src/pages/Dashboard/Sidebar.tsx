@@ -237,7 +237,7 @@ export default function Sidebar() {
                 )}
               >
                 <List sx={{ gap: 0.5 }}>
-                  {hasPermission("READ_ADMIN") && (
+                  {hasPermission("READ_REQUESTS") && (
                     <ListItem sx={{ mt: 0.5 }}>
                       <ListItemButton
                         selected={selectedItem === routes.PI}

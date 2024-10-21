@@ -94,7 +94,7 @@ export default function ApprovalTable() {
     let res = await getAllRequests();
     setRows(
       res.filter(
-        (req) => req.state === "Approved" && req.user?.email === user.email,
+        (req) => req.stage === "Approved" && req.user?.email === user.email,
       ),
     );
   };

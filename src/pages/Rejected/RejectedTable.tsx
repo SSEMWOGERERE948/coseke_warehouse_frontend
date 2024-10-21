@@ -91,7 +91,11 @@ export default function RejectedTable() {
   React.useEffect(() => {
     (async () => {
       let res = await getAllRequests();
-      setRows(res.filter((req) => req.state === "Rejected"));
+      setRows(
+        res.filter(
+          (req) => req.stage === "Rejected" && req.user?.email === user.email,
+        ),
+      );
     })();
   }, []);
 

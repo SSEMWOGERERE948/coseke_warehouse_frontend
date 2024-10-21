@@ -22,6 +22,7 @@ import { convertArrayToDate, getCurrentUser } from "../../utils/helpers";
 import { createRequest } from "../Requests/requests_api";
 import { IRequests } from "../../interfaces/IRequests";
 import { Chip } from "@mui/joy";
+import { checkInFileService } from "./files_api";
 
 export default function FileTable() {
   const [files, setFiles] = useState<IFile[]>([]);
@@ -33,7 +34,6 @@ export default function FileTable() {
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedFile, setSelectedFile] = useState<IFile | null>(null);
   const [openCaseStudyDialog, setOpenCaseStudyDialog] = useState(false);
-  const [re, setRE] = useState(false);
   const [openFolderDialog, setOpenFolderDialog] = useState(false);
   const user = getCurrentUser();
 
@@ -49,21 +49,6 @@ export default function FileTable() {
     setMenuAnchorEl(null);
   };
 
-  const handleCaseStudyDialogOpen = () => {
-    setOpenCaseStudyDialog(true);
-    handleMenuClose();
-  };
-
-  const handleRequestDialogOpen = () => {
-    setRE(true);
-    handleMenuClose();
-  };
-
-  const handleFolderDialogOpen = () => {
-    setOpenFolderDialog(true);
-    handleMenuClose();
-  };
-
   const handleDialogClose = () => {
     setOpenCaseStudyDialog(false);
     setOpenFolderDialog(false);
@@ -76,7 +61,6 @@ export default function FileTable() {
   const roleNames = userRoles
     .map((role: { name: any }) => role.name)
     .filter(Boolean);
-  console.log(roleNames);
   useEffect(() => {
     const fetchFiles = async () => {
       try {
@@ -89,6 +73,7 @@ export default function FileTable() {
           const data: IFile[] = Array.isArray(response.data)
             ? response.data
             : [];
+          console.log(data);
           setFiles(data);
         } else if (roleNames.includes("ADMIN") || roleNames.includes("USER")) {
           const id = currentUser?.id;
@@ -131,10 +116,29 @@ export default function FileTable() {
 
   const handleRequestCheckout = async (requests: IRequests) => {
     try {
+      if (requests.files.status === "Unavailable") {
+        alert("File is currently unavailable");
+        return;
+      }
       const res = await createRequest(requests);
+      alert("Request created successfully");
+      handleDialogClose();
     } catch (error: any) {
       console.error(
         "Error requesting checkout:",
+        error.response?.data || error.message,
+      );
+    }
+  };
+
+  const handleRequestCheckin = async (file: IFile) => {
+    try {
+      const res = await checkInFileService(file.id!);
+      alert("File checked in successfully");
+      handleDialogClose();
+    } catch (error: any) {
+      console.error(
+        "Error requesting check in!:",
         error.response?.data || error.message,
       );
     }
@@ -241,7 +245,11 @@ export default function FileTable() {
                         Checkout
                       </MenuItem>
                     ) : (
-                      <MenuItem onClick={() => null}>Check-in</MenuItem>
+                      <MenuItem
+                        onClick={async () => await handleRequestCheckin(file)}
+                      >
+                        Check-in
+                      </MenuItem>
                     )}
                   </Menu>
                 </td>
