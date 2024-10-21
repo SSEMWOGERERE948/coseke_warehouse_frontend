@@ -76,6 +76,22 @@ export default function Sidebar() {
     navigate(item);
   };
 
+  // Get the current user and their permissions
+  const currentUser = getCurrentUser();
+  const userRoles = currentUser?.roles || [];
+
+  // Flatten all the permissions from the user's roles
+  const userPermissions = userRoles.flatMap(
+    (role: { permissions: any }) => role.permissions || [],
+  );
+
+  // Function to check if the user has a specific permission
+  const hasPermission = (permissionName: string) => {
+    return userPermissions.some(
+      (permission: { name: string }) => permission.name === permissionName,
+    );
+  };
+
   return (
     <Sheet
       className="Sidebar"
@@ -157,157 +173,172 @@ export default function Sidebar() {
             "--ListItem-radius": (theme) => theme.vars.radius.sm,
           }}
         >
-          <ListItem>
-            <ListItemButton
-              selected={selectedItem === routes.DASHBOARD}
-              onClick={() => handleSelect(routes.DASHBOARD)}
-            >
-              <DashboardRoundedIcon />
-              <ListItemContent>
-                <Typography level="title-sm">Dashboard</Typography>
-              </ListItemContent>
-            </ListItemButton>
-          </ListItem>
-          <ListItem>
-            <ListItemButton
-              selected={selectedItem === routes.FILES}
-              onClick={() => handleSelect(routes.FILES)}
-            >
-              <HomeRoundedIcon />
-              <ListItemContent>
-                <Typography level="title-sm">Files</Typography>
-              </ListItemContent>
-            </ListItemButton>
-          </ListItem>
+          {hasPermission("READ_DASHBOARD") && (
+            <ListItem>
+              <ListItemButton
+                selected={selectedItem === routes.DASHBOARD}
+                onClick={() => handleSelect(routes.DASHBOARD)}
+              >
+                <DashboardRoundedIcon />
+                <ListItemContent>
+                  <Typography level="title-sm">Dashboard</Typography>
+                </ListItemContent>
+              </ListItemButton>
+            </ListItem>
+          )}
 
-          <ListItem>
-            <ListItemButton
-              selected={selectedItem === routes.FOLDERS}
-              onClick={() => handleSelect(routes.FOLDERS)}
-            >
-              <ShoppingCartRoundedIcon />
-              <ListItemContent>
-                <Typography level="title-sm">Folders</Typography>
-              </ListItemContent>
-            </ListItemButton>
-          </ListItem>
-
-          <ListItem nested>
-            <Toggler
-              renderToggle={({ open, setOpen }) => (
-                <ListItemButton onClick={() => setOpen(!open)}>
-                  <AssignmentRoundedIcon />
-                  <ListItemContent>
-                    <Typography level="title-sm">Requests</Typography>
-                  </ListItemContent>
-                  <KeyboardArrowDownIcon
-                    sx={[
-                      open
-                        ? {
-                            transform: "rotate(180deg)",
-                          }
-                        : {
-                            transform: "none",
-                          },
-                    ]}
-                  />
-                </ListItemButton>
-              )}
-            >
-              <List sx={{ gap: 0.5 }}>
-                <ListItem sx={{ mt: 0.5 }}>
-                  <ListItemButton
-                    selected={selectedItem === routes.PI}
-                    onClick={() => handleSelect(routes.PI)}
-                  >
-                    Principal Investigator
+          {hasPermission("READ_FILES") && (
+            <ListItem>
+              <ListItemButton
+                selected={selectedItem === routes.FILES}
+                onClick={() => handleSelect(routes.FILES)}
+              >
+                <HomeRoundedIcon />
+                <ListItemContent>
+                  <Typography level="title-sm">Files</Typography>
+                </ListItemContent>
+              </ListItemButton>
+            </ListItem>
+          )}
+          {hasPermission("READ_FOLDERS") && (
+            <ListItem>
+              <ListItemButton
+                selected={selectedItem === routes.FOLDERS}
+                onClick={() => handleSelect(routes.FOLDERS)}
+              >
+                <ShoppingCartRoundedIcon />
+                <ListItemContent>
+                  <Typography level="title-sm">Folders</Typography>
+                </ListItemContent>
+              </ListItemButton>
+            </ListItem>
+          )}
+          {hasPermission("READ_REQUESTS") && (
+            <ListItem nested>
+              <Toggler
+                renderToggle={({ open, setOpen }) => (
+                  <ListItemButton onClick={() => setOpen(!open)}>
+                    <AssignmentRoundedIcon />
+                    <ListItemContent>
+                      <Typography level="title-sm">Requests</Typography>
+                    </ListItemContent>
+                    <KeyboardArrowDownIcon
+                      sx={[
+                        open
+                          ? {
+                              transform: "rotate(180deg)",
+                            }
+                          : {
+                              transform: "none",
+                            },
+                      ]}
+                    />
                   </ListItemButton>
-                </ListItem>
-                <ListItem>
-                  <ListItemButton
-                    selected={selectedItem === routes.REQUESTS}
-                    onClick={() => handleSelect(routes.REQUESTS)}
-                  >
-                    Requests
+                )}
+              >
+                <List sx={{ gap: 0.5 }}>
+                  {hasPermission("READ_ADMIN") && (
+                    <ListItem sx={{ mt: 0.5 }}>
+                      <ListItemButton
+                        selected={selectedItem === routes.PI}
+                        onClick={() => handleSelect(routes.PI)}
+                      >
+                        Principal Investigator
+                      </ListItemButton>
+                    </ListItem>
+                  )}
+                  <ListItem>
+                    <ListItemButton
+                      selected={selectedItem === routes.REQUESTS}
+                      onClick={() => handleSelect(routes.REQUESTS)}
+                    >
+                      Requests
+                    </ListItemButton>
+                  </ListItem>
+                  <ListItem sx={{ mt: 0.5 }}>
+                    <ListItemButton
+                      selected={selectedItem === routes.MYREQUESTS}
+                      onClick={() => handleSelect(routes.MYREQUESTS)}
+                    >
+                      My Requests
+                    </ListItemButton>
+                  </ListItem>
+                  <ListItem sx={{ mt: 0.5 }}>
+                    <ListItemButton
+                      selected={selectedItem === routes.APPROVED}
+                      onClick={() => handleSelect(routes.APPROVED)}
+                    >
+                      Approved
+                    </ListItemButton>
+                  </ListItem>
+                  <ListItem sx={{ mt: 0.5 }}>
+                    <ListItemButton
+                      selected={selectedItem === routes.REJECTED}
+                      onClick={() => handleSelect(routes.REJECTED)}
+                    >
+                      Rejected
+                    </ListItemButton>
+                  </ListItem>
+                </List>
+              </Toggler>
+            </ListItem>
+          )}
+          {hasPermission("READ_USER") && (
+            <ListItem nested>
+              <Toggler
+                renderToggle={({ open, setOpen }) => (
+                  <ListItemButton onClick={() => setOpen(!open)}>
+                    <GroupRoundedIcon />
+                    <ListItemContent>
+                      <Typography level="title-sm">Users</Typography>
+                    </ListItemContent>
+                    <KeyboardArrowDownIcon
+                      sx={[
+                        open
+                          ? {
+                              transform: "rotate(180deg)",
+                            }
+                          : {
+                              transform: "none",
+                            },
+                      ]}
+                    />
                   </ListItemButton>
-                </ListItem>
-                <ListItem sx={{ mt: 0.5 }}>
-                  <ListItemButton
-                    selected={selectedItem === routes.MYREQUESTS}
-                    onClick={() => handleSelect(routes.MYREQUESTS)}
-                  >
-                    My Requests
-                  </ListItemButton>
-                </ListItem>
-                <ListItem sx={{ mt: 0.5 }}>
-                  <ListItemButton
-                    selected={selectedItem === routes.APPROVED}
-                    onClick={() => handleSelect(routes.APPROVED)}
-                  >
-                    Approved
-                  </ListItemButton>
-                </ListItem>
-                <ListItem sx={{ mt: 0.5 }}>
-                  <ListItemButton
-                    selected={selectedItem === routes.REJECTED}
-                    onClick={() => handleSelect(routes.REJECTED)}
-                  >
-                    Rejected
-                  </ListItemButton>
-                </ListItem>
-              </List>
-            </Toggler>
-          </ListItem>
-          <ListItem nested>
-            <Toggler
-              renderToggle={({ open, setOpen }) => (
-                <ListItemButton onClick={() => setOpen(!open)}>
-                  <GroupRoundedIcon />
-                  <ListItemContent>
-                    <Typography level="title-sm">Users</Typography>
-                  </ListItemContent>
-                  <KeyboardArrowDownIcon
-                    sx={[
-                      open
-                        ? {
-                            transform: "rotate(180deg)",
-                          }
-                        : {
-                            transform: "none",
-                          },
-                    ]}
-                  />
-                </ListItemButton>
-              )}
-            >
-              <List sx={{ gap: 0.5 }}>
-                <ListItem sx={{ mt: 0.5 }}>
-                  <ListItemButton
-                    selected={selectedItem === routes.PROFILE}
-                    onClick={() => handleSelect(routes.PROFILE)}
-                  >
-                    My profile
-                  </ListItemButton>
-                </ListItem>
-                <ListItem>
-                  <ListItemButton
-                    selected={selectedItem === routes.USERS}
-                    onClick={() => handleSelect(routes.USERS)}
-                  >
-                    View Users
-                  </ListItemButton>
-                </ListItem>
-                <ListItem>
-                  <ListItemButton
-                    selected={selectedItem === routes.ROLESANDPERMISSIONS}
-                    onClick={() => handleSelect(routes.ROLESANDPERMISSIONS)}
-                  >
-                    Roles & permission
-                  </ListItemButton>
-                </ListItem>
-              </List>
-            </Toggler>
-          </ListItem>
+                )}
+              >
+                <List sx={{ gap: 0.5 }}>
+                  <ListItem sx={{ mt: 0.5 }}>
+                    <ListItemButton
+                      selected={selectedItem === routes.PROFILE}
+                      onClick={() => handleSelect(routes.PROFILE)}
+                    >
+                      My profile
+                    </ListItemButton>
+                  </ListItem>
+                  {hasPermission("CREATE_USER") && (
+                    <ListItem>
+                      <ListItemButton
+                        selected={selectedItem === routes.USERS}
+                        onClick={() => handleSelect(routes.USERS)}
+                      >
+                        View Users
+                      </ListItemButton>
+                    </ListItem>
+                  )}
+                  {hasPermission("READ_PERMISSION") && (
+                    <ListItem>
+                      <ListItemButton
+                        selected={selectedItem === routes.ROLESANDPERMISSIONS}
+                        onClick={() => handleSelect(routes.ROLESANDPERMISSIONS)}
+                      >
+                        Roles & permission
+                      </ListItemButton>
+                    </ListItem>
+                  )}
+                </List>
+              </Toggler>
+            </ListItem>
+          )}
           {/* <ListItemButton
             selected={selectedItem === routes.CASE_STUDIES}
             onClick={() => handleSelect(routes.CASE_STUDIES)}

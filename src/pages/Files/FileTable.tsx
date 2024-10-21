@@ -69,15 +69,37 @@ export default function FileTable() {
     setOpenFolderDialog(false);
   };
 
+  const currentUser = getCurrentUser();
+  const userRoles = currentUser?.roles || [];
+
+  // Extract the role names into an array
+  const roleNames = userRoles
+    .map((role: { name: any }) => role.name)
+    .filter(Boolean);
+  console.log(roleNames);
   useEffect(() => {
     const fetchFiles = async () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await AxiosInstance.get("files/all");
-        const data: IFile[] = Array.isArray(response.data) ? response.data : [];
-        console.log(data);
-        setFiles(data);
+
+        // Check for role access and handle fetching logic accordingly
+        if (roleNames.includes("SUPER_ADMIN")) {
+          const response = await AxiosInstance.get("files/all");
+          const data: IFile[] = Array.isArray(response.data)
+            ? response.data
+            : [];
+          setFiles(data);
+        } else if (roleNames.includes("ADMIN") || roleNames.includes("USER")) {
+          const id = currentUser?.id;
+          if (id) {
+            const response = await AxiosInstance.get(`files/all/${id}`);
+            const data: IFile[] = Array.isArray(response.data)
+              ? response.data
+              : [];
+            setFiles(data);
+          }
+        }
       } catch (error) {
         console.error("Error fetching files:", error);
         setError("Failed to fetch files. Please try again later.");
