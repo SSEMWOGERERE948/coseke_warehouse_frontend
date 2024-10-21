@@ -18,11 +18,21 @@ import { getCurrentUser } from "../../utils/helpers";
 import IUser from "../../interfaces/IUser";
 import IFile from "../../interfaces/IFile";
 import IFolder from "../../interfaces/IFolder";
+import ICaseStudy from "../../interfaces/ICaseStudy";
 
 interface CaseStudy {
   id: number;
   name: string;
   enabled: boolean;
+}
+
+export interface IFileFormData {
+  PIDInfant: string;
+  PIDMother: string;
+  boxNumber: number;
+  status: string;
+  folderId?: number;
+  caseStudyId?: number;
 }
 
 interface FileAssignmentDialogProps {
@@ -67,24 +77,25 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
 
   const handleSubmit = async () => {
     try {
+      // fileData is of type IFileFormData
+      const { folderId, caseStudyId, ...fileDataWithoutIds } = fileData;
+
       const newFile: IFile = {
-        ...fileData,
+        ...fileDataWithoutIds,
+        folder: folderId ? ({ id: folderId } as IFolder) : undefined,
+        caseStudy: caseStudyId
+          ? ({ id: caseStudyId } as ICaseStudy)
+          : undefined,
       };
 
-      console.log("newFile", newFile);
+      console.log("Creating new file:", newFile);
 
-      const response = await AxiosInstance.post("files/add", newFile);
+      const response = await AxiosInstance.post<IFile>("files/add", newFile);
 
       const createdFile = response.data;
-      // Assign the file to the selected case study and folder after creation
-      if (fileData.caseStudyId) {
-        await assignFileToCaseStudy(createdFile.id, fileData.caseStudyId);
-      }
-      if (fileData.folderId) {
-        await assignFileToFolder(createdFile.id, fileData.folderId);
-      }
+      console.log("File created:", createdFile);
 
-      onFileCreate(response.data);
+      onFileCreate(createdFile);
       fetchAllFolders();
       onClose();
     } catch (error) {

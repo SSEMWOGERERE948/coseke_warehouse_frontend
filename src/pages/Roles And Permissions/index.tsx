@@ -267,6 +267,24 @@ const RolesAndPermissions: React.FC = () => {
                 checked: rolePermissions.has(perm.name),
               })),
           },
+          {
+            Name: "Requests",
+            enabled: true,
+            permissions: response.data
+              .filter((perm: any) =>
+                [
+                  "READ_REQUESTS",
+                  "CREATE_REQUESTS",
+                  "UPDATE_REQUESTS",
+                  "DELETE_REQUESTS",
+                ].includes(perm.name),
+              )
+              .map((perm: any) => ({
+                id: perm.id,
+                permissionName: perm.name,
+                checked: rolePermissions.has(perm.name),
+              })),
+          },
         ];
 
         setPermissionsByRole(organizedPermissions);
