@@ -43,35 +43,6 @@ function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
 
 type Order = "asc" | "desc";
 
-function getComparator<Key extends keyof any>(
-  order: Order,
-  orderBy: Key,
-): (
-  a: { [key in Key]: number | string },
-  b: { [key in Key]: number | string },
-) => number {
-  return order === "desc"
-    ? (a, b) => descendingComparator(a, b, orderBy)
-    : (a, b) => -descendingComparator(a, b, orderBy);
-}
-
-function RowMenu() {
-  return (
-    <Dropdown>
-      <MenuButton
-        slots={{ root: IconButton }}
-        slotProps={{ root: { variant: "plain", color: "neutral", size: "sm" } }}
-      >
-        <MoreHorizRoundedIcon />
-      </MenuButton>
-      <Menu size="sm" sx={{ minWidth: 140 }}>
-        <MenuItem>Forward to PI</MenuItem>
-        <Divider />
-        <MenuItem color="danger">Delete</MenuItem>
-      </Menu>
-    </Dropdown>
-  );
-}
 export default function ApprovalTable() {
   const [order, setOrder] = React.useState<Order>("desc");
   const [selected, setSelected] = React.useState<readonly string[]>([]);
@@ -235,14 +206,38 @@ export default function ApprovalTable() {
                       : { "& svg": { transform: "rotate(180deg)" } },
                   ]}
                 >
-                  File PID
+                  PID Mother
+                </Link>
+              </th>
+              <th style={{ width: 120, padding: "12px 6px" }}>
+                <Link
+                  underline="none"
+                  color="primary"
+                  component="button"
+                  onClick={() => setOrder(order === "asc" ? "desc" : "asc")}
+                  endDecorator={<ArrowDropDownIcon />}
+                  sx={[
+                    {
+                      fontWeight: "lg",
+                      "& svg": {
+                        transition: "0.2s",
+                        transform:
+                          order === "desc" ? "rotate(0deg)" : "rotate(180deg)",
+                      },
+                    },
+                    order === "desc"
+                      ? { "& svg": { transform: "rotate(0deg)" } }
+                      : { "& svg": { transform: "rotate(180deg)" } },
+                  ]}
+                >
+                  PID Infant
                 </Link>
               </th>
               <th style={{ width: 240, padding: "12px 6px" }}>
                 Responsible Person
               </th>
-              <th style={{ width: 240, padding: "12px 6px" }}>Status</th>
-              <th style={{ width: 240, padding: "12px 6px" }}>Stage</th>
+              <th style={{ width: 140, padding: "12px 6px" }}>Status</th>
+              <th style={{ width: 140, padding: "12px 6px" }}>Stage</th>
               <th style={{ width: 140, padding: "12px 6px" }}>
                 Date of Return
               </th>
@@ -278,6 +273,11 @@ export default function ApprovalTable() {
                       slotProps={{ checkbox: { sx: { textAlign: "left" } } }}
                       sx={{ verticalAlign: "text-bottom" }}
                     />
+                  </td>
+                  <td>
+                    <Typography level="body-xs">
+                      {row.files.pidmother}
+                    </Typography>
                   </td>
                   <td>
                     <Typography level="body-xs">

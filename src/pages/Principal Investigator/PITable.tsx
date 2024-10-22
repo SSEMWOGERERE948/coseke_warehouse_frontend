@@ -91,7 +91,7 @@ function RowMenu({
         <Divider />
         <MenuItem
           color="danger"
-          onClick={() => async () => {
+          onClick={async () => {
             try {
               // Approve the request
               await rejectRequest(request.id!);
@@ -101,7 +101,7 @@ function RowMenu({
             }
           }}
         >
-          Decline
+          Decline s
         </MenuItem>
       </Menu>
     </Dropdown>
@@ -265,7 +265,31 @@ export default function PITable() {
                       : { "& svg": { transform: "rotate(180deg)" } },
                   ]}
                 >
-                  File PID
+                  PID Mother
+                </Link>
+              </th>
+              <th style={{ width: 120, padding: "12px 6px" }}>
+                <Link
+                  underline="none"
+                  color="primary"
+                  component="button"
+                  onClick={() => setOrder(order === "asc" ? "desc" : "asc")}
+                  endDecorator={<ArrowDropDownIcon />}
+                  sx={[
+                    {
+                      fontWeight: "lg",
+                      "& svg": {
+                        transition: "0.2s",
+                        transform:
+                          order === "desc" ? "rotate(0deg)" : "rotate(180deg)",
+                      },
+                    },
+                    order === "desc"
+                      ? { "& svg": { transform: "rotate(0deg)" } }
+                      : { "& svg": { transform: "rotate(180deg)" } },
+                  ]}
+                >
+                  PID Infant
                 </Link>
               </th>
               <th style={{ width: 240, padding: "12px 6px" }}>
@@ -304,6 +328,11 @@ export default function PITable() {
                       slotProps={{ checkbox: { sx: { textAlign: "left" } } }}
                       sx={{ verticalAlign: "text-bottom" }}
                     />
+                  </td>
+                  <td>
+                    <Typography level="body-xs">
+                      {row.files.pidmother}
+                    </Typography>
                   </td>
                   <td>
                     <Typography level="body-xs">

@@ -239,7 +239,8 @@ export default function FileTable() {
               <th>
                 <Checkbox />
               </th>
-              <th>File Name</th>
+              <th>PID Mother</th>
+              <th>PID Infant</th>
               <th>Responsible Person</th>
               <th>Status</th>
               <th>Date Modified</th>
@@ -253,6 +254,7 @@ export default function FileTable() {
                 <td>
                   <Checkbox />
                 </td>
+                <td>{file.pidmother}</td>
                 <td>{file.pidinfant}</td>
                 <td>
                   <Typography>
@@ -296,6 +298,12 @@ export default function FileTable() {
                       <DeleteIcon />
                     </IconButton>
                   )}
+                  <IconButton
+                    size="sm"
+                    onClick={(e) => handleMenuClick(e, file)}
+                  >
+                    <MoreVert />
+                  </IconButton>
                   <Menu
                     anchorEl={menuAnchorEl}
                     open={Boolean(menuAnchorEl)}
