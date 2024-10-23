@@ -59,10 +59,8 @@ function Index() {
         userDetails,
       );
       console.log("User updated successfully:", response.data);
-      // Optionally: Show success notification here
     } catch (error) {
       console.error("Error updating user:", error);
-      // Optionally: Show error notification here
     }
   };
 
@@ -100,7 +98,7 @@ function Index() {
       address: currentUser.address || "",
       password: "",
     });
-  }, [currentUser]);
+  }, []);
 
   return (
     <Box sx={{ flex: 1, width: "100%" }}>

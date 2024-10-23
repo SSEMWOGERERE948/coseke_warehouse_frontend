@@ -20,14 +20,23 @@ import {
 } from "@mui/joy";
 import { AxiosInstance } from "../../core/baseURL";
 import { useNavigate } from "react-router-dom";
-import { FormGroup } from "@mui/material";
+import { getAllDepartments } from "../Roles And Permissions/roles_api";
+import { FormControlLabel, FormGroup } from "@mui/material";
+import IRole from "../../interfaces/IRole";
 
 interface Role {
   id: number;
   name: string;
 }
 
+interface Department {
+  departmentName: string;
+  id: number;
+}
+
 interface User {
+  departments: any;
+  roles: any;
   id: number;
   first_name: string;
   last_name: string;
@@ -41,6 +50,17 @@ const Index: React.FC = () => {
   const [sortColumn, setSortColumn] = useState<keyof User | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<number[]>(
+    [],
+  );
+  const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<number[]>(
+    [],
+  );
+  const [availableDepartments, setAvailableDepartments] = useState<
+    Department[]
+  >([]);
+
   const [newUser, setNewUser] = useState<{
     first_name: string;
     last_name: string;
@@ -48,6 +68,8 @@ const Index: React.FC = () => {
     password: string;
     phone: string;
     address: string;
+    roles: any;
+    departments: any;
   }>({
     first_name: "",
     last_name: "",
@@ -55,6 +77,8 @@ const Index: React.FC = () => {
     password: "",
     phone: "",
     address: "",
+    roles: null,
+    departments: null,
   });
 
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
@@ -63,6 +87,25 @@ const Index: React.FC = () => {
   const [selectedRoleIds, setSelectedRoleIds] = useState<number[]>([]);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [usersRes, rolesRes, departmentsRes] = await Promise.all([
+          AxiosInstance.get("/users"),
+          AxiosInstance.get("/roles/all"),
+          AxiosInstance.get("departments/"),
+        ]);
+        setUsers(usersRes.data);
+        setAvailableRoles(rolesRes.data);
+        setDepartments(departmentsRes.data);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -116,6 +159,8 @@ const Index: React.FC = () => {
       password: "",
       phone: "",
       address: "",
+      roles: null,
+      departments: null,
     });
   };
 
@@ -146,7 +191,13 @@ const Index: React.FC = () => {
 
   const handleEditUser = (user: User) => {
     setSelectedUser(user);
-    setSelectedRoleIds([]); // Clear previously selected roles
+
+    setSelectedRoleIds(user.roles?.map((role: { id: any }) => role.id) || []);
+
+    setSelectedDepartmentIds(
+      user.departments?.map((dept: { id: any }) => dept.id) || [],
+    );
+
     setIsEditUserOpen(true);
   };
 
@@ -159,13 +210,66 @@ const Index: React.FC = () => {
     }
   };
 
-  const handleRoleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleRoleChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const roleId = parseInt(event.target.value);
-    setSelectedRoleIds((prev) =>
-      prev.includes(roleId)
-        ? prev.filter((id) => id !== roleId)
-        : [...prev, roleId],
-    );
+    const isChecked = event.target.checked;
+
+    if (!selectedUser) return;
+
+    try {
+      if (isChecked) {
+        // Assign the role
+        await AxiosInstance.post(`/assign-userType`, {
+          userId: selectedUser.id,
+          userTypes: [availableRoles.find((role) => role.id === roleId)?.name],
+        });
+        setSelectedRoleIds((prev) => [...prev, roleId]);
+      } else {
+        // Unassign the role
+        await AxiosInstance.post(`/unassign-userType`, {
+          userId: selectedUser.id,
+          userTypes: [availableRoles.find((role) => role.id === roleId)?.name],
+        });
+        setSelectedRoleIds((prev) => prev.filter((id) => id !== roleId));
+      }
+    } catch (error) {
+      console.error("Error updating user role:", error);
+    }
+  };
+
+  const handleDepartmentChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const departmentId = parseInt(event.target.value);
+    const isChecked = event.target.checked;
+
+    if (!selectedUser) return;
+
+    try {
+      if (isChecked) {
+        // Assign department
+        await AxiosInstance.post(`departments/assign-user-to-department`, {
+          userId: selectedUser.id,
+          departmentIds: [...selectedDepartmentIds, departmentId], // Send the department IDs
+        });
+        setSelectedDepartmentIds((prev) => [...prev, departmentId]);
+      } else {
+        // Unassign department
+        await AxiosInstance.post(`departments/unassign-user-from-department`, {
+          userId: selectedUser.id,
+          departmentIds: selectedDepartmentIds.filter(
+            (id) => id !== departmentId,
+          ), // Send updated IDs
+        });
+        setSelectedDepartmentIds((prev) =>
+          prev.filter((id) => id !== departmentId),
+        );
+      }
+    } catch (error) {
+      console.error("Error updating user department:", error);
+    }
   };
 
   const handleCloseEditUser = () => {
@@ -465,23 +569,60 @@ const Index: React.FC = () => {
                 }
               />
             </FormControl>
+            {/* <FormControl>
+              <FormLabel>Department</FormLabel>
+              <select
+                value={selectedDepartmentId || ""}
+                onChange={(e) =>
+                  setSelectedDepartmentId(
+                    e.target.value ? parseInt(e.target.value) : null,
+                  )
+                }
+              >
+                <option value="">Select Department</option>
+                {departments.map((dept) => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.departmentName}
+                  </option>
+                ))}
+              </select>
+            </FormControl> */}
+
+            <FormControl component="fieldset" sx={{ mt: 3 }}>
+              <FormLabel component="legend">Department</FormLabel>
+              <FormGroup>
+                <List>
+                  {departments.map((dept) => (
+                    <ListItem key={dept.id}>
+                      <Checkbox
+                        value={dept.id.toString()}
+                        checked={selectedDepartmentIds.includes(dept.id)} // Use selectedDepartmentIds to auto-check assigned departments
+                        onChange={handleDepartmentChange}
+                      />
+                      <Typography>{dept.departmentName}</Typography>
+                    </ListItem>
+                  ))}
+                </List>
+              </FormGroup>
+            </FormControl>
 
             {/* Roles selection */}
             <FormControl component="fieldset" sx={{ mt: 3 }}>
               <FormLabel component="legend">Select Roles</FormLabel>
               <FormGroup>
-                <List>
-                  {availableRoles.map((role) => (
-                    <ListItem key={role.id}>
+                {availableRoles.map((role) => (
+                  <FormControlLabel
+                    key={role.id}
+                    control={
                       <Checkbox
-                        value={role.id.toString()}
-                        checked={selectedRoleIds.includes(role.id)}
+                        checked={selectedRoleIds.includes(role.id)} // Check if the role is already assigned
                         onChange={handleRoleChange}
+                        value={role.id}
                       />
-                      <Typography>{role.name}</Typography>
-                    </ListItem>
-                  ))}
-                </List>
+                    }
+                    label={role.name}
+                  />
+                ))}
               </FormGroup>
             </FormControl>
 

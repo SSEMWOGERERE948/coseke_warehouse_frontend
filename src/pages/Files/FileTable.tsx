@@ -345,7 +345,7 @@ export default function FileTable() {
           >
             <Stack spacing={2}>
               <FormControl>
-                <FormLabel>File Name</FormLabel>
+                <FormLabel>pid infant</FormLabel>
                 <Input
                   value={updatedFile?.pidinfant || ""}
                   onChange={(e) =>
@@ -357,9 +357,9 @@ export default function FileTable() {
                 />
               </FormControl>
               <FormControl>
-                <FormLabel>Status</FormLabel>
+                <FormLabel>pid mother</FormLabel>
                 <Input
-                  value={updatedFile?.status || ""}
+                  value={updatedFile?.pidmother || ""}
                   onChange={(e) =>
                     setUpdatedFile((prev) => ({
                       ...prev!,

@@ -56,7 +56,7 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
   const [caseStudies, setCaseStudies] = useState<CaseStudy[]>([]);
   const [folders, setFolders] = useState<IFolder[]>([]);
   const currentUser = getCurrentUser();
-  const userEmails = [currentUser?.email]; // Store the user's email
+  const userEmails = [currentUser?.email];
 
   const handleInputChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -206,22 +206,6 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
               value={fileData.pidmother}
               onChange={handleInputChange}
             />
-          </FormControl>
-          <FormControl>
-            <FormLabel>Status</FormLabel>
-            <Select
-              name="status"
-              value={fileData.status}
-              onChange={(_, value) =>
-                setFileData((prev) => ({
-                  ...prev,
-                  status: value || "Available",
-                }))
-              }
-            >
-              <Option value="Available">Available</Option>
-              <Option value="Unavailable">Unavailable</Option>
-            </Select>
           </FormControl>
           <FormControl>
             <FormLabel>Box Number</FormLabel>
