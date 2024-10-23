@@ -16,6 +16,7 @@ import {
 import { AxiosInstance } from "../../core/baseURL";
 import { useParams, useNavigate } from "react-router-dom";
 import { FormGroup } from "@mui/material";
+import IDepartment from "../../interfaces/IDepartment";
 
 interface Role {
   id: number;
@@ -32,6 +33,12 @@ export default function UserRoles() {
   const { id } = useParams<{ id: string }>();
   const [selectedRoleIds, setSelectedRoleIds] = useState<number[]>([]);
   const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
+  const [availableDepartments, setAvailableDepartments] = useState<
+    IDepartment[]
+  >([]);
+  const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<number[]>(
+    [],
+  );
   const [user, setUser] = useState<User | null>(null); // State to hold user data
   const [userName, setUserName] = useState<string>(""); // State for editable user name
   const [userEmail, setUserEmail] = useState<string>(""); // State for editable user email
@@ -65,8 +72,18 @@ export default function UserRoles() {
       }
     };
 
+    const fetchDepartments = async () => {
+      try {
+        const response = await AxiosInstance.get("departments/");
+        setAvailableDepartments(response.data);
+      } catch (error) {
+        console.error("Error fetching roles:", error);
+      }
+    };
+
     fetchRoles();
     fetchUser();
+    fetchDepartments();
   }, [id]);
 
   const handleRoleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
