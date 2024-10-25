@@ -7,6 +7,7 @@ export interface IRequests {
   state?: string;
   files: IFile;
   user?: IUser;
+  reason?: string;
   createdDate?: number[];
   returnDate: number[] | Date;
   lastModifiedDateTime?: number[];

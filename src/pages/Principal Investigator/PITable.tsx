@@ -34,6 +34,7 @@ import {
 import IUser from "../../interfaces/IUser";
 import { currentUser } from "../../utils/constants";
 import { convertArrayToDate, getCurrentUser } from "../../utils/helpers";
+import { Stack, Textarea } from "@mui/joy";
 
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
   if (b[orderBy] < a[orderBy]) {
@@ -62,9 +63,13 @@ function getComparator<Key extends keyof any>(
 function RowMenu({
   request,
   handleGetAllRequests,
+  setRequest,
+  setRejectOpen,
 }: {
   request: IRequests;
   handleGetAllRequests: () => Promise<void>;
+  setRequest: React.Dispatch<React.SetStateAction<IRequests | null>>;
+  setRejectOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   return (
     <Dropdown>
@@ -91,17 +96,12 @@ function RowMenu({
         <Divider />
         <MenuItem
           color="danger"
-          onClick={async () => {
-            try {
-              // Approve the request
-              await rejectRequest(request.id!);
-              handleGetAllRequests();
-            } catch (error) {
-              console.error(error);
-            }
+          onClick={() => {
+            setRequest(request); // Set the current request
+            setRejectOpen(true);
           }}
         >
-          Decline s
+          Decline
         </MenuItem>
       </Menu>
     </Dropdown>
@@ -114,6 +114,21 @@ export default function PITable() {
   const [searchTerm, setSearchTerm] = React.useState<string>("");
   const [rows, setRows] = React.useState<IRequests[]>([]);
   const user = getCurrentUser();
+  const [rejectReason, setRejectReason] = React.useState("");
+  const [rejectOpen, setRejectOpen] = React.useState(false);
+  const [req, setReq] = React.useState<IRequests | null>(null);
+
+  const handleReject = async (request: IRequests) => {
+    try {
+      await rejectRequest(request.id!, rejectReason);
+      handleGetAllRequests();
+      setRejectOpen(false); // Close the modal
+      setRejectReason(""); // Reset the reason
+      setReq(null); // Clear the selected request
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   // Handle search input change
   const handleSearchChange = (event: any) => {
@@ -374,6 +389,8 @@ export default function PITable() {
                       {row.user?.email == user.email ? (
                         <RowMenu
                           request={row}
+                          setRejectOpen={setRejectOpen}
+                          setRequest={setReq}
                           handleGetAllRequests={handleGetAllRequests}
                         />
                       ) : null}
@@ -384,6 +401,82 @@ export default function PITable() {
           </tbody>
         </Table>
       </Sheet>
+
+      <Modal
+        aria-labelledby="decline-modal-dialog"
+        open={rejectOpen}
+        onClose={() => setRejectOpen(false)}
+      >
+        <ModalDialog
+          aria-labelledby="decline-modal-dialog-title"
+          aria-describedby="decline-modal-dialog-description"
+          sx={{
+            maxWidth: 500,
+            borderRadius: "md",
+            p: 3,
+            boxShadow: "lg",
+          }}
+        >
+          <ModalClose
+            variant="outlined"
+            sx={{
+              top: "calc(-1/4 * var(--IconButton-size))",
+              right: "calc(-1/4 * var(--IconButton-size))",
+              boxShadow: "0 2px 12px 0 rgba(0 0 0 / 0.2)",
+              borderRadius: "50%",
+              bgcolor: "background.surface",
+            }}
+          />
+
+          <Typography
+            id="decline-modal-dialog-title"
+            component="h2"
+            level="h4"
+            textColor="inherit"
+            fontWeight="lg"
+            mb={1}
+          >
+            Decline Request
+          </Typography>
+
+          <Typography
+            id="decline-modal-dialog-description"
+            textColor="text.tertiary"
+            mb={3}
+          >
+            Please provide a reason for declining this request.
+          </Typography>
+
+          <FormControl sx={{ mb: 2 }}>
+            <FormLabel>Reason for declining</FormLabel>
+            <Textarea
+              minRows={3}
+              sx={{ mt: 1 }}
+              placeholder="Enter your reason here..."
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+            />
+          </FormControl>
+
+          <Stack direction="row" spacing={1} justifyContent="flex-end">
+            <Button
+              variant="plain"
+              color="neutral"
+              onClick={() => setRejectOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="solid"
+              color="danger"
+              onClick={() => handleReject(req!)}
+              disabled={!rejectReason.trim()}
+            >
+              Decline Request
+            </Button>
+          </Stack>
+        </ModalDialog>
+      </Modal>
     </React.Fragment>
   );
 }

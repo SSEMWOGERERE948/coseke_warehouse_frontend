@@ -29,9 +29,14 @@ export const approveRequest = async (requestId: number): Promise<IRequests> => {
   return response.data;
 };
 
-export const rejectRequest = async (requestId: number): Promise<IRequests> => {
+export const rejectRequest = async (
+  requestId: number,
+  reason: string,
+): Promise<IRequests> => {
   const response = await AxiosInstance.put<IRequests>(
     `/requests/${requestId}/reject`,
+    null,
+    { params: { reason } },
   );
   return response.data;
 };
