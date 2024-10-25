@@ -86,8 +86,9 @@ function RowMenu({
               // Approve the request
               await approveRequest(request.id!);
               handleGetAllRequests();
-            } catch (error) {
+            } catch (error: any) {
               console.error(error);
+              alert(error.response.data);
             }
           }}
         >

@@ -72,6 +72,7 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
     try {
       const newFile: IFile = {
         ...fileData,
+        folder: { id: fileData.folderId, folderName: "" },
       };
 
       console.log("Creating new file:", newFile);
@@ -79,7 +80,6 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
       const response = await AxiosInstance.post("files/add", {
         ...newFile,
         caseStudy: fileData.caseStudy,
-        folder: fileData.folder,
       });
 
       const createdFile = response.data;

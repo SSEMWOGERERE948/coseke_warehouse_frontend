@@ -44,7 +44,8 @@ export default function FileTable() {
   const [error, setError] = useState<string | null>(null);
 
   // State for menu and dialogs
-  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
+  const [activeFileId, setActiveFileId] = useState<number | null>(null);
   const [selectedFile, setSelectedFile] = useState<IFile | null>(null);
   const [openUpdateDialog, setOpenUpdateDialog] = useState(false);
   const [updatedFile, setUpdatedFile] = useState<IFile | null>(null);
@@ -55,12 +56,15 @@ export default function FileTable() {
     event: React.MouseEvent<HTMLElement>,
     file: IFile,
   ) => {
+    event.stopPropagation();
     setMenuAnchorEl(event.currentTarget);
+    setActiveFileId(file.id!);
     setSelectedFile(file);
   };
 
   const handleMenuClose = () => {
     setMenuAnchorEl(null);
+    setActiveFileId(null);
   };
 
   const handleDialogClose = () => {
@@ -134,7 +138,14 @@ export default function FileTable() {
       }
       const res = await createRequest(requests);
       alert("Request created successfully");
-      handleDialogClose();
+      handleMenuClose();
+      // Optionally refresh the files list here to update the status
+      const updatedFiles = await AxiosInstance.get(
+        roleNames.includes("SUPER_ADMIN")
+          ? "files/all"
+          : `files/all/${currentUser?.id}`,
+      );
+      setFiles(updatedFiles.data);
     } catch (error: any) {
       console.error(
         "Error requesting checkout:",
@@ -147,7 +158,14 @@ export default function FileTable() {
     try {
       const res = await checkInFileService(file.id!);
       alert("File checked in successfully");
-      handleDialogClose();
+      handleMenuClose();
+      // Optionally refresh the files list here to update the status
+      const updatedFiles = await AxiosInstance.get(
+        roleNames.includes("SUPER_ADMIN")
+          ? "files/all"
+          : `files/all/${currentUser?.id}`,
+      );
+      setFiles(updatedFiles.data);
     } catch (error: any) {
       console.error(
         "Error requesting check in!:",
@@ -304,40 +322,46 @@ export default function FileTable() {
                   >
                     <MoreVert />
                   </IconButton>
-                  <Menu
-                    anchorEl={menuAnchorEl}
-                    open={Boolean(menuAnchorEl)}
-                    onClose={handleMenuClose}
-                  >
-                    <Divider />
-                    {file.status === "Available" ? (
-                      <MenuItem
-                        onClick={async () => {
-                          const returnDate = new Date();
-                          returnDate.setDate(returnDate.getDate() + 3);
-                          await handleRequestCheckout({
-                            files: file,
-                            returnDate: returnDate,
-                            createdBy: user.id,
-                          });
-                        }}
-                      >
-                        Checkout
-                      </MenuItem>
-                    ) : (
-                      <MenuItem
-                        onClick={async () => await handleRequestCheckin(file)}
-                      >
-                        Check-in
-                      </MenuItem>
-                    )}
-                  </Menu>
                 </td>
               </tr>
             ))}
           </tbody>
         </Table>
       </Sheet>
+
+      {/* Single Menu component outside the table */}
+      <Menu
+        anchorEl={menuAnchorEl}
+        open={Boolean(menuAnchorEl)}
+        onClose={handleMenuClose}
+      >
+        <Divider />
+        {selectedFile?.status === "Available" ? (
+          <MenuItem
+            onClick={async () => {
+              const returnDate = new Date();
+              returnDate.setDate(returnDate.getDate() + 3);
+              await handleRequestCheckout({
+                files: selectedFile,
+                returnDate: returnDate,
+                createdBy: user.id,
+              });
+            }}
+          >
+            Checkout
+          </MenuItem>
+        ) : (
+          <MenuItem
+            onClick={async () => {
+              if (selectedFile) {
+                await handleRequestCheckin(selectedFile);
+              }
+            }}
+          >
+            Check-in
+          </MenuItem>
+        )}
+      </Menu>
 
       <Modal open={openUpdateDialog} onClose={handleDialogClose}>
         <ModalDialog>
