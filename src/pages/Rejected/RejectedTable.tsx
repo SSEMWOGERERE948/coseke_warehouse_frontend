@@ -258,6 +258,7 @@ export default function RejectedTable() {
                   PID Infant
                 </Link>
               </th>
+              <th style={{ width: 140, padding: "12px 6px" }}>Box Number</th>
               <th style={{ width: 140, padding: "12px 6px" }}>Reason</th>
               <th style={{ width: 200, padding: "12px 6px" }}>
                 Responsible Person
@@ -308,6 +309,11 @@ export default function RejectedTable() {
                   <td>
                     <Typography level="body-xs">
                       {row.files.pidinfant}
+                    </Typography>
+                  </td>
+                  <td>
+                    <Typography level="body-xs">
+                      {row.files.boxNumber}
                     </Typography>
                   </td>
                   <td>

@@ -259,6 +259,7 @@ export default function FileTable() {
               </th>
               <th>PID Mother</th>
               <th>PID Infant</th>
+              <th>Box Number</th>
               <th>Responsible Person</th>
               <th>Status</th>
               <th>Date Modified</th>
@@ -274,6 +275,7 @@ export default function FileTable() {
                 </td>
                 <td>{file.pidmother}</td>
                 <td>{file.pidinfant}</td>
+                <td>{file.boxNumber}</td>
                 <td>
                   <Typography>
                     {file.responsibleUser?.first_name +

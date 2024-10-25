@@ -92,7 +92,7 @@ function RowMenu({
             }
           }}
         >
-          Checkout
+          Approve
         </MenuItem>
         <Divider />
         <MenuItem
@@ -308,6 +308,7 @@ export default function PITable() {
                   PID Infant
                 </Link>
               </th>
+              <th style={{ width: 140, padding: "12px 6px" }}>Box Number</th>
               <th style={{ width: 240, padding: "12px 6px" }}>
                 Responsible Person
               </th>
@@ -353,6 +354,11 @@ export default function PITable() {
                   <td>
                     <Typography level="body-xs">
                       {row.files.pidinfant}
+                    </Typography>
+                  </td>
+                  <td>
+                    <Typography level="body-xs">
+                      {row.files.boxNumber}
                     </Typography>
                   </td>
                   <td>
