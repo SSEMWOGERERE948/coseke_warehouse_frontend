@@ -4,4 +4,5 @@ export default interface IFolder {
   description?: string; // Optional description of the folder
   createdAt?: Date; // Optional creation date
   updatedAt?: Date; // Optional last updated date
+  isAssigned?: boolean;
 }

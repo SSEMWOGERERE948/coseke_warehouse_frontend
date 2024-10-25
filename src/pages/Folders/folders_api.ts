@@ -1,6 +1,11 @@
 import { AxiosInstance } from "../../core/baseURL";
 import IFolder from "../../interfaces/IFolder";
 
+interface AssignFolderToDepartmentRequest {
+  departmentId: number;
+  folderIds: number[];
+}
+
 export const addFolderService = async (folder: IFolder) => {
   try {
     const response = await AxiosInstance.post("folders/add", folder);
@@ -75,6 +80,17 @@ export const deleteMultipleFoldersService = async (ids: number[]) => {
     const response = await AxiosInstance.delete("folders/delete-multiple", {
       data: ids,
     });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const assignFoldersToDepartmentService = async (
+  payload: AssignFolderToDepartmentRequest,
+) => {
+  try {
+    const response = await AxiosInstance.post("/folders/assign", payload);
     return response.data;
   } catch (error) {
     throw error;
