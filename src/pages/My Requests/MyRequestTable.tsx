@@ -308,7 +308,11 @@ export default function MyRequestTable() {
                       {row.files.pidinfant}
                     </Typography>
                   </td>
-                  <td>{row.files.boxNumber}</td>
+                  <td>
+                    <Typography level="body-xs">
+                      {row.files.boxNumber}
+                    </Typography>
+                  </td>
                   <td>
                     <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
                       <Avatar size="sm">
