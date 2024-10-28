@@ -298,6 +298,22 @@ const Index: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    const fetchUserDepartments = async () => {
+      if (!selectedUser) return;
+      try {
+        const response = await AxiosInstance.get(
+          `departments/user/${selectedUser.id}`,
+        );
+        setSelectedDepartmentIds(response.data.departmentIds);
+      } catch (error) {
+        console.error("Error fetching user departments:", error);
+      }
+    };
+
+    fetchUserDepartments();
+  }, [selectedUser]);
+
   return (
     <Box sx={{ maxWidth: 1200, margin: "auto", p: 3 }}>
       <Stack

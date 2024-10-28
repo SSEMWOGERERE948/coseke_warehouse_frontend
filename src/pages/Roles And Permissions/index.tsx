@@ -503,8 +503,13 @@ const RolesAndPermissions: React.FC = () => {
     setIsLoading(true);
     try {
       const fetchedDepartments = await getAllDepartments();
-      console.log(fetchedDepartments);
-      setDepartments(fetchedDepartments);
+      if (Array.isArray(fetchedDepartments)) {
+        // Ensure it's an array
+        setDepartments(fetchedDepartments);
+      } else {
+        setDepartments([]); // Fallback to an empty array if not an array
+        console.error("Expected an array but got:", fetchedDepartments);
+      }
       setError(null);
     } catch (error) {
       setError("Failed to fetch departments");
@@ -954,79 +959,80 @@ const RolesAndPermissions: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {departments.map((department: IDepartment) => (
-                    <tr key={department.id!}>
-                      <td>{department.departmentName}</td>
-                      <td>
-                        {convertArrayToDate(
-                          department.createdDate!,
-                        )?.toDateString()}
-                      </td>
-                      <td>
-                        {convertArrayToDate(
-                          department.lastModifiedDateTime!,
-                        )?.toDateString()}
-                      </td>
-                      <td>
-                        <Button
-                          size="sm"
-                          variant="outlined"
-                          color="danger"
-                          onClick={async () => {
-                            if (department.id) {
-                              try {
-                                await deleteDepartment(department.id);
-                                await fetchDepartments();
-                              } catch (err) {
-                                setDefaultResultOrder(
-                                  "Failed to delete department",
-                                );
-                                console.error(
-                                  "Error deleting department:",
-                                  err,
-                                );
+                  {Array.isArray(departments) &&
+                    departments.map((department: IDepartment) => (
+                      <tr key={department.id!}>
+                        <td>{department.departmentName}</td>
+                        <td>
+                          {convertArrayToDate(
+                            department.createdDate!,
+                          ).toDateString()}
+                        </td>
+                        <td>
+                          {convertArrayToDate(
+                            department.lastModifiedDateTime!,
+                          ).toDateString()}
+                        </td>
+                        <td>
+                          <Button
+                            size="sm"
+                            variant="outlined"
+                            color="danger"
+                            onClick={async () => {
+                              if (department.id) {
+                                try {
+                                  await deleteDepartment(department.id);
+                                  await fetchDepartments();
+                                } catch (err) {
+                                  setDefaultResultOrder(
+                                    "Failed to delete department",
+                                  );
+                                  console.error(
+                                    "Error deleting department:",
+                                    err,
+                                  );
+                                }
                               }
-                            }
-                          }}
-                        >
-                          Delete
-                        </Button>
-
-                        {/* Three-dotted icon */}
-                        <IconButton
-                          onClick={(event) =>
-                            handleOpenAssignDialog(event, department.id!)
-                          }
-                        >
-                          <MoreVert />
-                        </IconButton>
-
-                        {/* Menu for assigning folders */}
-                        <Menu
-                          anchorEl={anchorEl} // The element the menu is anchored to
-                          open={Boolean(anchorEl)} // Open when anchorEl is not null
-                          onClose={handleCloseMenu} // Close the menu
-                        >
-                          <Menu
-                            anchorEl={anchorEl}
-                            open={
-                              Boolean(anchorEl) &&
-                              selectedDepartmentId === department.id
-                            }
-                            onClose={handleCloseMenu}
+                            }}
                           >
-                            <MenuItem
-                              onClick={() =>
-                                handleAssignFolders(department.id!)
+                            Delete
+                          </Button>
+
+                          {/* Three-dotted icon */}
+                          <IconButton
+                            onClick={(event) =>
+                              handleOpenAssignDialog(event, department.id!)
+                            }
+                          >
+                            <MoreVert />
+                          </IconButton>
+
+                          {/* Menu for assigning folders */}
+                          <Menu
+                            anchorEl={anchorEl} // The element the menu is anchored to
+                            open={Boolean(anchorEl)} // Open when anchorEl is not null
+                            onClose={handleCloseMenu} // Close the menu
+                          >
+                            <Menu
+                              anchorEl={anchorEl}
+                              open={
+                                Boolean(anchorEl) &&
+                                selectedDepartmentId === department.id
                               }
+                              onClose={handleCloseMenu}
                             >
-                              Assign Folders
-                            </MenuItem>
+                              <MenuItem
+                                onClick={() =>
+                                  handleAssignFolders(department.id!)
+                                }
+                              >
+                                Assign Folders
+                              </MenuItem>
+                            </Menu>
                           </Menu>
-                        </Menu>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    ))}
                 </tbody>
               </Table>
             </Sheet>

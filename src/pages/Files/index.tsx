@@ -122,7 +122,8 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
 
   const fetchAllFolders = async () => {
     try {
-      const response = await AxiosInstance.get("folders/all");
+      const id = currentUser?.id;
+      const response = await AxiosInstance.get(`folders/all/${id}`);
       setFolders(response.data || []);
     } catch (error) {
       console.error("Error fetching folders", error);

@@ -68,7 +68,8 @@ export default function Navigation() {
   useEffect(() => {
     const fetchAllFolders = async () => {
       try {
-        const response = await AxiosInstance.get("folders/all");
+        const userId = currentUser?.id;
+        const response = await AxiosInstance.get(`folders/all/${userId}`);
         setFolders([
           {
             id: 0,
