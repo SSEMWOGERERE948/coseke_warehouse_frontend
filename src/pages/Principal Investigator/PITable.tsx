@@ -138,7 +138,7 @@ export default function PITable() {
 
   // Filter files based on search term
   const filteredFiles = rows.filter((req) =>
-    req.files.pidinfant.toLowerCase().includes(searchTerm.toLowerCase()),
+    req.files.pid.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const handleGetAllRequests = async () => {
@@ -319,9 +319,7 @@ export default function PITable() {
           </thead>
           <tbody>
             {[...filteredFiles]
-              .sort((a, b) =>
-                a.files.pidinfant.localeCompare(b.files.pidinfant),
-              )
+              .sort((a, b) => a.files.pid.localeCompare(b.files.pid))
               .map((row) => (
                 <tr key={row.id}>
                   <td style={{ textAlign: "center", width: 120 }}>
@@ -347,14 +345,7 @@ export default function PITable() {
                     />
                   </td>
                   <td>
-                    <Typography level="body-xs">
-                      {row.files.pidmother}
-                    </Typography>
-                  </td>
-                  <td>
-                    <Typography level="body-xs">
-                      {row.files.pidinfant}
-                    </Typography>
+                    <Typography level="body-xs">{row.files.pid}</Typography>
                   </td>
                   <td>
                     <Typography level="body-xs">

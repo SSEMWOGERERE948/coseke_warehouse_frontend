@@ -4,8 +4,7 @@ import ICaseStudy from "./ICaseStudy";
 
 export default interface IFile {
   id?: number; // Optional since it will be generated
-  pidinfant: string;
-  pidmother: string;
+  pid: string;
   boxNumber: number;
   status: string;
   responsibleUser?: IUser; // User entity relationship

@@ -125,9 +125,7 @@ export default function FileTable() {
   };
 
   const filteredFiles = files.filter((file) =>
-    file.id
-      ? file.pidinfant?.toLowerCase().includes(search.toLowerCase())
-      : false,
+    file.id ? file.pid?.toLowerCase().includes(search.toLowerCase()) : false,
   );
 
   const handleRequestCheckout = async (requests: IRequests) => {
@@ -257,8 +255,7 @@ export default function FileTable() {
               <th>
                 <Checkbox />
               </th>
-              <th>PID Mother</th>
-              <th>PID Infant</th>
+              <th>PID</th>
               <th>Box Number</th>
               <th>Responsible Person</th>
               <th>Status</th>
@@ -273,8 +270,7 @@ export default function FileTable() {
                 <td>
                   <Checkbox />
                 </td>
-                <td>{file.pidmother}</td>
-                <td>{file.pidinfant}</td>
+                <td>{file.pid}</td>
                 <td>{file.boxNumber}</td>
                 <td>
                   <Typography>
@@ -381,7 +377,7 @@ export default function FileTable() {
               <FormControl>
                 <FormLabel>pid infant</FormLabel>
                 <Input
-                  value={updatedFile?.pidinfant || ""}
+                  value={updatedFile?.pid || ""}
                   onChange={(e) =>
                     setUpdatedFile((prev) => ({
                       ...prev!,
@@ -393,7 +389,7 @@ export default function FileTable() {
               <FormControl>
                 <FormLabel>pid mother</FormLabel>
                 <Input
-                  value={updatedFile?.pidmother || ""}
+                  value={updatedFile?.pid || ""}
                   onChange={(e) =>
                     setUpdatedFile((prev) => ({
                       ...prev!,
