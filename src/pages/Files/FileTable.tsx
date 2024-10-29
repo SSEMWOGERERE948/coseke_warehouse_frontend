@@ -90,6 +90,7 @@ export default function FileTable() {
           const data: IFile[] = Array.isArray(response.data)
             ? response.data
             : [];
+          console.log(data);
           setFiles(data);
         } else if (roleNames.includes("ADMIN") || roleNames.includes("USER")) {
           const id = currentUser?.id;

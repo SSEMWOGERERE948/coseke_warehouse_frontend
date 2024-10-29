@@ -281,31 +281,7 @@ export default function PITable() {
                       : { "& svg": { transform: "rotate(180deg)" } },
                   ]}
                 >
-                  PID Mother
-                </Link>
-              </th>
-              <th style={{ width: 120, padding: "12px 6px" }}>
-                <Link
-                  underline="none"
-                  color="primary"
-                  component="button"
-                  onClick={() => setOrder(order === "asc" ? "desc" : "asc")}
-                  endDecorator={<ArrowDropDownIcon />}
-                  sx={[
-                    {
-                      fontWeight: "lg",
-                      "& svg": {
-                        transition: "0.2s",
-                        transform:
-                          order === "desc" ? "rotate(0deg)" : "rotate(180deg)",
-                      },
-                    },
-                    order === "desc"
-                      ? { "& svg": { transform: "rotate(0deg)" } }
-                      : { "& svg": { transform: "rotate(180deg)" } },
-                  ]}
-                >
-                  PID Infant
+                  PID
                 </Link>
               </th>
               <th style={{ width: 140, padding: "12px 6px" }}>Box Number</th>
