@@ -197,6 +197,7 @@ export default function DashboardContent() {
       value: fileCount,
       icon: <ContentPasteIcon sx={{ color: "white" }} />,
       color: "blue",
+      backgroundColor: "#BBDEFB", // Lighter blue for a soothing effect
       change: "Available files in the system",
       changeColor: "success",
     },
@@ -205,6 +206,7 @@ export default function DashboardContent() {
       value: unavailableFileCount,
       icon: <ContentPasteOffIcon sx={{ color: "white" }} />,
       color: "red",
+      backgroundColor: "#FFCDD2", // Lighter red for visibility
       change: "Files that have been checked out",
       changeColor: "success",
     },
@@ -213,6 +215,7 @@ export default function DashboardContent() {
       value: caseStudyCount,
       icon: <BusinessCenterIcon sx={{ color: "white" }} />,
       color: "green",
+      backgroundColor: "#C8E6C9", // Lighter green for positivity
       change: "Active case studies",
       changeColor: "danger",
     },
@@ -221,6 +224,7 @@ export default function DashboardContent() {
       value: approvalsCount,
       icon: <AddTaskIcon sx={{ color: "white" }} />,
       color: "blue",
+      backgroundColor: "#BBDEFB", // Consistent lighter blue
       change: "Current number of Approvals in the system",
       changeColor: "success",
     },
@@ -338,7 +342,9 @@ export default function DashboardContent() {
       <Grid container spacing={3}>
         {cardsData.map((card, index) => (
           <Grid xs={12} sm={6} md={3} key={index}>
-            <Card sx={{ height: "100%" }}>
+            <Card
+              sx={{ height: "100%", backgroundColor: card.backgroundColor }}
+            >
               <CardContent>
                 <Box
                   display="flex"
