@@ -223,8 +223,8 @@ export default function DashboardContent() {
       title: "Approvals",
       value: approvalsCount,
       icon: <AddTaskIcon sx={{ color: "white" }} />,
-      color: "blue",
-      backgroundColor: "#BBDEFB", // Consistent lighter blue
+      color: "orange", // Orange for the icon background
+      backgroundColor: "#FFE0B2", // Light orange background
       change: "Current number of Approvals in the system",
       changeColor: "success",
     },

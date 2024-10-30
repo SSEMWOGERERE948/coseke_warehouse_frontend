@@ -35,7 +35,7 @@ import {
   updateFileService,
   deleteFileService,
 } from "./files_api";
-import { EditIcon, DeleteIcon } from "lucide-react";
+import { EditIcon, DeleteIcon, ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function FileTable() {
   const [files, setFiles] = useState<IFile[]>([]);
@@ -49,6 +49,9 @@ export default function FileTable() {
   const [selectedFile, setSelectedFile] = useState<IFile | null>(null);
   const [openUpdateDialog, setOpenUpdateDialog] = useState(false);
   const [updatedFile, setUpdatedFile] = useState<IFile | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const pageSizeOptions = [5, 10, 25, 50];
 
   const user = getCurrentUser();
 
@@ -220,6 +223,25 @@ export default function FileTable() {
     );
   };
 
+  const totalPages = Math.ceil(filteredFiles.length / pageSize);
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedFiles = filteredFiles.slice(startIndex, endIndex);
+
+  const handlePageChange = (newPage: number) => {
+    setPage(Math.max(1, Math.min(newPage, totalPages)));
+  };
+
+  const handlePageSizeChange = (
+    event: React.SyntheticEvent | null,
+    newValue: string | null,
+  ) => {
+    if (newValue) {
+      setPageSize(Number(newValue));
+      setPage(1); // Reset to first page when changing page size
+    }
+  };
+
   return (
     <Box sx={{ p: 3 }}>
       <Typography level="h2" sx={{ mb: 2 }}>
@@ -266,7 +288,7 @@ export default function FileTable() {
             </tr>
           </thead>
           <tbody>
-            {filteredFiles.map((file) => (
+            {paginatedFiles.map((file) => (
               <tr key={file.id}>
                 <td>
                   <Checkbox />
@@ -327,6 +349,37 @@ export default function FileTable() {
           </tbody>
         </Table>
       </Sheet>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: 2,
+          mt: 2,
+        }}
+      >
+        <IconButton
+          size="sm"
+          variant="outlined"
+          color="neutral"
+          onClick={() => handlePageChange(page - 1)}
+          disabled={page === 1}
+        >
+          <ChevronLeft />
+        </IconButton>
+        <Typography level="body-sm">
+          Page {page} of {totalPages}
+        </Typography>
+        <IconButton
+          size="sm"
+          variant="outlined"
+          color="neutral"
+          onClick={() => handlePageChange(page + 1)}
+          disabled={page === totalPages}
+        >
+          <ChevronRight />
+        </IconButton>
+      </Box>
 
       {/* Single Menu component outside the table */}
       <Menu
