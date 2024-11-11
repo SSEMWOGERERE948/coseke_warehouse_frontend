@@ -25,17 +25,16 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import MoreHorizRoundedIcon from "@mui/icons-material/MoreHorizRounded";
 import SearchIcon from "@mui/icons-material/Search";
+import { Stack, Textarea } from "@mui/joy";
+import * as XLSX from "xlsx";
 import { IRequests } from "../../interfaces/IRequests";
+import { convertArrayToDate, getCurrentUser } from "../../utils/helpers";
 import {
-  approveRequest,
   changeStage,
   getAllRequests,
   rejectRequest,
 } from "../Requests/requests_api";
-import IUser from "../../interfaces/IUser";
-import { currentUser } from "../../utils/constants";
-import { convertArrayToDate, getCurrentUser } from "../../utils/helpers";
-import { Stack, Textarea } from "@mui/joy";
+import { SearchRounded } from "@mui/icons-material";
 
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
   if (b[orderBy] < a[orderBy]) {
@@ -117,6 +116,65 @@ export default function RequestTable() {
   const [rejectReason, setRejectReason] = React.useState("");
   const [rejectOpen, setRejectOpen] = React.useState(false);
   const [req, setReq] = React.useState<IRequests | null>(null);
+  const [dateRange, setDateRange] = React.useState<{
+    start: Date | null;
+    end: Date | null;
+  }>({
+    start: null,
+    end: null,
+  });
+
+  // Helper function to format date arrays
+  const formatDate = (dateArray?: number[]) => {
+    if (!dateArray) return "N/A";
+    const date = new Date(dateArray[0], dateArray[1] - 1, dateArray[2]);
+    return date.toLocaleDateString();
+  };
+
+  // Flatten and filter data based on date range
+  const prepareDataForExport = () => {
+    return rows
+      .filter((file) => {
+        // Apply date filtering only if both start and end dates are provided
+        if (dateRange.start && dateRange.end) {
+          const fileDate = file.createdDate
+            ? new Date(
+                file.createdDate[0],
+                file.createdDate[1] - 1,
+                file.createdDate[2],
+              )
+            : null;
+          return (
+            fileDate && fileDate >= dateRange.start && fileDate <= dateRange.end
+          );
+        }
+        return true; // No date filtering if either start or end date is missing
+      })
+      .map((file) => ({
+        ID: file.id || "N/A",
+        PID: file.files.pid,
+        "Box Number": file.files.boxNumber,
+        Status: file.state,
+        Stage: file.stage,
+        "Responsible Person": file.user
+          ? `${file.user.first_name} ${file.user.last_name}`
+          : "N/A",
+        Email: file.user?.email || "N/A",
+        "Date Created": formatDate(file.createdDate),
+        "Last Modified Date": formatDate(file.lastModifiedDateTime),
+        "Created By": file.createdBy,
+      }));
+  };
+
+  const handleExportToExcel = () => {
+    const data = prepareDataForExport();
+    const worksheet = XLSX.utils.json_to_sheet(data); // Convert files array to worksheet
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Files Report");
+
+    // Generate and trigger Excel download
+    XLSX.writeFile(workbook, "Officer Requests.xlsx");
+  };
 
   const handleReject = async (request: IRequests) => {
     try {
@@ -198,13 +256,61 @@ export default function RequestTable() {
       >
         <FormControl sx={{ flex: 1 }} size="sm">
           <FormLabel>Search for file</FormLabel>
-          <Input
-            size="sm"
-            placeholder="Search"
-            startDecorator={<SearchIcon />}
-            value={searchTerm}
-            onChange={handleSearchChange} // Update the search term
-          />
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+            }}
+          >
+            <Input
+              startDecorator={<SearchRounded />}
+              placeholder="Search for file"
+              size="md"
+              sx={{ width: 300 }}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+
+            {/* Start Date label and input */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography>Start Date:</Typography>
+              <Input
+                type="date"
+                placeholder="Start Date"
+                onChange={(e) =>
+                  setDateRange({
+                    ...dateRange,
+                    start: e.target.value ? new Date(e.target.value) : null,
+                  })
+                }
+              />
+            </Box>
+
+            {/* End Date label and input */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography>End Date:</Typography>
+              <Input
+                type="date"
+                placeholder="End Date"
+                onChange={(e) =>
+                  setDateRange({
+                    ...dateRange,
+                    end: e.target.value ? new Date(e.target.value) : null,
+                  })
+                }
+              />
+            </Box>
+
+            {/* Export to Excel button */}
+            <Button
+              onClick={handleExportToExcel}
+              variant="solid"
+              color="primary"
+            >
+              Export to Excel
+            </Button>
+          </Box>
         </FormControl>
       </Box>
       <Sheet

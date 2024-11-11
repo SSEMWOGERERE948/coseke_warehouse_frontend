@@ -120,7 +120,6 @@ export default function DashboardContent() {
     fetchCaseStudies();
     fetchUnavailableFiles();
     fetchApprovals();
-    fetchLogs();
   }, []);
 
   const fetchCaseStudies = async () => {
@@ -142,7 +141,6 @@ export default function DashboardContent() {
 
   useEffect(() => {
     fetchCaseStudies();
-    fetchLogs();
   }, [pageSize, currentPage]);
 
   const fetchUnavailableFiles = async () => {
@@ -173,24 +171,6 @@ export default function DashboardContent() {
     }
   };
 
-  const fetchLogs = async () => {
-    setLoadingLogs(true);
-    try {
-      const response = await AxiosInstance.get(`logging/all`, {
-        params: {
-          page: currentPage - 1, // API pages are usually 0-indexed
-          size: pageSize,
-        },
-      });
-      setLogs(response.data.content);
-      setTotalLogs(response.data.totalElements);
-    } catch (error) {
-      console.error("Error fetching logs:", error);
-    }
-    setLoadingLogs(false);
-  };
-
-  const totalPages = Math.ceil(totalLogs / pageSize);
   const cardsData = [
     {
       title: "Available files",
@@ -240,7 +220,6 @@ export default function DashboardContent() {
         file.createdDate[2], // Day
         file.createdDate[3], // Hour
         file.createdDate[4], // Minute
-        file.createdDate[5], // Second
       );
       const month = createdDate.getMonth(); // Get the month (0-11)
       monthlyCounts[month]++; // Increment the count for the month
@@ -380,96 +359,8 @@ export default function DashboardContent() {
       <Box sx={{ mt: 4 }}>
         <Typography level="h4">Request and approved files</Typography>
         <div className="w-full max-w-3xl mx-auto p-4">
-          <Select
-            value={scale}
-            onChange={(e, newValue) => setScale(newValue as string)}
-            className="mb-4"
-          >
-            <option value="days">Days</option>
-            <option value="months">Months</option>
-            <option value="years">Years</option>
-          </Select>
           {chartData && <Line options={options} data={chartData} />}
         </div>{" "}
-      </Box>
-
-      {/* Logs Table Section */}
-      <Box sx={{ mt: 2, overflowX: "auto" }}>
-        <table
-          style={{ width: "100%", border: "1px solid #ddd", marginTop: "10px" }}
-        >
-          <thead>
-            <tr>
-              <th style={{ padding: "8px", textAlign: "left" }}>Date</th>
-              <th style={{ padding: "8px", textAlign: "left" }}>Type</th>
-              <th style={{ padding: "8px", textAlign: "left" }}>Message</th>
-              <th style={{ padding: "8px", textAlign: "left" }}>User</th>
-            </tr>
-          </thead>
-          <tbody>
-            {logs.map((log, index) => (
-              <tr key={index}>
-                <td style={{ padding: "8px" }}>{log.date}</td>
-                <td style={{ padding: "8px" }}>{log.type}</td>
-                <td style={{ padding: "8px" }}>{log.message}</td>
-                <td style={{ padding: "8px" }}>{log.user || "N/A"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Box>
-
-      {/* Pagination Section */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          mt: 3,
-          alignItems: "center",
-        }}
-      >
-        <Typography>
-          Showing {Math.min(logs.length, pageSize)} of {totalLogs} logs
-        </Typography>
-
-        {/* Page Size Selector */}
-        {/* <Box>
-          <Typography>Select logs per page:</Typography>
-          <Select
-            value={pageSize.toString()}
-            onChange={(_, value) => {
-              if (value) {
-                setPageSize(Number(value));
-                setCurrentPage(1); // Reset to the first page when page size changes
-              }
-            }}
-          >
-            <Option value="10">10</Option>
-            <Option value="25">25</Option>
-            <Option value="50">50</Option>
-          </Select>
-        </Box> */}
-
-        {/* Page Navigation */}
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <Button
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-          >
-            Prev
-          </Button>
-          <Typography>
-            {currentPage} / {totalPages}
-          </Typography>
-          <Button
-            onClick={() =>
-              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-            }
-            disabled={currentPage === totalPages}
-          >
-            Next
-          </Button>
-        </Box>
       </Box>
     </Box>
   );

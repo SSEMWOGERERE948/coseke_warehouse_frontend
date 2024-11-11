@@ -4,15 +4,11 @@ import Box from "@mui/joy/Box";
 import Button from "@mui/joy/Button";
 import Checkbox from "@mui/joy/Checkbox";
 import Divider from "@mui/joy/Divider";
-import Dropdown from "@mui/joy/Dropdown";
 import FormControl from "@mui/joy/FormControl";
 import FormLabel from "@mui/joy/FormLabel";
 import IconButton from "@mui/joy/IconButton";
 import Input from "@mui/joy/Input";
 import Link from "@mui/joy/Link";
-import Menu from "@mui/joy/Menu";
-import MenuButton from "@mui/joy/MenuButton";
-import MenuItem from "@mui/joy/MenuItem";
 import Modal from "@mui/joy/Modal";
 import ModalClose from "@mui/joy/ModalClose";
 import ModalDialog from "@mui/joy/ModalDialog";
@@ -21,15 +17,13 @@ import Table from "@mui/joy/Table";
 import Typography from "@mui/joy/Typography";
 import * as React from "react";
 
+import { SearchRounded } from "@mui/icons-material";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
-import MoreHorizRoundedIcon from "@mui/icons-material/MoreHorizRounded";
-import SearchIcon from "@mui/icons-material/Search";
+import * as XLSX from "xlsx";
 import { IRequests } from "../../interfaces/IRequests";
-import { getAllRequests } from "../Requests/requests_api";
-import IUser from "../../interfaces/IUser";
-import { currentUser } from "../../utils/constants";
 import { convertArrayToDate, getCurrentUser } from "../../utils/helpers";
+import { getAllRequests } from "../Requests/requests_api";
 
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
   if (b[orderBy] < a[orderBy]) {
@@ -50,7 +44,65 @@ export default function ApprovalTable() {
   const [searchTerm, setSearchTerm] = React.useState<string>("");
   const [rows, setRows] = React.useState<IRequests[]>([]);
   const user = getCurrentUser();
+  const [dateRange, setDateRange] = React.useState<{
+    start: Date | null;
+    end: Date | null;
+  }>({
+    start: null,
+    end: null,
+  });
 
+  // Helper function to format date arrays
+  const formatDate = (dateArray?: number[]) => {
+    if (!dateArray) return "N/A";
+    const date = new Date(dateArray[0], dateArray[1] - 1, dateArray[2]);
+    return date.toLocaleDateString();
+  };
+
+  // Flatten and filter data based on date range
+  const prepareDataForExport = () => {
+    return rows
+      .filter((file) => {
+        // Apply date filtering only if both start and end dates are provided
+        if (dateRange.start && dateRange.end) {
+          const fileDate = file.createdDate
+            ? new Date(
+                file.createdDate[0],
+                file.createdDate[1] - 1,
+                file.createdDate[2],
+              )
+            : null;
+          return (
+            fileDate && fileDate >= dateRange.start && fileDate <= dateRange.end
+          );
+        }
+        return true; // No date filtering if either start or end date is missing
+      })
+      .map((file) => ({
+        ID: file.id || "N/A",
+        PID: file.files.pid,
+        "Box Number": file.files.boxNumber,
+        Status: file.state,
+        Stage: file.stage,
+        "Responsible Person": file.user
+          ? `${file.user.first_name} ${file.user.last_name}`
+          : "N/A",
+        Email: file.user?.email || "N/A",
+        "Date Created": formatDate(file.createdDate),
+        "Last Modified Date": formatDate(file.lastModifiedDateTime),
+        "Created By": file.createdBy,
+      }));
+  };
+
+  const handleExportToExcel = () => {
+    const data = prepareDataForExport();
+    const worksheet = XLSX.utils.json_to_sheet(data); // Convert files array to worksheet
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Files Report");
+
+    // Generate and trigger Excel download
+    XLSX.writeFile(workbook, "Approved Requests.xlsx");
+  };
   // Handle search input change
   const handleSearchChange = (event: any) => {
     setSearchTerm(event.target.value);
@@ -80,12 +132,6 @@ export default function ApprovalTable() {
         className="SearchAndFilters-mobile"
         sx={{ display: { xs: "flex", sm: "none" }, my: 1, gap: 1 }}
       >
-        <Input
-          size="sm"
-          placeholder="Search"
-          startDecorator={<SearchIcon />}
-          sx={{ flexGrow: 1 }}
-        />
         <IconButton
           size="sm"
           variant="outlined"
@@ -124,13 +170,61 @@ export default function ApprovalTable() {
       >
         <FormControl sx={{ flex: 1 }} size="sm">
           <FormLabel>Search for file</FormLabel>
-          <Input
-            size="sm"
-            placeholder="Search"
-            startDecorator={<SearchIcon />}
-            value={searchTerm}
-            onChange={handleSearchChange} // Update the search term
-          />
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+            }}
+          >
+            <Input
+              startDecorator={<SearchRounded />}
+              placeholder="Search for file"
+              size="md"
+              sx={{ width: 300 }}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+
+            {/* Start Date label and input */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography>Start Date:</Typography>
+              <Input
+                type="date"
+                placeholder="Start Date"
+                onChange={(e) =>
+                  setDateRange({
+                    ...dateRange,
+                    start: e.target.value ? new Date(e.target.value) : null,
+                  })
+                }
+              />
+            </Box>
+
+            {/* End Date label and input */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography>End Date:</Typography>
+              <Input
+                type="date"
+                placeholder="End Date"
+                onChange={(e) =>
+                  setDateRange({
+                    ...dateRange,
+                    end: e.target.value ? new Date(e.target.value) : null,
+                  })
+                }
+              />
+            </Box>
+
+            {/* Export to Excel button */}
+            <Button
+              onClick={handleExportToExcel}
+              variant="solid"
+              color="primary"
+            >
+              Export to Excel
+            </Button>
+          </Box>
         </FormControl>
       </Box>
       <Sheet

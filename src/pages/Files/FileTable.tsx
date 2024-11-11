@@ -17,6 +17,8 @@ import {
   Stack,
   FormControl,
   FormLabel,
+  Select,
+  Option,
 } from "@mui/joy";
 import {
   CheckCircle,
@@ -36,6 +38,7 @@ import {
   deleteFileService,
 } from "./files_api";
 import { EditIcon, DeleteIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import * as XLSX from "xlsx";
 
 export default function FileTable() {
   const [files, setFiles] = useState<IFile[]>([]);
@@ -52,6 +55,65 @@ export default function FileTable() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const pageSizeOptions = [5, 10, 25, 50];
+  const [dateRange, setDateRange] = useState<{
+    start: Date | null;
+    end: Date | null;
+  }>({
+    start: null,
+    end: null,
+  });
+  const [fileStatus, setFileStatus] = React.useState<string>("all"); // Track selected file status
+
+  // Helper function to format date arrays
+  const formatDate = (dateArray?: number[]) => {
+    if (!dateArray) return "N/A";
+    const date = new Date(dateArray[0], dateArray[1] - 1, dateArray[2]);
+    return date.toLocaleDateString();
+  };
+
+  // Flatten and filter data based on date range
+  const prepareDataForExport = () => {
+    return files
+      .filter((file) => {
+        // Apply date filtering only if both start and end dates are provided
+        if (dateRange.start && dateRange.end) {
+          const fileDate = file.createdDate
+            ? new Date(
+                file.createdDate[0],
+                file.createdDate[1] - 1,
+                file.createdDate[2],
+              )
+            : null;
+          return (
+            fileDate && fileDate >= dateRange.start && fileDate <= dateRange.end
+          );
+        }
+        return true; // No date filtering if either start or end date is missing
+      })
+      .map((file) => ({
+        ID: file.id || "N/A",
+        PID: file.pid,
+        "Box Number": file.boxNumber,
+        Status: file.status,
+        "Responsible Person": file.responsibleUser
+          ? `${file.responsibleUser.first_name} ${file.responsibleUser.last_name}`
+          : "N/A",
+        Email: file.responsibleUser?.email || "N/A",
+        "Date Created": formatDate(file.createdDate),
+        "Last Modified Date": formatDate(file.lastModifiedDateTime),
+        "Created By": file.createdBy,
+      }));
+  };
+
+  const handleExportToExcel = () => {
+    const data = prepareDataForExport();
+    const worksheet = XLSX.utils.json_to_sheet(data); // Convert files array to worksheet
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Files Report");
+
+    // Generate and trigger Excel download
+    XLSX.writeFile(workbook, "Files Report.xlsx");
+  };
 
   const user = getCurrentUser();
 
@@ -93,7 +155,6 @@ export default function FileTable() {
           const data: IFile[] = Array.isArray(response.data)
             ? response.data
             : [];
-          console.log(data);
           setFiles(data);
         } else if (roleNames.includes("ADMIN") || roleNames.includes("USER")) {
           const id = currentUser?.id;
@@ -128,9 +189,17 @@ export default function FileTable() {
     );
   };
 
-  const filteredFiles = files.filter((file) =>
-    file.id ? file.pid?.toLowerCase().includes(search.toLowerCase()) : false,
-  );
+  const filteredFiles = files.filter((file) => {
+    // Filter by search term
+    const matchesSearch = file.id
+      ? file.pid?.toLowerCase().includes(search.toLowerCase())
+      : false;
+
+    // Filter by file status (available, unavailable, all)
+    const matchesStatus = fileStatus === "all" || file.status === fileStatus;
+
+    return matchesSearch && matchesStatus;
+  });
 
   const handleRequestCheckout = async (requests: IRequests) => {
     try {
@@ -262,6 +331,55 @@ export default function FileTable() {
           sx={{ width: 300 }}
           onChange={(e) => setSearch(e.target.value)}
         />
+
+        {/* Start Date label and input */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Typography>Start Date:</Typography>
+          <Input
+            type="date"
+            placeholder="Start Date"
+            onChange={(e) =>
+              setDateRange({
+                ...dateRange,
+                start: e.target.value ? new Date(e.target.value) : null,
+              })
+            }
+          />
+        </Box>
+
+        {/* End Date label and input */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Typography>End Date:</Typography>
+          <Input
+            type="date"
+            placeholder="End Date"
+            onChange={(e) =>
+              setDateRange({
+                ...dateRange,
+                end: e.target.value ? new Date(e.target.value) : null,
+              })
+            }
+          />
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Typography>Status:</Typography>
+          <Select
+            value={fileStatus}
+            onChange={(e: any) => {
+              setFileStatus(e?.target.innerText);
+            }}
+            sx={{ width: 150 }}
+          >
+            <Option value="all">All Files</Option>
+            <Option value="Available">Available</Option>
+            <Option value="Unavailable">Unavailable</Option>
+          </Select>
+        </Box>
+
+        {/* Export to Excel button */}
+        <Button onClick={handleExportToExcel} variant="solid" color="primary">
+          Export to Excel
+        </Button>
       </Box>
       <Sheet
         variant="outlined"
@@ -313,7 +431,7 @@ export default function FileTable() {
                 </td>
                 <td>
                   {Array.isArray(file.createdDate)
-                    ? convertArrayToDate(file.createdDate)?.toDateString()
+                    ? convertArrayToDate(file.createdDate)!.toDateString()
                     : "N/A"}
                 </td>
                 <td>
