@@ -21,19 +21,20 @@ import Table from "@mui/joy/Table";
 import Typography from "@mui/joy/Typography";
 import * as React from "react";
 
+import { SearchRounded } from "@mui/icons-material";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import MoreHorizRoundedIcon from "@mui/icons-material/MoreHorizRounded";
 import SearchIcon from "@mui/icons-material/Search";
+import { Stack, Textarea } from "@mui/joy";
+import * as XLSX from "xlsx";
 import { IRequests } from "../../interfaces/IRequests";
+import { convertArrayToDate, getCurrentUser } from "../../utils/helpers";
 import {
   approveRequest,
   getAllRequests,
   rejectRequest,
 } from "../Requests/requests_api";
-import IUser from "../../interfaces/IUser";
-import { currentUser } from "../../utils/constants";
-import { convertArrayToDate, getCurrentUser } from "../../utils/helpers";
 
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
   if (b[orderBy] < a[orderBy]) {
@@ -62,9 +63,13 @@ function getComparator<Key extends keyof any>(
 function RowMenu({
   request,
   handleGetAllRequests,
+  setRequest,
+  setRejectOpen,
 }: {
   request: IRequests;
   handleGetAllRequests: () => Promise<void>;
+  setRequest: React.Dispatch<React.SetStateAction<IRequests | null>>;
+  setRejectOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   return (
     <Dropdown>
@@ -81,24 +86,20 @@ function RowMenu({
               // Approve the request
               await approveRequest(request.id!);
               handleGetAllRequests();
-            } catch (error) {
+            } catch (error: any) {
               console.error(error);
+              alert(error.response.data);
             }
           }}
         >
-          Checkout
+          Approve
         </MenuItem>
         <Divider />
         <MenuItem
           color="danger"
-          onClick={() => async () => {
-            try {
-              // Approve the request
-              await rejectRequest(request.id!);
-              handleGetAllRequests();
-            } catch (error) {
-              console.error(error);
-            }
+          onClick={() => {
+            setRequest(request); // Set the current request
+            setRejectOpen(true);
           }}
         >
           Decline
@@ -114,6 +115,80 @@ export default function PITable() {
   const [searchTerm, setSearchTerm] = React.useState<string>("");
   const [rows, setRows] = React.useState<IRequests[]>([]);
   const user = getCurrentUser();
+  const [rejectReason, setRejectReason] = React.useState("");
+  const [rejectOpen, setRejectOpen] = React.useState(false);
+  const [req, setReq] = React.useState<IRequests | null>(null);
+  const [dateRange, setDateRange] = React.useState<{
+    start: Date | null;
+    end: Date | null;
+  }>({
+    start: null,
+    end: null,
+  });
+
+  // Helper function to format date arrays
+  const formatDate = (dateArray?: number[]) => {
+    if (!dateArray) return "N/A";
+    const date = new Date(dateArray[0], dateArray[1] - 1, dateArray[2]);
+    return date.toLocaleDateString();
+  };
+
+  // Flatten and filter data based on date range
+  const prepareDataForExport = () => {
+    return rows
+      .filter((file) => {
+        // Apply date filtering only if both start and end dates are provided
+        if (dateRange.start && dateRange.end) {
+          const fileDate = file.createdDate
+            ? new Date(
+                file.createdDate[0],
+                file.createdDate[1] - 1,
+                file.createdDate[2],
+              )
+            : null;
+          return (
+            fileDate && fileDate >= dateRange.start && fileDate <= dateRange.end
+          );
+        }
+        return true; // No date filtering if either start or end date is missing
+      })
+      .map((file) => ({
+        ID: file.id || "N/A",
+        PID: file.files.pid,
+        "Box Number": file.files.boxNumber,
+        Status: file.state,
+        Stage: file.stage,
+        "Responsible Person": file.user
+          ? `${file.user.first_name} ${file.user.last_name}`
+          : "N/A",
+        Email: file.user?.email || "N/A",
+        "Date Created": formatDate(file.createdDate),
+        "Last Modified Date": formatDate(file.lastModifiedDateTime),
+        "Created By": file.createdBy,
+      }));
+  };
+
+  const handleExportToExcel = () => {
+    const data = prepareDataForExport();
+    const worksheet = XLSX.utils.json_to_sheet(data); // Convert files array to worksheet
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Files Report");
+
+    // Generate and trigger Excel download
+    XLSX.writeFile(workbook, "PI Approvals.xlsx");
+  };
+
+  const handleReject = async (request: IRequests) => {
+    try {
+      await rejectRequest(request.id!, rejectReason);
+      handleGetAllRequests();
+      setRejectOpen(false); // Close the modal
+      setRejectReason(""); // Reset the reason
+      setReq(null); // Clear the selected request
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   // Handle search input change
   const handleSearchChange = (event: any) => {
@@ -122,7 +197,7 @@ export default function PITable() {
 
   // Filter files based on search term
   const filteredFiles = rows.filter((req) =>
-    req.files.pidinfant.toLowerCase().includes(searchTerm.toLowerCase()),
+    req.files.pid.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const handleGetAllRequests = async () => {
@@ -183,13 +258,61 @@ export default function PITable() {
       >
         <FormControl sx={{ flex: 1 }} size="sm">
           <FormLabel>Search for file</FormLabel>
-          <Input
-            size="sm"
-            placeholder="Search"
-            startDecorator={<SearchIcon />}
-            value={searchTerm}
-            onChange={handleSearchChange} // Update the search term
-          />
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+            }}
+          >
+            <Input
+              startDecorator={<SearchRounded />}
+              placeholder="Search for file"
+              size="md"
+              sx={{ width: 300 }}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+
+            {/* Start Date label and input */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography>Start Date:</Typography>
+              <Input
+                type="date"
+                placeholder="Start Date"
+                onChange={(e) =>
+                  setDateRange({
+                    ...dateRange,
+                    start: e.target.value ? new Date(e.target.value) : null,
+                  })
+                }
+              />
+            </Box>
+
+            {/* End Date label and input */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography>End Date:</Typography>
+              <Input
+                type="date"
+                placeholder="End Date"
+                onChange={(e) =>
+                  setDateRange({
+                    ...dateRange,
+                    end: e.target.value ? new Date(e.target.value) : null,
+                  })
+                }
+              />
+            </Box>
+
+            {/* Export to Excel button */}
+            <Button
+              onClick={handleExportToExcel}
+              variant="solid"
+              color="primary"
+            >
+              Export to Excel
+            </Button>
+          </Box>
         </FormControl>
       </Box>
       <Sheet
@@ -265,9 +388,10 @@ export default function PITable() {
                       : { "& svg": { transform: "rotate(180deg)" } },
                   ]}
                 >
-                  File PID
+                  PID
                 </Link>
               </th>
+              <th style={{ width: 140, padding: "12px 6px" }}>Box Number</th>
               <th style={{ width: 240, padding: "12px 6px" }}>
                 Responsible Person
               </th>
@@ -278,9 +402,7 @@ export default function PITable() {
           </thead>
           <tbody>
             {[...filteredFiles]
-              .sort((a, b) =>
-                a.files.pidinfant.localeCompare(b.files.pidinfant),
-              )
+              .sort((a, b) => a.files.pid.localeCompare(b.files.pid))
               .map((row) => (
                 <tr key={row.id}>
                   <td style={{ textAlign: "center", width: 120 }}>
@@ -306,8 +428,11 @@ export default function PITable() {
                     />
                   </td>
                   <td>
+                    <Typography level="body-xs">{row.files.pid}</Typography>
+                  </td>
+                  <td>
                     <Typography level="body-xs">
-                      {row.files.pidinfant}
+                      {row.files.boxNumber}
                     </Typography>
                   </td>
                   <td>
@@ -345,6 +470,8 @@ export default function PITable() {
                       {row.user?.email == user.email ? (
                         <RowMenu
                           request={row}
+                          setRejectOpen={setRejectOpen}
+                          setRequest={setReq}
                           handleGetAllRequests={handleGetAllRequests}
                         />
                       ) : null}
@@ -355,6 +482,82 @@ export default function PITable() {
           </tbody>
         </Table>
       </Sheet>
+
+      <Modal
+        aria-labelledby="decline-modal-dialog"
+        open={rejectOpen}
+        onClose={() => setRejectOpen(false)}
+      >
+        <ModalDialog
+          aria-labelledby="decline-modal-dialog-title"
+          aria-describedby="decline-modal-dialog-description"
+          sx={{
+            maxWidth: 500,
+            borderRadius: "md",
+            p: 3,
+            boxShadow: "lg",
+          }}
+        >
+          <ModalClose
+            variant="outlined"
+            sx={{
+              top: "calc(-1/4 * var(--IconButton-size))",
+              right: "calc(-1/4 * var(--IconButton-size))",
+              boxShadow: "0 2px 12px 0 rgba(0 0 0 / 0.2)",
+              borderRadius: "50%",
+              bgcolor: "background.surface",
+            }}
+          />
+
+          <Typography
+            id="decline-modal-dialog-title"
+            component="h2"
+            level="h4"
+            textColor="inherit"
+            fontWeight="lg"
+            mb={1}
+          >
+            Decline Request
+          </Typography>
+
+          <Typography
+            id="decline-modal-dialog-description"
+            textColor="text.tertiary"
+            mb={3}
+          >
+            Please provide a reason for declining this request.
+          </Typography>
+
+          <FormControl sx={{ mb: 2 }}>
+            <FormLabel>Reason for declining</FormLabel>
+            <Textarea
+              minRows={3}
+              sx={{ mt: 1 }}
+              placeholder="Enter your reason here..."
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+            />
+          </FormControl>
+
+          <Stack direction="row" spacing={1} justifyContent="flex-end">
+            <Button
+              variant="plain"
+              color="neutral"
+              onClick={() => setRejectOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="solid"
+              color="danger"
+              onClick={() => handleReject(req!)}
+              disabled={!rejectReason.trim()}
+            >
+              Decline Request
+            </Button>
+          </Stack>
+        </ModalDialog>
+      </Modal>
     </React.Fragment>
   );
 }

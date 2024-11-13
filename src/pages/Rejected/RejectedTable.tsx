@@ -28,6 +28,8 @@ import SearchIcon from "@mui/icons-material/Search";
 import { IRequests } from "../../interfaces/IRequests";
 import { convertArrayToDate, getCurrentUser } from "../../utils/helpers";
 import { getAllRequests } from "../Requests/requests_api";
+import * as XLSX from "xlsx";
+import { SearchRounded } from "@mui/icons-material";
 
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
   if (b[orderBy] < a[orderBy]) {
@@ -85,7 +87,7 @@ export default function RejectedTable() {
 
   // Filter files based on search term
   const filteredFiles = rows.filter((req) =>
-    req.files.pidinfant.toLowerCase().includes(searchTerm.toLowerCase()),
+    req.files.pid.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   React.useEffect(() => {
@@ -98,6 +100,67 @@ export default function RejectedTable() {
       );
     })();
   }, []);
+
+  const [dateRange, setDateRange] = React.useState<{
+    start: Date | null;
+    end: Date | null;
+  }>({
+    start: null,
+    end: null,
+  });
+
+  // Helper function to format date arrays
+  const formatDate = (dateArray?: number[]) => {
+    if (!dateArray) return "N/A";
+    const date = new Date(dateArray[0], dateArray[1] - 1, dateArray[2]);
+    return date.toLocaleDateString();
+  };
+
+  // Flatten and filter data based on date range
+  const prepareDataForExport = () => {
+    return rows
+      .filter((file) => {
+        // Apply date filtering only if both start and end dates are provided
+        if (dateRange.start && dateRange.end) {
+          const fileDate = file.createdDate
+            ? new Date(
+                file.createdDate[0],
+                file.createdDate[1] - 1,
+                file.createdDate[2],
+              )
+            : null;
+          return (
+            fileDate && fileDate >= dateRange.start && fileDate <= dateRange.end
+          );
+        }
+        return true; // No date filtering if either start or end date is missing
+      })
+      .map((file) => ({
+        ID: file.id || "N/A",
+        PID: file.files.pid,
+        "Box Number": file.files.boxNumber,
+        Status: file.state,
+        Stage: file.stage,
+        Reason: file.reason,
+        "Responsible Person": file.user
+          ? `${file.user.first_name} ${file.user.last_name}`
+          : "N/A",
+        Email: file.user?.email || "N/A",
+        "Date Created": formatDate(file.createdDate),
+        "Last Modified Date": formatDate(file.lastModifiedDateTime),
+        "Created By": file.createdBy,
+      }));
+  };
+
+  const handleExportToExcel = () => {
+    const data = prepareDataForExport();
+    const worksheet = XLSX.utils.json_to_sheet(data); // Convert files array to worksheet
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Files Report");
+
+    // Generate and trigger Excel download
+    XLSX.writeFile(workbook, "Rejected Requests.xlsx");
+  };
 
   return (
     <React.Fragment>
@@ -149,13 +212,61 @@ export default function RejectedTable() {
       >
         <FormControl sx={{ flex: 1 }} size="sm">
           <FormLabel>Search for file</FormLabel>
-          <Input
-            size="sm"
-            placeholder="Search"
-            startDecorator={<SearchIcon />}
-            value={searchTerm}
-            onChange={handleSearchChange} // Update the search term
-          />
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+            }}
+          >
+            <Input
+              startDecorator={<SearchRounded />}
+              placeholder="Search for file"
+              size="md"
+              sx={{ width: 300 }}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+
+            {/* Start Date label and input */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography>Start Date:</Typography>
+              <Input
+                type="date"
+                placeholder="Start Date"
+                onChange={(e) =>
+                  setDateRange({
+                    ...dateRange,
+                    start: e.target.value ? new Date(e.target.value) : null,
+                  })
+                }
+              />
+            </Box>
+
+            {/* End Date label and input */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography>End Date:</Typography>
+              <Input
+                type="date"
+                placeholder="End Date"
+                onChange={(e) =>
+                  setDateRange({
+                    ...dateRange,
+                    end: e.target.value ? new Date(e.target.value) : null,
+                  })
+                }
+              />
+            </Box>
+
+            {/* Export to Excel button */}
+            <Button
+              onClick={handleExportToExcel}
+              variant="solid"
+              color="primary"
+            >
+              Export to Excel
+            </Button>
+          </Box>
         </FormControl>
       </Box>
       <Sheet
@@ -231,14 +342,16 @@ export default function RejectedTable() {
                       : { "& svg": { transform: "rotate(180deg)" } },
                   ]}
                 >
-                  File PID
+                  PID
                 </Link>
               </th>
-              <th style={{ width: 240, padding: "12px 6px" }}>
+              <th style={{ width: 140, padding: "12px 6px" }}>Box Number</th>
+              <th style={{ width: 140, padding: "12px 6px" }}>Reason</th>
+              <th style={{ width: 200, padding: "12px 6px" }}>
                 Responsible Person
               </th>
-              <th style={{ width: 240, padding: "12px 6px" }}>Status</th>
-              <th style={{ width: 240, padding: "12px 6px" }}>Stage</th>
+              <th style={{ width: 140, padding: "12px 6px" }}>Status</th>
+              <th style={{ width: 140, padding: "12px 6px" }}>Stage</th>
               <th style={{ width: 140, padding: "12px 6px" }}>
                 Date of Return
               </th>
@@ -248,9 +361,7 @@ export default function RejectedTable() {
           </thead>
           <tbody>
             {[...filteredFiles]
-              .sort((a, b) =>
-                a.files.pidinfant.localeCompare(b.files.pidinfant),
-              )
+              .sort((a, b) => a.files.pid.localeCompare(b.files.pid))
               .map((row) => (
                 <tr key={row.id}>
                   <td style={{ textAlign: "center", width: 120 }}>
@@ -276,9 +387,15 @@ export default function RejectedTable() {
                     />
                   </td>
                   <td>
+                    <Typography level="body-xs">{row.files.pid}</Typography>
+                  </td>
+                  <td>
                     <Typography level="body-xs">
-                      {row.files.pidinfant}
+                      {row.files.boxNumber}
                     </Typography>
+                  </td>
+                  <td>
+                    <Typography level="body-xs">{row.reason}</Typography>
                   </td>
                   <td>
                     <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>

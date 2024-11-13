@@ -17,6 +17,8 @@ import {
   Stack,
   FormControl,
   FormLabel,
+  Select,
+  Option,
 } from "@mui/joy";
 import {
   CheckCircle,
@@ -35,7 +37,8 @@ import {
   updateFileService,
   deleteFileService,
 } from "./files_api";
-import { EditIcon, DeleteIcon } from "lucide-react";
+import { EditIcon, DeleteIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import * as XLSX from "xlsx";
 
 export default function FileTable() {
   const [files, setFiles] = useState<IFile[]>([]);
@@ -44,10 +47,73 @@ export default function FileTable() {
   const [error, setError] = useState<string | null>(null);
 
   // State for menu and dialogs
-  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
+  const [activeFileId, setActiveFileId] = useState<number | null>(null);
   const [selectedFile, setSelectedFile] = useState<IFile | null>(null);
   const [openUpdateDialog, setOpenUpdateDialog] = useState(false);
   const [updatedFile, setUpdatedFile] = useState<IFile | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const pageSizeOptions = [5, 10, 25, 50];
+  const [dateRange, setDateRange] = useState<{
+    start: Date | null;
+    end: Date | null;
+  }>({
+    start: null,
+    end: null,
+  });
+  const [fileStatus, setFileStatus] = React.useState<string>("all"); // Track selected file status
+
+  // Helper function to format date arrays
+  const formatDate = (dateArray?: number[]) => {
+    if (!dateArray) return "N/A";
+    const date = new Date(dateArray[0], dateArray[1] - 1, dateArray[2]);
+    return date.toLocaleDateString();
+  };
+
+  // Flatten and filter data based on date range
+  const prepareDataForExport = () => {
+    return files
+      .filter((file) => {
+        // Apply date filtering only if both start and end dates are provided
+        if (dateRange.start && dateRange.end) {
+          const fileDate = file.createdDate
+            ? new Date(
+                file.createdDate[0],
+                file.createdDate[1] - 1,
+                file.createdDate[2],
+              )
+            : null;
+          return (
+            fileDate && fileDate >= dateRange.start && fileDate <= dateRange.end
+          );
+        }
+        return true; // No date filtering if either start or end date is missing
+      })
+      .map((file) => ({
+        ID: file.id || "N/A",
+        PID: file.pid,
+        "Box Number": file.boxNumber,
+        Status: file.status,
+        "Responsible Person": file.responsibleUser
+          ? `${file.responsibleUser.first_name} ${file.responsibleUser.last_name}`
+          : "N/A",
+        Email: file.responsibleUser?.email || "N/A",
+        "Date Created": formatDate(file.createdDate),
+        "Last Modified Date": formatDate(file.lastModifiedDateTime),
+        "Created By": file.createdBy,
+      }));
+  };
+
+  const handleExportToExcel = () => {
+    const data = prepareDataForExport();
+    const worksheet = XLSX.utils.json_to_sheet(data); // Convert files array to worksheet
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Files Report");
+
+    // Generate and trigger Excel download
+    XLSX.writeFile(workbook, "Files Report.xlsx");
+  };
 
   const user = getCurrentUser();
 
@@ -55,12 +121,15 @@ export default function FileTable() {
     event: React.MouseEvent<HTMLElement>,
     file: IFile,
   ) => {
+    event.stopPropagation();
     setMenuAnchorEl(event.currentTarget);
+    setActiveFileId(file.id!);
     setSelectedFile(file);
   };
 
   const handleMenuClose = () => {
     setMenuAnchorEl(null);
+    setActiveFileId(null);
   };
 
   const handleDialogClose = () => {
@@ -120,11 +189,17 @@ export default function FileTable() {
     );
   };
 
-  const filteredFiles = files.filter((file) =>
-    file.id
-      ? file.pidinfant?.toLowerCase().includes(search.toLowerCase())
-      : false,
-  );
+  const filteredFiles = files.filter((file) => {
+    // Filter by search term
+    const matchesSearch = file.id
+      ? file.pid?.toLowerCase().includes(search.toLowerCase())
+      : false;
+
+    // Filter by file status (available, unavailable, all)
+    const matchesStatus = fileStatus === "all" || file.status === fileStatus;
+
+    return matchesSearch && matchesStatus;
+  });
 
   const handleRequestCheckout = async (requests: IRequests) => {
     try {
@@ -134,7 +209,14 @@ export default function FileTable() {
       }
       const res = await createRequest(requests);
       alert("Request created successfully");
-      handleDialogClose();
+      handleMenuClose();
+      // Optionally refresh the files list here to update the status
+      const updatedFiles = await AxiosInstance.get(
+        roleNames.includes("SUPER_ADMIN")
+          ? "files/all"
+          : `files/all/${currentUser?.id}`,
+      );
+      setFiles(updatedFiles.data);
     } catch (error: any) {
       console.error(
         "Error requesting checkout:",
@@ -147,7 +229,14 @@ export default function FileTable() {
     try {
       const res = await checkInFileService(file.id!);
       alert("File checked in successfully");
-      handleDialogClose();
+      handleMenuClose();
+      // Optionally refresh the files list here to update the status
+      const updatedFiles = await AxiosInstance.get(
+        roleNames.includes("SUPER_ADMIN")
+          ? "files/all"
+          : `files/all/${currentUser?.id}`,
+      );
+      setFiles(updatedFiles.data);
     } catch (error: any) {
       console.error(
         "Error requesting check in!:",
@@ -203,6 +292,25 @@ export default function FileTable() {
     );
   };
 
+  const totalPages = Math.ceil(filteredFiles.length / pageSize);
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedFiles = filteredFiles.slice(startIndex, endIndex);
+
+  const handlePageChange = (newPage: number) => {
+    setPage(Math.max(1, Math.min(newPage, totalPages)));
+  };
+
+  const handlePageSizeChange = (
+    event: React.SyntheticEvent | null,
+    newValue: string | null,
+  ) => {
+    if (newValue) {
+      setPageSize(Number(newValue));
+      setPage(1); // Reset to first page when changing page size
+    }
+  };
+
   return (
     <Box sx={{ p: 3 }}>
       <Typography level="h2" sx={{ mb: 2 }}>
@@ -223,6 +331,55 @@ export default function FileTable() {
           sx={{ width: 300 }}
           onChange={(e) => setSearch(e.target.value)}
         />
+
+        {/* Start Date label and input */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Typography>Start Date:</Typography>
+          <Input
+            type="date"
+            placeholder="Start Date"
+            onChange={(e) =>
+              setDateRange({
+                ...dateRange,
+                start: e.target.value ? new Date(e.target.value) : null,
+              })
+            }
+          />
+        </Box>
+
+        {/* End Date label and input */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Typography>End Date:</Typography>
+          <Input
+            type="date"
+            placeholder="End Date"
+            onChange={(e) =>
+              setDateRange({
+                ...dateRange,
+                end: e.target.value ? new Date(e.target.value) : null,
+              })
+            }
+          />
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Typography>Status:</Typography>
+          <Select
+            value={fileStatus}
+            onChange={(e: any) => {
+              setFileStatus(e?.target.innerText);
+            }}
+            sx={{ width: 150 }}
+          >
+            <Option value="all">All Files</Option>
+            <Option value="Available">Available</Option>
+            <Option value="Unavailable">Unavailable</Option>
+          </Select>
+        </Box>
+
+        {/* Export to Excel button */}
+        <Button onClick={handleExportToExcel} variant="solid" color="primary">
+          Export to Excel
+        </Button>
       </Box>
       <Sheet
         variant="outlined"
@@ -239,7 +396,8 @@ export default function FileTable() {
               <th>
                 <Checkbox />
               </th>
-              <th>File Name</th>
+              <th>PID</th>
+              <th>Box Number</th>
               <th>Responsible Person</th>
               <th>Status</th>
               <th>Date Modified</th>
@@ -248,12 +406,13 @@ export default function FileTable() {
             </tr>
           </thead>
           <tbody>
-            {filteredFiles.map((file) => (
+            {paginatedFiles.map((file) => (
               <tr key={file.id}>
                 <td>
                   <Checkbox />
                 </td>
-                <td>{file.pidinfant}</td>
+                <td>{file.pid}</td>
+                <td>{file.boxNumber}</td>
                 <td>
                   <Typography>
                     {file.responsibleUser?.first_name +
@@ -272,7 +431,7 @@ export default function FileTable() {
                 </td>
                 <td>
                   {Array.isArray(file.createdDate)
-                    ? convertArrayToDate(file.createdDate)?.toDateString()
+                    ? convertArrayToDate(file.createdDate)!.toDateString()
                     : "N/A"}
                 </td>
                 <td>
@@ -296,40 +455,83 @@ export default function FileTable() {
                       <DeleteIcon />
                     </IconButton>
                   )}
-                  <Menu
-                    anchorEl={menuAnchorEl}
-                    open={Boolean(menuAnchorEl)}
-                    onClose={handleMenuClose}
+                  <IconButton
+                    size="sm"
+                    onClick={(e) => handleMenuClick(e, file)}
                   >
-                    <Divider />
-                    {file.status === "Available" ? (
-                      <MenuItem
-                        onClick={async () => {
-                          const returnDate = new Date();
-                          returnDate.setDate(returnDate.getDate() + 3);
-                          await handleRequestCheckout({
-                            files: file,
-                            returnDate: returnDate,
-                            createdBy: user.id,
-                          });
-                        }}
-                      >
-                        Checkout
-                      </MenuItem>
-                    ) : (
-                      <MenuItem
-                        onClick={async () => await handleRequestCheckin(file)}
-                      >
-                        Check-in
-                      </MenuItem>
-                    )}
-                  </Menu>
+                    <MoreVert />
+                  </IconButton>
                 </td>
               </tr>
             ))}
           </tbody>
         </Table>
       </Sheet>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: 2,
+          mt: 2,
+        }}
+      >
+        <IconButton
+          size="sm"
+          variant="outlined"
+          color="neutral"
+          onClick={() => handlePageChange(page - 1)}
+          disabled={page === 1}
+        >
+          <ChevronLeft />
+        </IconButton>
+        <Typography level="body-sm">
+          Page {page} of {totalPages}
+        </Typography>
+        <IconButton
+          size="sm"
+          variant="outlined"
+          color="neutral"
+          onClick={() => handlePageChange(page + 1)}
+          disabled={page === totalPages}
+        >
+          <ChevronRight />
+        </IconButton>
+      </Box>
+
+      {/* Single Menu component outside the table */}
+      <Menu
+        anchorEl={menuAnchorEl}
+        open={Boolean(menuAnchorEl)}
+        onClose={handleMenuClose}
+      >
+        <Divider />
+        {selectedFile?.status === "Available" ? (
+          <MenuItem
+            onClick={async () => {
+              const returnDate = new Date();
+              returnDate.setDate(returnDate.getDate() + 3);
+              await handleRequestCheckout({
+                files: selectedFile,
+                returnDate: returnDate,
+                createdBy: user.id,
+              });
+            }}
+          >
+            Checkout
+          </MenuItem>
+        ) : (
+          <MenuItem
+            onClick={async () => {
+              if (selectedFile) {
+                await handleRequestCheckin(selectedFile);
+              }
+            }}
+          >
+            Check-in
+          </MenuItem>
+        )}
+      </Menu>
 
       <Modal open={openUpdateDialog} onClose={handleDialogClose}>
         <ModalDialog>
@@ -347,7 +549,7 @@ export default function FileTable() {
               <FormControl>
                 <FormLabel>pid infant</FormLabel>
                 <Input
-                  value={updatedFile?.pidinfant || ""}
+                  value={updatedFile?.pid || ""}
                   onChange={(e) =>
                     setUpdatedFile((prev) => ({
                       ...prev!,
@@ -359,7 +561,7 @@ export default function FileTable() {
               <FormControl>
                 <FormLabel>pid mother</FormLabel>
                 <Input
-                  value={updatedFile?.pidmother || ""}
+                  value={updatedFile?.pid || ""}
                   onChange={(e) =>
                     setUpdatedFile((prev) => ({
                       ...prev!,

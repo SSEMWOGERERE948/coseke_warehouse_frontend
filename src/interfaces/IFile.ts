@@ -3,10 +3,8 @@ import IFolder from "./IFolder";
 import ICaseStudy from "./ICaseStudy";
 
 export default interface IFile {
-  [x: string]: any;
-  id?: number;
-  pidinfant: string;
-  pidmother: string;
+  id?: number; // Optional since it will be generated
+  pid: string;
   boxNumber: number;
   status: string;
   responsibleUser?: IUser; // User entity relationship

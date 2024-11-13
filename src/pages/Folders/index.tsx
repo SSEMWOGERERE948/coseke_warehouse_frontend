@@ -231,7 +231,7 @@ export default function FilesExample() {
                               }
                               sx={{ alignItems: "flex-start" }}
                             >
-                              {file.pidinfant}
+                              {file.pid}
                             </Typography>
                             <AvatarGroup
                               size="sm"
@@ -331,10 +331,7 @@ export default function FilesExample() {
                       "& > *:nth-child(odd)": { color: "text.secondary" },
                     }}
                   >
-                    <DetailItem
-                      label="File PID"
-                      value={selectedFile.pidinfant}
-                    />
+                    <DetailItem label="File PID" value={selectedFile.pid} />
                     <DetailItem label="Status" value={selectedFile.status} />
                     <DetailItem
                       label="Modified"

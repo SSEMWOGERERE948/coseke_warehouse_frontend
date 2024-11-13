@@ -1,34 +1,36 @@
-import * as React from "react";
+import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
+import EditRoundedIcon from "@mui/icons-material/EditRounded";
+import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import AspectRatio from "@mui/joy/AspectRatio";
 import Box from "@mui/joy/Box";
-import Button from "@mui/joy/Button";
-import Divider from "@mui/joy/Divider";
-import FormControl from "@mui/joy/FormControl";
-import FormLabel from "@mui/joy/FormLabel";
-import Input from "@mui/joy/Input";
-import IconButton from "@mui/joy/IconButton";
-import Stack from "@mui/joy/Stack";
-import Select from "@mui/joy/Select";
-import Option from "@mui/joy/Option";
-import Typography from "@mui/joy/Typography";
-import Tabs from "@mui/joy/Tabs";
-import TabList from "@mui/joy/TabList";
-import Tab, { tabClasses } from "@mui/joy/Tab";
 import Breadcrumbs from "@mui/joy/Breadcrumbs";
-import Link from "@mui/joy/Link";
+import Button from "@mui/joy/Button";
 import Card from "@mui/joy/Card";
 import CardActions from "@mui/joy/CardActions";
 import CardOverflow from "@mui/joy/CardOverflow";
-import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
-import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
-import EmailRoundedIcon from "@mui/icons-material/EmailRounded";
-import AccessTimeFilledRoundedIcon from "@mui/icons-material/AccessTimeFilledRounded";
-import EditRoundedIcon from "@mui/icons-material/EditRounded";
+import Divider from "@mui/joy/Divider";
+import FormControl from "@mui/joy/FormControl";
+import FormLabel from "@mui/joy/FormLabel";
+import IconButton from "@mui/joy/IconButton";
+import Input from "@mui/joy/Input";
+import Link from "@mui/joy/Link";
+import Stack from "@mui/joy/Stack";
+import Typography from "@mui/joy/Typography";
+import * as React from "react";
 import { AxiosInstance } from "../../core/baseURL";
 import { getCurrentUser } from "../../utils/helpers";
+import { updatePassword, updateUser } from "../users/user_api";
+import { Alert, Snackbar } from "@mui/material";
+import { toast } from "react-toastify";
 
 function Index() {
   const [selectedImage, setSelectedImage] = React.useState<string | null>(null);
+  const [openSnackbar, setOpenSnackbar] = React.useState(false);
+  const [snackbarMessage, setSnackbarMessage] = React.useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = React.useState<
+    "success" | "error"
+  >("success");
+
   const [userDetails, setUserDetails] = React.useState({
     first_name: "",
     last_name: "",
@@ -36,6 +38,11 @@ function Index() {
     phone: "",
     address: "",
     password: "",
+  });
+
+  const [newPassword, setNewPassword] = React.useState({
+    currentPassword: "",
+    newPassword: "",
   });
 
   const currentUser = getCurrentUser();
@@ -48,20 +55,6 @@ function Index() {
       ...prevDetails,
       [name]: value,
     }));
-  };
-
-  // Save profile details
-  const handleSave = async () => {
-    try {
-      // Sending PUT request to update the user
-      const response = await AxiosInstance.put(
-        `/users/update/${currentUser.id}`,
-        userDetails,
-      );
-      console.log("User updated successfully:", response.data);
-    } catch (error) {
-      console.error("Error updating user:", error);
-    }
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -99,6 +92,40 @@ function Index() {
       password: "",
     });
   }, []);
+
+  const handleSave = async () => {
+    try {
+      const response = await updateUser(currentUser.id, userDetails);
+      console.log("User updated successfully:", response);
+      toast.success("User updated successfully!");
+    } catch (error) {
+      console.error("Error updating user:", error);
+      toast.error("Error updating user. Please try again.");
+    }
+  };
+
+  const handleSavePassword = async () => {
+    try {
+      const response = await updatePassword(
+        currentUser.id,
+        newPassword.currentPassword,
+        newPassword.newPassword,
+      );
+      console.log("Password updated successfully:", response);
+      toast.success("Password updated successfully!");
+    } catch (error) {
+      console.error("Error updating password:", error);
+      toast.error("Error updating password. Please try again.");
+    }
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setNewPassword((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
   return (
     <Box sx={{ flex: 1, width: "100%" }}>
@@ -253,40 +280,6 @@ function Index() {
                   onChange={handleChange}
                 />
               </Stack>
-              <Stack spacing={1}>
-                <FormLabel>Password</FormLabel>
-                <Input
-                  name="password"
-                  type="password"
-                  size="sm"
-                  placeholder="Password"
-                  value={userDetails.password}
-                  onChange={handleChange}
-                />
-              </Stack>
-              {/* <div>
-                <FormControl sx={{ display: { sm: "contents" } }}>
-                  <FormLabel>Timezone</FormLabel>
-                  <Select
-                    size="sm"
-                    startDecorator={<AccessTimeFilledRoundedIcon />}
-                    defaultValue="1"
-                  >
-                    <Option value="1">
-                      Indochina Time (Bangkok)
-                      <Typography textColor="text.tertiary" sx={{ ml: 0.5 }}>
-                        — GMT+07:00
-                      </Typography>
-                    </Option>
-                    <Option value="2">
-                      Indochina Time (Ho Chi Minh City)
-                      <Typography textColor="text.tertiary" sx={{ ml: 0.5 }}>
-                        — GMT+07:00
-                      </Typography>
-                    </Option>
-                  </Select>
-                </FormControl>
-              </div> */}
             </Stack>
           </Stack>
           <CardOverflow sx={{ borderTop: "1px solid", borderColor: "divider" }}>
@@ -300,7 +293,7 @@ function Index() {
             </CardActions>
           </CardOverflow>
         </Card>
-        {/* <Card>
+        <Card>
           <Box sx={{ mb: 1 }}>
             <Typography level="title-md">Change Password</Typography>
             <Typography level="body-sm">
@@ -310,23 +303,37 @@ function Index() {
           <Divider />
           <FormControl>
             <FormLabel>Current Password</FormLabel>
-            <Input size="sm" type="password" placeholder="Current Password" />
+            <Input
+              size="sm"
+              type="password"
+              value={newPassword.currentPassword}
+              onChange={handlePasswordChange}
+              name="currentPassword"
+              placeholder="Current Password"
+            />
           </FormControl>
           <FormControl>
             <FormLabel>New Password</FormLabel>
-            <Input size="sm" type="password" placeholder="New Password" />
+            <Input
+              size="sm"
+              value={newPassword.newPassword}
+              onChange={handlePasswordChange}
+              name="newPassword"
+              type="password"
+              placeholder="New Password"
+            />
           </FormControl>
           <CardOverflow sx={{ borderTop: "1px solid", borderColor: "divider" }}>
             <CardActions sx={{ alignSelf: "flex-end", pt: 2 }}>
               <Button size="sm" variant="outlined" color="neutral">
                 Cancel
               </Button>
-              <Button size="sm" variant="solid">
+              <Button size="sm" variant="solid" onClick={handleSavePassword}>
                 Save
               </Button>
             </CardActions>
           </CardOverflow>
-        </Card> */}
+        </Card>
       </Stack>
     </Box>
   );

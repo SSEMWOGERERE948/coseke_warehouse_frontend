@@ -58,7 +58,7 @@ export default function TableFiles({ data, onFileClick }: TableFilesProps) {
                   startDecorator={<ArticleRounded color="primary" />}
                   sx={{ alignItems: "flex-start" }}
                 >
-                  {file.pidinfant}
+                  {file.pid}
                 </Typography>
               </td>
               <td>

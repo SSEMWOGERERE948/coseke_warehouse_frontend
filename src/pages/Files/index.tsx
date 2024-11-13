@@ -26,15 +26,6 @@ interface CaseStudy {
   enabled: boolean;
 }
 
-interface FileAssignmentDialogProps {
-  open: boolean;
-  onClose: () => void;
-  selectedFile: IFile | null;
-  caseStudies: CaseStudy[];
-  folders: IFolder[];
-  onAssign: () => void;
-}
-
 const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
   open,
   onClose,
@@ -45,8 +36,7 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
   >({
     status: "Available",
     boxNumber: 0,
-    pidinfant: "",
-    pidmother: "",
+    pid: "",
     createdBy: 0,
     caseStudyId: undefined,
     folderId: undefined,
@@ -72,15 +62,13 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
     try {
       const newFile: IFile = {
         ...fileData,
+        caseStudy: { id: fileData.caseStudyId!, name: "", description: "" },
+        folder: { id: fileData.folderId, folderName: "" },
       };
 
       console.log("Creating new file:", newFile);
 
-      const response = await AxiosInstance.post("files/add", {
-        ...newFile,
-        caseStudy: fileData.caseStudy,
-        folder: fileData.folder,
-      });
+      const response = await AxiosInstance.post("files/add", newFile);
 
       const createdFile = response.data;
       console.log("File created:", createdFile);
@@ -193,18 +181,10 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
         </Typography>
         <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
           <FormControl>
-            <FormLabel>PID Infant</FormLabel>
+            <FormLabel>PID</FormLabel>
             <Input
-              name="pidinfant"
-              value={fileData.pidinfant}
-              onChange={handleInputChange}
-            />
-          </FormControl>
-          <FormControl>
-            <FormLabel>PID Mother</FormLabel>
-            <Input
-              name="pidmother"
-              value={fileData.pidmother}
+              name="pid"
+              value={fileData.pid}
               onChange={handleInputChange}
             />
           </FormControl>

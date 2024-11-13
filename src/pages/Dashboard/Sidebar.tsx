@@ -213,40 +213,40 @@ export default function Sidebar() {
               </ListItemButton>
             </ListItem>
           )}
-          {hasPermission("READ_REQUESTS") && (
-            <ListItem nested>
-              <Toggler
-                renderToggle={({ open, setOpen }) => (
-                  <ListItemButton onClick={() => setOpen(!open)}>
-                    <AssignmentRoundedIcon />
-                    <ListItemContent>
-                      <Typography level="title-sm">Requests</Typography>
-                    </ListItemContent>
-                    <KeyboardArrowDownIcon
-                      sx={[
-                        open
-                          ? {
-                              transform: "rotate(180deg)",
-                            }
-                          : {
-                              transform: "none",
-                            },
-                      ]}
-                    />
-                  </ListItemButton>
+          <ListItem nested>
+            <Toggler
+              renderToggle={({ open, setOpen }) => (
+                <ListItemButton onClick={() => setOpen(!open)}>
+                  <AssignmentRoundedIcon />
+                  <ListItemContent>
+                    <Typography level="title-sm">Requests</Typography>
+                  </ListItemContent>
+                  <KeyboardArrowDownIcon
+                    sx={[
+                      open
+                        ? {
+                            transform: "rotate(180deg)",
+                          }
+                        : {
+                            transform: "none",
+                          },
+                    ]}
+                  />
+                </ListItemButton>
+              )}
+            >
+              <List sx={{ gap: 0.5 }}>
+                {hasPermission("READ_REQUESTS") && (
+                  <ListItem sx={{ mt: 0.5 }}>
+                    <ListItemButton
+                      selected={selectedItem === routes.PI}
+                      onClick={() => handleSelect(routes.PI)}
+                    >
+                      Principal Investigator
+                    </ListItemButton>
+                  </ListItem>
                 )}
-              >
-                <List sx={{ gap: 0.5 }}>
-                  {hasPermission("READ_REQUESTS") && (
-                    <ListItem sx={{ mt: 0.5 }}>
-                      <ListItemButton
-                        selected={selectedItem === routes.PI}
-                        onClick={() => handleSelect(routes.PI)}
-                      >
-                        Principal Investigator
-                      </ListItemButton>
-                    </ListItem>
-                  )}
+                {hasPermission("READ_REQUESTS") && (
                   <ListItem>
                     <ListItemButton
                       selected={selectedItem === routes.REQUESTS}
@@ -255,34 +255,35 @@ export default function Sidebar() {
                       Requests
                     </ListItemButton>
                   </ListItem>
-                  <ListItem sx={{ mt: 0.5 }}>
-                    <ListItemButton
-                      selected={selectedItem === routes.MYREQUESTS}
-                      onClick={() => handleSelect(routes.MYREQUESTS)}
-                    >
-                      My Requests
-                    </ListItemButton>
-                  </ListItem>
-                  <ListItem sx={{ mt: 0.5 }}>
-                    <ListItemButton
-                      selected={selectedItem === routes.APPROVED}
-                      onClick={() => handleSelect(routes.APPROVED)}
-                    >
-                      Approved
-                    </ListItemButton>
-                  </ListItem>
-                  <ListItem sx={{ mt: 0.5 }}>
-                    <ListItemButton
-                      selected={selectedItem === routes.REJECTED}
-                      onClick={() => handleSelect(routes.REJECTED)}
-                    >
-                      Rejected
-                    </ListItemButton>
-                  </ListItem>
-                </List>
-              </Toggler>
-            </ListItem>
-          )}
+                )}
+                <ListItem sx={{ mt: 0.5 }}>
+                  <ListItemButton
+                    selected={selectedItem === routes.MYREQUESTS}
+                    onClick={() => handleSelect(routes.MYREQUESTS)}
+                  >
+                    My Requests
+                  </ListItemButton>
+                </ListItem>
+                <ListItem sx={{ mt: 0.5 }}>
+                  <ListItemButton
+                    selected={selectedItem === routes.APPROVED}
+                    onClick={() => handleSelect(routes.APPROVED)}
+                  >
+                    Approved
+                  </ListItemButton>
+                </ListItem>
+                <ListItem sx={{ mt: 0.5 }}>
+                  <ListItemButton
+                    selected={selectedItem === routes.REJECTED}
+                    onClick={() => handleSelect(routes.REJECTED)}
+                  >
+                    Rejected
+                  </ListItemButton>
+                </ListItem>
+              </List>
+            </Toggler>
+          </ListItem>
+
           {hasPermission("READ_USER") && (
             <ListItem nested>
               <Toggler
