@@ -3,7 +3,8 @@ import IFolder from "./IFolder";
 import ICaseStudy from "./ICaseStudy";
 
 export default interface IFile {
-  id?: number; // Optional since it will be generated
+  [x: string]: any;
+  id?: number;
   pidinfant: string;
   pidmother: string;
   boxNumber: number;

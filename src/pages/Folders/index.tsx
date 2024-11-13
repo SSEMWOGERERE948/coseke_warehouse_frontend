@@ -36,7 +36,7 @@ import { useFileContext } from "./FileContext";
 import Layout from "./Layout";
 import Navigation from "./Navigation";
 import TableFiles from "./TableFiles";
-import { convertArrayToDate } from "../../utils/helpers";
+import { convertArrayToDate, getCurrentUser } from "../../utils/helpers";
 
 interface TabButtonProps {
   icon: React.ReactNode;

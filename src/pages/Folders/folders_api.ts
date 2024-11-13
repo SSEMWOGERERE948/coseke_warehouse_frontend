@@ -1,5 +1,6 @@
 import { AxiosInstance } from "../../core/baseURL";
 import IFolder from "../../interfaces/IFolder";
+import { getCurrentUser } from "../../utils/helpers";
 
 interface AssignFolderToDepartmentRequest {
   departmentId: number;
@@ -28,7 +29,9 @@ export const getFolderByIdService = async (id: number) => {
 // get all folders
 export const getAllFoldersService = async () => {
   try {
-    const response = await AxiosInstance.get("folders/all");
+    const currentUser = getCurrentUser();
+    const id = currentUser?.id;
+    const response = await AxiosInstance.get(`folders/all/${id}`);
     return response.data;
   } catch (error) {
     throw error;
