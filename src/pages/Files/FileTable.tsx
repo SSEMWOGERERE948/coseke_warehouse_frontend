@@ -19,6 +19,7 @@ import {
   FormLabel,
   Select,
   Option,
+  CircularProgress,
 } from "@mui/joy";
 import {
   CheckCircle,
@@ -36,6 +37,7 @@ import {
   checkInFileService,
   updateFileService,
   deleteFileService,
+  getAllFilesService,
 } from "./files_api";
 import { EditIcon, DeleteIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import * as XLSX from "xlsx";
@@ -43,7 +45,6 @@ import * as XLSX from "xlsx";
 export default function FileTable() {
   const [files, setFiles] = useState<IFile[]>([]);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // State for menu and dialogs
@@ -52,6 +53,7 @@ export default function FileTable() {
   const [selectedFile, setSelectedFile] = useState<IFile | null>(null);
   const [openUpdateDialog, setOpenUpdateDialog] = useState(false);
   const [updatedFile, setUpdatedFile] = useState<IFile | null>(null);
+  const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const pageSizeOptions = [5, 10, 25, 50];
@@ -151,8 +153,8 @@ export default function FileTable() {
         setError(null);
 
         if (roleNames.includes("SUPER_ADMIN")) {
-          const response = await AxiosInstance.get("files/all");
-          setFiles(Array.isArray(response.data) ? response.data : []);
+          const files = await getAllFilesService();
+          setFiles(Array.isArray(files) ? files : []);
         } else if (roleNames.includes("ADMIN") || roleNames.includes("USER")) {
           const userId = currentUser?.id; // Use user ID here
           if (userId) {
@@ -198,6 +200,7 @@ export default function FileTable() {
   });
 
   const handleRequestCheckout = async (requests: IRequests) => {
+    setLoading(true);
     try {
       if (requests.files.status === "Unavailable") {
         alert("File is currently unavailable");
@@ -218,10 +221,13 @@ export default function FileTable() {
         "Error requesting checkout:",
         error.response?.data || error.message,
       );
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleRequestCheckin = async (file: IFile) => {
+    setLoading(true);
     try {
       const res = await checkInFileService(file.id!);
       alert("File checked in successfully");
@@ -238,6 +244,8 @@ export default function FileTable() {
         "Error requesting check in!:",
         error.response?.data || error.message,
       );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -514,7 +522,7 @@ export default function FileTable() {
               });
             }}
           >
-            Checkout
+            {loading ? <CircularProgress size="sm" /> : "Checkout"}
           </MenuItem>
         ) : (
           <MenuItem
@@ -524,7 +532,7 @@ export default function FileTable() {
               }
             }}
           >
-            Check-in
+            {loading ? <CircularProgress size="sm" /> : "Check-in"}
           </MenuItem>
         )}
       </Menu>

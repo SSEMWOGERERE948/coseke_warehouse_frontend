@@ -67,10 +67,7 @@ export default function TableFiles({ data, onFileClick }: TableFilesProps) {
               </Typography>
             </th>
             <th>
-              <Typography level="title-sm">Status</Typography>
-            </th>
-            <th>
-              <Typography level="title-sm">Responsible User</Typography>
+              <Typography level="title-md">Status</Typography>
             </th>
           </tr>
         </thead>
@@ -97,11 +94,6 @@ export default function TableFiles({ data, onFileClick }: TableFilesProps) {
               </td>
               <td>
                 <Typography level="body-sm">{file.status}</Typography>
-              </td>
-              <td>
-                {file.responsibleUser?.first_name +
-                  " " +
-                  file.responsibleUser?.last_name}
               </td>
             </tr>
           ))}

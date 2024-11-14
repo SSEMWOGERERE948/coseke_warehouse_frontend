@@ -24,17 +24,6 @@ import * as XLSX from "xlsx";
 import { IRequests } from "../../interfaces/IRequests";
 import { convertArrayToDate, getCurrentUser } from "../../utils/helpers";
 import { getAllRequests } from "../Requests/requests_api";
-
-function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
-  if (b[orderBy] < a[orderBy]) {
-    return -1;
-  }
-  if (b[orderBy] > a[orderBy]) {
-    return 1;
-  }
-  return 0;
-}
-
 type Order = "asc" | "desc";
 
 export default function ApprovalTable() {
@@ -51,6 +40,13 @@ export default function ApprovalTable() {
     start: null,
     end: null,
   });
+
+  const currentUser = getCurrentUser();
+  const userRoles = currentUser?.roles || [];
+
+  const roleNames = userRoles
+    .map((role: { name: any }) => role.name)
+    .filter(Boolean);
 
   // Helper function to format date arrays
   const formatDate = (dateArray?: number[]) => {
@@ -116,8 +112,11 @@ export default function ApprovalTable() {
   const handleGetAllRequests = async () => {
     let res = await getAllRequests();
     setRows(
-      res.filter(
-        (req) => req.stage === "Approved" && req.user?.email === user.email,
+      res.filter((req) =>
+        roleNames.includes("SUPER_ADMIN") || roleNames.includes("ADMIN")
+          ? req.stage === "Approved" || req.stage === "Returned"
+          : req.stage === "Approved" ||
+            (req.stage === "Returned" && req.user?.email === user.email),
       ),
     );
   };

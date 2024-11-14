@@ -80,6 +80,13 @@ export default function RejectedTable() {
   const [rows, setRows] = React.useState<IRequests[]>([]);
   const user = getCurrentUser();
 
+  const currentUser = getCurrentUser();
+  const userRoles = currentUser?.roles || [];
+
+  const roleNames = userRoles
+    .map((role: { name: any }) => role.name)
+    .filter(Boolean);
+
   // Handle search input change
   const handleSearchChange = (event: any) => {
     setSearchTerm(event.target.value);
@@ -94,8 +101,10 @@ export default function RejectedTable() {
     (async () => {
       let res = await getAllRequests();
       setRows(
-        res.filter(
-          (req) => req.stage === "Rejected" && req.user?.email === user.email,
+        res.filter((req) =>
+          roleNames.includes("SUPER_ADMIN") || roleNames.includes("ADMIN")
+            ? req.stage === "Rejected"
+            : req.stage === "Rejected" && req.user?.email === user.email,
         ),
       );
     })();

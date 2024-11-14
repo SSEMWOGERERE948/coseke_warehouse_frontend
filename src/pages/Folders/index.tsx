@@ -307,20 +307,6 @@ export default function FilesExample() {
                       srcSet="https://images.unsplash.com/photo-1534067783941-51c9c23ecefd?w=400&h=400&auto=format&dpr=2 2x"
                     />
                   </AspectRatio>
-                  <Box
-                    sx={{ p: 2, display: "flex", gap: 1, alignItems: "center" }}
-                  >
-                    <Typography level="title-sm" sx={{ mr: 1 }}>
-                      Responsible Person
-                    </Typography>
-                    <AvatarGroup size="sm" sx={{ "--Avatar-size": "24px" }}>
-                      {selectedFile.responsibleUser && (
-                        <Avatar
-                          src={selectedFile.responsibleUser?.first_name}
-                        />
-                      )}
-                    </AvatarGroup>
-                  </Box>
                   <Divider />
                   <Box
                     sx={{

@@ -25,7 +25,7 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import MoreHorizRoundedIcon from "@mui/icons-material/MoreHorizRounded";
 import SearchIcon from "@mui/icons-material/Search";
-import { Stack, Textarea } from "@mui/joy";
+import { CircularProgress, Stack, Textarea } from "@mui/joy";
 import * as XLSX from "xlsx";
 import { IRequests } from "../../interfaces/IRequests";
 import { convertArrayToDate, getCurrentUser } from "../../utils/helpers";
@@ -35,7 +35,6 @@ import {
   rejectRequest,
 } from "../Requests/requests_api";
 import { SearchRounded } from "@mui/icons-material";
-import { CircularProgress } from "@mui/material";
 
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
   if (b[orderBy] < a[orderBy]) {
@@ -98,7 +97,7 @@ function RowMenu({
             }
           }}
         >
-          {loading ? <CircularProgress size={24} /> : "Forward to PI"}
+          {loading ? <CircularProgress size="sm" /> : "Forward to PI"}
         </MenuItem>
         <Divider />
         <MenuItem
@@ -108,7 +107,7 @@ function RowMenu({
             setRejectOpen(true);
           }}
         >
-          {loading ? <CircularProgress size={24} /> : "Decline"}
+          {loading ? <CircularProgress size="sm" /> : "Decline"}
         </MenuItem>
       </Menu>
     </Dropdown>
@@ -563,7 +562,7 @@ export default function RequestTable() {
               onClick={() => handleReject(req!)}
               disabled={!rejectReason.trim()}
             >
-              Decline Request
+              {loading ? <CircularProgress size="sm" /> : "Decline Request"}
             </Button>
           </Stack>
         </ModalDialog>

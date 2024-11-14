@@ -49,17 +49,38 @@ export default function Navigation() {
     null,
   );
 
+  // Get the current user and their permissions
+  const currentUser = getCurrentUser();
+  const userRoles = currentUser?.roles || [];
+
+  const roleNames = userRoles
+    .map((role: { name: any }) => role.name)
+    .filter(Boolean);
+
   const handleTagClick = async (name: string) => {
     setSelectedTag(name);
     try {
       const files = await getAllFilesService();
-      let filteredFiles = files;
-      if (name !== "All") {
+      let filteredFiles = [];
+
+      if (roleNames.includes("SUPER_ADMIN")) {
         filteredFiles = files.filter(
           (file) => file.folder?.folderName === name,
         );
+        console.log("filteredFiles", files);
+        setFileData(filteredFiles);
+      } else if (
+        (roleNames.includes("ADMIN") || roleNames.includes("USER")) &&
+        currentUser?.id
+      ) {
+        const response = await AxiosInstance.get(
+          `files/by-departments/${currentUser.id}`,
+        );
+        filteredFiles = Array.isArray(response.data)
+          ? response.data.filter((file) => file.folder?.folderName === name)
+          : [];
+        setFileData(filteredFiles);
       }
-      setFileData(filteredFiles);
     } catch (error) {
       console.error("Error fetching files:", error);
     }
@@ -70,22 +91,14 @@ export default function Navigation() {
       try {
         const userId = currentUser?.id;
         const response = await AxiosInstance.get(`folders/all/${userId}`);
-        setFolders([
-          {
-            id: 0,
-            folderName: "All",
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-          ...response.data,
-        ]);
+        setFolders([...response.data]);
       } catch (error) {
         console.error("Error fetching folders", error);
       }
     };
 
     fetchAllFolders();
-    handleTagClick("All"); // Load all files initially
+    handleTagClick(""); // Load all files initially
   }, []);
 
   const handleSubmitNewFolder = async (event: React.FormEvent) => {
@@ -171,10 +184,6 @@ export default function Navigation() {
     setIsEditFolderOpen(false);
     setCurrentEditFolder(null);
   };
-
-  // Get the current user and their permissions
-  const currentUser = getCurrentUser();
-  const userRoles = currentUser?.roles || [];
 
   // Flatten all the permissions from the user's roles
   const userPermissions = userRoles.flatMap(
