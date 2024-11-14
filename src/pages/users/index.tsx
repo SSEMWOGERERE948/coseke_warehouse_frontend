@@ -91,14 +91,12 @@ const Index: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [usersRes, rolesRes, departmentsRes] = await Promise.all([
+        const [usersRes, rolesRes] = await Promise.all([
           AxiosInstance.get("/users"),
           AxiosInstance.get("/roles/all"),
-          AxiosInstance.get("departments/"),
         ]);
         setUsers(usersRes.data);
         setAvailableRoles(rolesRes.data);
-        setDepartments(departmentsRes.data);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -242,7 +240,7 @@ const Index: React.FC = () => {
   const handleDepartmentChange = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    const departmentId = parseInt(event.target.value);
+    const departmentId = Number(event.target.value); // Ensure consistent number type
     const isChecked = event.target.checked;
 
     if (!selectedUser) return;
@@ -252,16 +250,14 @@ const Index: React.FC = () => {
         // Assign department
         await AxiosInstance.post(`departments/assign-user-to-department`, {
           userId: selectedUser.id,
-          departmentIds: [...selectedDepartmentIds, departmentId], // Send the department IDs
+          departmentIds: [departmentId], // Send only the new department ID
         });
         setSelectedDepartmentIds((prev) => [...prev, departmentId]);
       } else {
         // Unassign department
         await AxiosInstance.post(`departments/unassign-user-from-department`, {
           userId: selectedUser.id,
-          departmentIds: selectedDepartmentIds.filter(
-            (id) => id !== departmentId,
-          ), // Send updated IDs
+          departmentIds: [departmentId], // Send only the unassigned department ID
         });
         setSelectedDepartmentIds((prev) =>
           prev.filter((id) => id !== departmentId),
@@ -298,6 +294,22 @@ const Index: React.FC = () => {
     }
   };
 
+  // Fetch all departments
+  useEffect(() => {
+    const fetchAllDepartments = async () => {
+      try {
+        const response = await AxiosInstance.get("departments/all");
+        console.log("Fetched departments data:", response.data); // Log data to check structure
+        setDepartments(response.data);
+      } catch (error) {
+        console.error("Error fetching all departments:", error);
+      }
+    };
+
+    fetchAllDepartments();
+  }, []);
+
+  // Fetch departments assigned to the selected user
   useEffect(() => {
     const fetchUserDepartments = async () => {
       if (!selectedUser) return;
@@ -305,9 +317,10 @@ const Index: React.FC = () => {
         const response = await AxiosInstance.get(
           `departments/user/${selectedUser.id}`,
         );
-        setSelectedDepartmentIds(response.data.departmentIds);
+        setSelectedDepartmentIds(response.data || []); // Ensure an empty array if response is null
       } catch (error) {
         console.error("Error fetching user departments:", error);
+        setSelectedDepartmentIds([]); // Fallback to an empty array on error
       }
     };
 
@@ -585,24 +598,6 @@ const Index: React.FC = () => {
                 }
               />
             </FormControl>
-            {/* <FormControl>
-              <FormLabel>Department</FormLabel>
-              <select
-                value={selectedDepartmentId || ""}
-                onChange={(e) =>
-                  setSelectedDepartmentId(
-                    e.target.value ? parseInt(e.target.value) : null,
-                  )
-                }
-              >
-                <option value="">Select Department</option>
-                {departments.map((dept) => (
-                  <option key={dept.id} value={dept.id}>
-                    {dept.departmentName}
-                  </option>
-                ))}
-              </select>
-            </FormControl> */}
 
             <FormControl component="fieldset" sx={{ mt: 3 }}>
               <FormLabel component="legend">Department</FormLabel>
@@ -611,10 +606,11 @@ const Index: React.FC = () => {
                   {departments.map((dept) => (
                     <ListItem key={dept.id}>
                       <Checkbox
-                        value={dept.id.toString()}
-                        checked={selectedDepartmentIds.includes(dept.id)} // Use selectedDepartmentIds to auto-check assigned departments
+                        value={dept.id} // Remove toString()
+                        checked={selectedDepartmentIds.includes(dept.id)} // Ensure the check is correct
                         onChange={handleDepartmentChange}
                       />
+
                       <Typography>{dept.departmentName}</Typography>
                     </ListItem>
                   ))}

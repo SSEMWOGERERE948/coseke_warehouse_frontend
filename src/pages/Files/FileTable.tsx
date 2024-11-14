@@ -152,18 +152,14 @@ export default function FileTable() {
 
         if (roleNames.includes("SUPER_ADMIN")) {
           const response = await AxiosInstance.get("files/all");
-          const data: IFile[] = Array.isArray(response.data)
-            ? response.data
-            : [];
-          setFiles(data);
+          setFiles(Array.isArray(response.data) ? response.data : []);
         } else if (roleNames.includes("ADMIN") || roleNames.includes("USER")) {
-          const id = currentUser?.id;
-          if (id) {
-            const response = await AxiosInstance.get(`files/all/${id}`);
-            const data: IFile[] = Array.isArray(response.data)
-              ? response.data
-              : [];
-            setFiles(data);
+          const userId = currentUser?.id; // Use user ID here
+          if (userId) {
+            const response = await AxiosInstance.get(
+              `files/by-departments/${userId}`,
+            );
+            setFiles(Array.isArray(response.data) ? response.data : []);
           }
         }
       } catch (error) {
@@ -398,7 +394,7 @@ export default function FileTable() {
               </th>
               <th>PID</th>
               <th>Box Number</th>
-              <th>Responsible Person</th>
+              {/* <th>Responsible Person</th> */}
               <th>Status</th>
               <th>Date Modified</th>
               <th>Date Uploaded</th>
@@ -413,14 +409,14 @@ export default function FileTable() {
                 </td>
                 <td>{file.pid}</td>
                 <td>{file.boxNumber}</td>
-                <td>
+                {/* <td>
                   <Typography>
                     {file.responsibleUser?.first_name +
                       " " +
                       file.responsibleUser?.last_name}
                   </Typography>
                   <Typography>{file.responsibleUser?.email}</Typography>
-                </td>
+                </td> */}
                 <td>{getStatusChip(file.status)}</td>
                 <td>
                   {file.lastModifiedDateTime

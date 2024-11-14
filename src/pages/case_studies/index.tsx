@@ -18,7 +18,9 @@ import {
   Checkbox,
   Chip,
   ModalClose,
+  IconButton,
 } from "@mui/joy";
+import { DeleteIcon } from "lucide-react";
 
 interface CaseStudy {
   id: number;
@@ -208,6 +210,17 @@ export default function CaseStudiesScreen() {
     }
   };
 
+  const deleteCaseStudy = async (studyId: number) => {
+    try {
+      await AxiosInstance.delete(`case-studies/delete/${studyId}`);
+      setCaseStudies((prevStudies) =>
+        prevStudies.filter((study) => study.id !== studyId),
+      );
+    } catch (error: any) {
+      console.error("Error deleting case study:", error);
+    }
+  };
+
   return (
     <CssVarsProvider>
       <CssBaseline />
@@ -331,6 +344,13 @@ export default function CaseStudiesScreen() {
                 >
                   Assign User
                 </Button>
+                <IconButton
+                  color="danger"
+                  size="sm"
+                  onClick={() => deleteCaseStudy(study.id)}
+                >
+                  <DeleteIcon />
+                </IconButton>
               </Sheet>
             </Grid>
           ))}

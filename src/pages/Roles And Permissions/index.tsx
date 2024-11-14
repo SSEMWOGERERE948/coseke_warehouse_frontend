@@ -622,36 +622,43 @@ const RolesAndPermissions: React.FC = () => {
     }
   };
 
-  // Handle opening the assign folders dialog
   const handleAssignFolders = async (departmentId: number) => {
     try {
       setIsLoading(true);
       setSelectedDepartmentId(departmentId);
 
       // Fetch all folders
-      const allFolders = await getAllFoldersService();
+      console.log("Fetching all folders...");
+      const allFoldersResponse = await AxiosInstance.get("/folders/all");
+      console.log("All Folders Response:", allFoldersResponse.data); // Log raw response
 
-      // Fetch assigned folders for this department
-      const assignedFolders = await fetchAssignedFolders(departmentId);
-      const assignedFolderIds = assignedFolders.map(
+      // Fetch assigned folders for the department
+      console.log("Fetching assigned folders...");
+      const assignedFoldersResponse = await AxiosInstance.get(
+        `/folders/departments/${departmentId}`,
+      );
+      console.log("Assigned Folders Response:", assignedFoldersResponse.data); // Log raw response
+
+      const assignedFolderIds = assignedFoldersResponse.data.map(
         (folder: IFolder) => folder.id,
       );
 
-      // Mark folders as assigned/unassigned
-      const foldersWithAssignmentStatus = allFolders.map((folder: IFolder) => ({
-        ...folder,
-        isAssigned: assignedFolderIds.includes(folder.id),
-      }));
+      // Map the folders with the assignment status
+      const foldersWithAssignments = allFoldersResponse.data.map(
+        (folder: IFolder) => ({
+          ...folder,
+          isAssigned: assignedFolderIds.includes(folder.id),
+        }),
+      );
 
-      setFolders(foldersWithAssignmentStatus);
-      setSelectedFolders(assignedFolderIds);
+      console.log("Mapped Folders:", foldersWithAssignments); // Check final folders data
+      setFolders(foldersWithAssignments);
       setIsFolderDialogOpen(true);
     } catch (error) {
-      console.error("Error preparing folder assignment dialog:", error);
+      console.error("Error fetching folders:", error);
       setError("Failed to load folders");
     } finally {
       setIsLoading(false);
-      handleCloseMenu();
     }
   };
 
@@ -675,66 +682,14 @@ const RolesAndPermissions: React.FC = () => {
     setSelectedFolders([]);
   };
 
-  const fetchFoldersWithAssignments = async (departmentId: number) => {
-    try {
-      setIsLoading(true);
-
-      // Fetch all folders
-      const allFoldersResponse = await AxiosInstance.get("folders/all");
-      console.log("All folders:", allFoldersResponse.data);
-
-      // Fetch assigned folders for the department
-      const assignedFoldersResponse = await AxiosInstance.get(
-        `folders/department/${departmentId}`,
-      );
-      console.log("Assigned folders:", assignedFoldersResponse.data);
-
-      // Create a Set of assigned folder IDs for quick lookup
-      const assignedFolderIds = new Set(
-        assignedFoldersResponse.data.map((folder: IFolder) => folder.id),
-      );
-      console.log("Assigned folder IDs:", Array.from(assignedFolderIds));
-
-      // Mark folders as assigned or not with explicit type checking
-      const foldersWithAssignments = allFoldersResponse.data.map(
-        (folder: IFolder) => {
-          const isAssigned = assignedFolderIds.has(folder.id);
-          console.log(
-            `Folder ${folder.id} (${folder.folderName}) assigned: ${isAssigned}`,
-          );
-
-          return {
-            ...folder,
-            isAssigned: isAssigned,
-          };
-        },
-      );
-
-      console.log("Final folders with assignments:", foldersWithAssignments);
-      setFolders(foldersWithAssignments);
-      setError(null);
-    } catch (error) {
-      console.error("Error fetching folders and assignments:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Effect to load folders when department is selected
-  useEffect(() => {
-    if (selectedDepartmentId) {
-      console.log("Selected Department ID:", selectedDepartmentId);
-      fetchFoldersWithAssignments(selectedDepartmentId);
-    }
-  }, [selectedDepartmentId]);
-
-  // Add type checking for folder ID comparison
+  // Checkbox change handler
   const handleFolderCheckboxChange = async (
     folderId: number,
     isChecked: boolean,
   ) => {
-    console.log("Checkbox change:", { folderId, isChecked });
     if (!selectedDepartmentId) return;
+
+    console.log("Checkbox change:", { folderId, isChecked });
     await handleFolderAssignment(selectedDepartmentId, folderId, isChecked);
   };
 
@@ -1039,10 +994,7 @@ const RolesAndPermissions: React.FC = () => {
           </Box>
         </SwipeableViews>
 
-        <Modal
-          open={isFolderDialogOpen}
-          onClose={() => setIsFolderDialogOpen(false)}
-        >
+        <Modal open={isFolderDialogOpen} onClose={handleCloseDialog}>
           <ModalDialog>
             <Typography component="h2" fontSize="lg" mb={2}>
               Manage Folder Assignments for Department
@@ -1050,20 +1002,24 @@ const RolesAndPermissions: React.FC = () => {
             <Stack gap={2}>
               {isLoading && <Typography>Loading...</Typography>}
               {error && <Typography>{error}</Typography>}
-              {folders.map((folder: IFolder) => (
-                <FormControl key={folder.id}>
-                  <Stack direction="row" alignItems="center" spacing={2}>
-                    <Checkbox
-                      checked={Boolean(folder.isAssigned)}
-                      onChange={(e) =>
-                        handleFolderCheckboxChange(folder.id!, e.target.checked)
-                      }
-                      disabled={isLoading}
-                    />
-                    <FormLabel>{folder.folderName}</FormLabel>
-                  </Stack>
-                </FormControl>
-              ))}
+              {!isLoading &&
+                folders.map((folder: IFolder) => (
+                  <FormControl key={folder.id}>
+                    <Stack direction="row" alignItems="center" spacing={2}>
+                      <Checkbox
+                        checked={Boolean(folder.isAssigned)}
+                        onChange={(e) =>
+                          handleFolderCheckboxChange(
+                            folder.id!,
+                            e.target.checked,
+                          )
+                        }
+                        disabled={isLoading}
+                      />
+                      <FormLabel>{folder.folderName}</FormLabel>
+                    </Stack>
+                  </FormControl>
+                ))}
             </Stack>
           </ModalDialog>
         </Modal>
