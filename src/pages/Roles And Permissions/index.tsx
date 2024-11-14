@@ -9,6 +9,8 @@ import {
   Grid,
   IconButton,
   Input,
+  Menu,
+  MenuItem,
   Modal,
   ModalClose,
   ModalDialog,
@@ -37,6 +39,12 @@ import {
 } from "./roles_api";
 import { Routes, Route } from "react-router-dom";
 import CaseStudies from "../case_studies";
+import { MoreVert } from "@mui/icons-material";
+import {
+  assignFoldersToDepartmentService,
+  getAllFoldersService,
+} from "../Folders/folders_api";
+import IFolder from "../../interfaces/IFolder";
 
 interface Permission {
   id: string;
@@ -59,6 +67,12 @@ const roles: Role[] = [
 interface Role {
   id: number;
   roleName: string;
+}
+
+interface AssignFolderToDepartment {
+  folderIds: number[];
+  departmentId: number;
+  operation: "ASSIGN" | "UNASSIGN";
 }
 
 const RolesAndPermissions: React.FC = () => {
@@ -472,6 +486,14 @@ const RolesAndPermissions: React.FC = () => {
   const [departments, setDepartments] = useState<IDepartment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<
+    number | null
+  >(null);
+  const [folders, setFolders] = useState<IFolder[]>([]); // State to hold fetched folders
+  const [selectedFolders, setSelectedFolders] = useState<number[]>([]); // Selected folder IDs
+  const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false); // State for dialog open/close
 
   useEffect(() => {
     fetchDepartments();
@@ -481,8 +503,13 @@ const RolesAndPermissions: React.FC = () => {
     setIsLoading(true);
     try {
       const fetchedDepartments = await getAllDepartments();
-      console.log(fetchedDepartments);
-      setDepartments(fetchedDepartments);
+      if (Array.isArray(fetchedDepartments)) {
+        // Ensure it's an array
+        setDepartments(fetchedDepartments);
+      } else {
+        setDepartments([]); // Fallback to an empty array if not an array
+        console.error("Expected an array but got:", fetchedDepartments);
+      }
       setError(null);
     } catch (error) {
       setError("Failed to fetch departments");
@@ -546,6 +573,124 @@ const RolesAndPermissions: React.FC = () => {
       console.error("Failed to remove permission:", error);
       throw error;
     }
+  };
+
+  const fetchAssignedFolders = async (departmentId: number) => {
+    try {
+      const response = await AxiosInstance.get(
+        `/folders/departments/${departmentId}`,
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching assigned folders:", error);
+      return [];
+    }
+  };
+
+  const handleFolderAssignment = async (
+    departmentId: number,
+    folderId: number,
+    isAssigning: boolean,
+  ) => {
+    const payload: AssignFolderToDepartment = {
+      departmentId: departmentId,
+      folderIds: [folderId],
+      operation: isAssigning ? "ASSIGN" : "UNASSIGN",
+    };
+
+    try {
+      setIsLoading(true);
+      // Use a single endpoint for both operations
+      await AxiosInstance.post("/folders/manage-assignment", payload);
+
+      // Update local state
+      setFolders((prevFolders) =>
+        prevFolders.map((folder) =>
+          folder.id === folderId
+            ? { ...folder, isAssigned: isAssigning }
+            : folder,
+        ),
+      );
+    } catch (error) {
+      console.error(
+        `Error ${isAssigning ? "assigning" : "unassigning"} folder:`,
+        error,
+      );
+      setError(`Failed to ${isAssigning ? "assign" : "unassign"} folder`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAssignFolders = async (departmentId: number) => {
+    try {
+      setIsLoading(true);
+      setSelectedDepartmentId(departmentId);
+
+      // Fetch all folders
+      console.log("Fetching all folders...");
+      const allFoldersResponse = await AxiosInstance.get("/folders/all");
+      console.log("All Folders Response:", allFoldersResponse.data); // Log raw response
+
+      // Fetch assigned folders for the department
+      console.log("Fetching assigned folders...");
+      const assignedFoldersResponse = await AxiosInstance.get(
+        `/folders/departments/${departmentId}`,
+      );
+      console.log("Assigned Folders Response:", assignedFoldersResponse.data); // Log raw response
+
+      const assignedFolderIds = assignedFoldersResponse.data.map(
+        (folder: IFolder) => folder.id,
+      );
+
+      // Map the folders with the assignment status
+      const foldersWithAssignments = allFoldersResponse.data.map(
+        (folder: IFolder) => ({
+          ...folder,
+          isAssigned: assignedFolderIds.includes(folder.id),
+        }),
+      );
+
+      console.log("Mapped Folders:", foldersWithAssignments); // Check final folders data
+      setFolders(foldersWithAssignments);
+      setIsFolderDialogOpen(true);
+    } catch (error) {
+      console.error("Error fetching folders:", error);
+      setError("Failed to load folders");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Menu handlers
+  const handleOpenAssignDialog = (
+    event: React.MouseEvent<HTMLElement>,
+    departmentId: number,
+  ) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedDepartmentId(departmentId);
+    console.log("Opening menu for department:", departmentId);
+  };
+
+  const handleCloseMenu = () => {
+    setAnchorEl(null);
+  };
+
+  const handleCloseDialog = () => {
+    setIsFolderDialogOpen(false);
+    setSelectedDepartmentId(null);
+    setSelectedFolders([]);
+  };
+
+  // Checkbox change handler
+  const handleFolderCheckboxChange = async (
+    folderId: number,
+    isChecked: boolean,
+  ) => {
+    if (!selectedDepartmentId) return;
+
+    console.log("Checkbox change:", { folderId, isChecked });
+    await handleFolderAssignment(selectedDepartmentId, folderId, isChecked);
   };
 
   return (
@@ -765,54 +910,119 @@ const RolesAndPermissions: React.FC = () => {
                     <th>Department Name</th>
                     <th>Added Date</th>
                     <th>Modified Date</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {departments.map((department: IDepartment) => (
-                    <tr key={department.id!}>
-                      <td>{department.departmentName}</td>
-                      <td>
-                        {convertArrayToDate(
-                          department.createdDate!,
-                        )?.toDateString()}
-                      </td>
-                      <td>
-                        {convertArrayToDate(
-                          department.lastModifiedDateTime!,
-                        )?.toDateString()}
-                      </td>
-                      <td>
-                        <Button
-                          size="sm"
-                          variant="outlined"
-                          color="danger"
-                          onClick={async () => {
-                            if (department.id) {
-                              try {
-                                await deleteDepartment(department.id);
-                                await fetchDepartments();
-                              } catch (err) {
-                                setDefaultResultOrder(
-                                  "Failed to delete department",
-                                );
-                                console.error(
-                                  "error deleting department:",
-                                  err,
-                                );
+                  {Array.isArray(departments) &&
+                    departments.map((department: IDepartment) => (
+                      <tr key={department.id!}>
+                        <td>{department.departmentName}</td>
+                        <td>
+                          {convertArrayToDate(
+                            department.createdDate!,
+                          ).toDateString()}
+                        </td>
+                        <td>
+                          {convertArrayToDate(
+                            department.lastModifiedDateTime!,
+                          ).toDateString()}
+                        </td>
+                        <td>
+                          <Button
+                            size="sm"
+                            variant="outlined"
+                            color="danger"
+                            onClick={async () => {
+                              if (department.id) {
+                                try {
+                                  await deleteDepartment(department.id);
+                                  await fetchDepartments();
+                                } catch (err) {
+                                  setDefaultResultOrder(
+                                    "Failed to delete department",
+                                  );
+                                  console.error(
+                                    "Error deleting department:",
+                                    err,
+                                  );
+                                }
                               }
+                            }}
+                          >
+                            Delete
+                          </Button>
+
+                          {/* Three-dotted icon */}
+                          <IconButton
+                            onClick={(event) =>
+                              handleOpenAssignDialog(event, department.id!)
                             }
-                          }}
-                        >
-                          Delete
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
+                          >
+                            <MoreVert />
+                          </IconButton>
+
+                          {/* Menu for assigning folders */}
+                          <Menu
+                            anchorEl={anchorEl} // The element the menu is anchored to
+                            open={Boolean(anchorEl)} // Open when anchorEl is not null
+                            onClose={handleCloseMenu} // Close the menu
+                          >
+                            <Menu
+                              anchorEl={anchorEl}
+                              open={
+                                Boolean(anchorEl) &&
+                                selectedDepartmentId === department.id
+                              }
+                              onClose={handleCloseMenu}
+                            >
+                              <MenuItem
+                                onClick={() =>
+                                  handleAssignFolders(department.id!)
+                                }
+                              >
+                                Assign Folders
+                              </MenuItem>
+                            </Menu>
+                          </Menu>
+                        </td>
+                      </tr>
+                    ))}
                 </tbody>
               </Table>
             </Sheet>
           </Box>
         </SwipeableViews>
+
+        <Modal open={isFolderDialogOpen} onClose={handleCloseDialog}>
+          <ModalDialog>
+            <Typography component="h2" fontSize="lg" mb={2}>
+              Manage Folder Assignments for Department
+            </Typography>
+            <Stack gap={2}>
+              {isLoading && <Typography>Loading...</Typography>}
+              {error && <Typography>{error}</Typography>}
+              {!isLoading &&
+                folders.map((folder: IFolder) => (
+                  <FormControl key={folder.id}>
+                    <Stack direction="row" alignItems="center" spacing={2}>
+                      <Checkbox
+                        checked={Boolean(folder.isAssigned)}
+                        onChange={(e) =>
+                          handleFolderCheckboxChange(
+                            folder.id!,
+                            e.target.checked,
+                          )
+                        }
+                        disabled={isLoading}
+                      />
+                      <FormLabel>{folder.folderName}</FormLabel>
+                    </Stack>
+                  </FormControl>
+                ))}
+            </Stack>
+          </ModalDialog>
+        </Modal>
 
         {/* Modal for Adding a Department */}
         <Modal open={isAddDepartmentOpen} onClose={handleCloseAddDepartment}>

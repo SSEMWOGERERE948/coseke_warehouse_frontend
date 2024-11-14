@@ -1,5 +1,11 @@
 import { AxiosInstance } from "../../core/baseURL";
 import IFolder from "../../interfaces/IFolder";
+import { getCurrentUser } from "../../utils/helpers";
+
+interface AssignFolderToDepartmentRequest {
+  departmentId: number;
+  folderIds: number[];
+}
 
 export const addFolderService = async (folder: IFolder) => {
   try {
@@ -23,7 +29,9 @@ export const getFolderByIdService = async (id: number) => {
 // get all folders
 export const getAllFoldersService = async () => {
   try {
-    const response = await AxiosInstance.get("folders/all");
+    const currentUser = getCurrentUser();
+    const id = currentUser?.id;
+    const response = await AxiosInstance.get(`folders/all/${id}`);
     return response.data;
   } catch (error) {
     throw error;
@@ -75,6 +83,17 @@ export const deleteMultipleFoldersService = async (ids: number[]) => {
     const response = await AxiosInstance.delete("folders/delete-multiple", {
       data: ids,
     });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const assignFoldersToDepartmentService = async (
+  payload: AssignFolderToDepartmentRequest,
+) => {
+  try {
+    const response = await AxiosInstance.post("/folders/assign", payload);
     return response.data;
   } catch (error) {
     throw error;

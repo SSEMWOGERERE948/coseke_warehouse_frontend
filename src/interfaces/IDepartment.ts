@@ -1,3 +1,4 @@
+import { MouseEvent } from "react";
 import IUser from "./IUser";
 
 export default interface IDepartment {

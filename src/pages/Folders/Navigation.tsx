@@ -68,7 +68,8 @@ export default function Navigation() {
   useEffect(() => {
     const fetchAllFolders = async () => {
       try {
-        const response = await AxiosInstance.get("folders/all");
+        const userId = currentUser?.id;
+        const response = await AxiosInstance.get(`folders/all/${userId}`);
         setFolders([
           {
             id: 0,
@@ -200,7 +201,6 @@ export default function Navigation() {
           }}
         >
           Folders
-          {/* Add Button - visible only if the user has CREATE_FOLDERS permission */}
           {hasPermission("CREATE_FOLDERS") && (
             <IconButton onClick={handleOpenAddFolder} color="primary">
               <AddIcon />
@@ -257,14 +257,13 @@ export default function Navigation() {
                   </IconButton>
                 )}
 
-                {/* Delete Button - visible only if the user has DELETE_FOLDERS permission */}
                 {hasPermission("DELETE_FOLDERS") && (
                   <IconButton
                     aria-label="delete"
                     onClick={() => handleDeleteFolder(folder.id)}
                     sx={{
-                      padding: 0.5, // Smaller padding for smaller icon
-                      fontSize: "small", // Reduces icon size
+                      padding: 0.5,
+                      fontSize: "small",
                     }}
                   >
                     <DeleteIcon fontSize="small" />

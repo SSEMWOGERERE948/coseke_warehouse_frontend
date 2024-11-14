@@ -1,5 +1,6 @@
 import { AxiosInstance } from "../../core/baseURL";
 import IDepartment from "../../interfaces/IDepartment";
+import { getCurrentUser } from "../../utils/helpers";
 
 // Function to create a department
 export const createDepartment = async (department: IDepartment) => {
@@ -15,9 +16,25 @@ export const createDepartment = async (department: IDepartment) => {
 };
 
 // Function to get all departments
+export const assignDepartmentsFolders = async () => {
+  try {
+    const currentUser = getCurrentUser();
+    const id = currentUser?.id;
+    const response = await AxiosInstance.get(
+      `departments/departmentById/${id}`,
+    );
+    console.log("Fetched departments data:", response.data); // Log data to check structure
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Function to get all departments
 export const getAllDepartments = async () => {
   try {
-    const response = await AxiosInstance.get("departments/");
+    const response = await AxiosInstance.get(`departments/all`);
+    console.log("Fetched departments data:", response.data); // Log data to check structure
     return response.data;
   } catch (error) {
     throw error;
