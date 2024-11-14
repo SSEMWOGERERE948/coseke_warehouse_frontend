@@ -102,7 +102,7 @@ export default function RejectedTable() {
       let res = await getAllRequests();
       setRows(
         res.filter((req) =>
-          roleNames.includes("SUPER_ADMIN") || roleNames.includes("ADMIN")
+          roleNames.includes("SUPER_ADMIN") || roleNames.includes("MANAGER")
             ? req.stage === "Rejected"
             : req.stage === "Rejected" && req.user?.email === user.email,
         ),
@@ -170,6 +170,26 @@ export default function RejectedTable() {
     // Generate and trigger Excel download
     XLSX.writeFile(workbook, "Rejected Requests.xlsx");
   };
+
+  React.useEffect(() => {
+    const filteredFiles = rows.filter((file) => {
+      // Filter by date range
+      if (dateRange.start !== null && dateRange.end !== null) {
+        const fileDate = file.createdDate
+          ? new Date(
+              file.createdDate[0],
+              file.createdDate[1] - 1,
+              file.createdDate[2],
+            )
+          : null;
+        return (
+          fileDate && fileDate >= dateRange.start && fileDate <= dateRange.end
+        );
+      }
+      return true;
+    });
+    setRows(filteredFiles);
+  }, [dateRange]);
 
   return (
     <React.Fragment>

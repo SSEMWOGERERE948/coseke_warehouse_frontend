@@ -1,6 +1,6 @@
 export default interface IRole {
   id: number;
-  roleName: string;
+  name: string;
   permissions: Array<string>;
   activities: any;
   user: any;

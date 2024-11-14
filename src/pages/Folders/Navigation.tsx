@@ -70,7 +70,7 @@ export default function Navigation() {
         console.log("filteredFiles", files);
         setFileData(filteredFiles);
       } else if (
-        (roleNames.includes("ADMIN") || roleNames.includes("USER")) &&
+        (roleNames.includes("MANAGER") || roleNames.includes("USER")) &&
         currentUser?.id
       ) {
         const response = await AxiosInstance.get(

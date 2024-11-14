@@ -215,6 +215,26 @@ export default function PITable() {
     handleGetAllRequests();
   }, []);
 
+  React.useEffect(() => {
+    const filteredFiles = rows.filter((file) => {
+      // Filter by date range
+      if (dateRange.start !== null && dateRange.end !== null) {
+        const fileDate = file.createdDate
+          ? new Date(
+              file.createdDate[0],
+              file.createdDate[1] - 1,
+              file.createdDate[2],
+            )
+          : null;
+        return (
+          fileDate && fileDate >= dateRange.start && fileDate <= dateRange.end
+        );
+      }
+      return true;
+    });
+    setRows(filteredFiles);
+  }, [dateRange]);
+
   return (
     <React.Fragment>
       <Sheet

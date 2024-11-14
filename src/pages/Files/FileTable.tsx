@@ -155,12 +155,16 @@ export default function FileTable() {
         if (roleNames.includes("SUPER_ADMIN")) {
           const files = await getAllFilesService();
           setFiles(Array.isArray(files) ? files : []);
-        } else if (roleNames.includes("ADMIN") || roleNames.includes("USER")) {
+        } else if (
+          roleNames.includes("MANAGER") ||
+          roleNames.includes("USER")
+        ) {
           const userId = currentUser?.id; // Use user ID here
           if (userId) {
             const response = await AxiosInstance.get(
               `files/by-departments/${userId}`,
             );
+            console.log("response", response);
             setFiles(Array.isArray(response.data) ? response.data : []);
           }
         }
@@ -314,6 +318,26 @@ export default function FileTable() {
       setPage(1); // Reset to first page when changing page size
     }
   };
+
+  useEffect(() => {
+    const filteredFiles = files.filter((file) => {
+      // Filter by date range
+      if (dateRange.start !== null && dateRange.end !== null) {
+        const fileDate = file.createdDate
+          ? new Date(
+              file.createdDate[0],
+              file.createdDate[1] - 1,
+              file.createdDate[2],
+            )
+          : null;
+        return (
+          fileDate && fileDate >= dateRange.start && fileDate <= dateRange.end
+        );
+      }
+      return true;
+    });
+    setFiles(filteredFiles);
+  }, [dateRange]);
 
   return (
     <Box sx={{ p: 3 }}>

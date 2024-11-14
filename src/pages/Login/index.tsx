@@ -151,12 +151,12 @@ export default function Login() {
 
                     if (
                       roleNames.includes("SUPER_ADMIN") ||
-                      roleNames.includes("ADMIN")
+                      roleNames.includes("MANAGER")
                     ) {
                       navigate("/dashboard");
                     } else if (
                       roleNames.includes("USER") ||
-                      roleNames.includes("ADMIN")
+                      roleNames.includes("MANAGER")
                     ) {
                       navigate(routes.FILES);
                     } else {
