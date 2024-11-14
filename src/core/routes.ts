@@ -14,6 +14,8 @@ const SETTINGS: string = "/settings";
 const PI: string = `${DASHBOARD}/pi`;
 const APPROVED: string = `${DASHBOARD}/tasks/approved`;
 const REJECTED: string = `${DASHBOARD}/tasks/rejected`;
+const FORGOT_PASSWORD: string = "/forgot-password";
+const RESET_PASSWORD: string = "/reset-password";
 
 const routes = {
   LOGIN,
@@ -32,6 +34,8 @@ const routes = {
   PI,
   APPROVED,
   REJECTED,
+  FORGOT_PASSWORD,
+  RESET_PASSWORD,
 };
 
 export default routes;

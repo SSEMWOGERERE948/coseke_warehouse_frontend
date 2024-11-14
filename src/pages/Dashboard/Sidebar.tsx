@@ -173,19 +173,17 @@ export default function Sidebar() {
             "--ListItem-radius": (theme) => theme.vars.radius.sm,
           }}
         >
-          {hasPermission("READ_DASHBOARD") && (
-            <ListItem>
-              <ListItemButton
-                selected={selectedItem === routes.DASHBOARD}
-                onClick={() => handleSelect(routes.DASHBOARD)}
-              >
-                <DashboardRoundedIcon />
-                <ListItemContent>
-                  <Typography level="title-sm">Dashboard</Typography>
-                </ListItemContent>
-              </ListItemButton>
-            </ListItem>
-          )}
+          <ListItem>
+            <ListItemButton
+              selected={selectedItem === routes.DASHBOARD}
+              onClick={() => handleSelect(routes.DASHBOARD)}
+            >
+              <DashboardRoundedIcon />
+              <ListItemContent>
+                <Typography level="title-sm">Dashboard</Typography>
+              </ListItemContent>
+            </ListItemButton>
+          </ListItem>
 
           {hasPermission("READ_FILES") && (
             <ListItem>

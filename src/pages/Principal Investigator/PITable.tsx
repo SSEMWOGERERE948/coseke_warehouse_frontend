@@ -35,6 +35,7 @@ import {
   getAllRequests,
   rejectRequest,
 } from "../Requests/requests_api";
+import { CircularProgress } from "@mui/material";
 
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
   if (b[orderBy] < a[orderBy]) {
@@ -65,11 +66,15 @@ function RowMenu({
   handleGetAllRequests,
   setRequest,
   setRejectOpen,
+  setLoading,
+  loading,
 }: {
   request: IRequests;
   handleGetAllRequests: () => Promise<void>;
   setRequest: React.Dispatch<React.SetStateAction<IRequests | null>>;
   setRejectOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  loading: boolean;
 }) {
   return (
     <Dropdown>
@@ -82,6 +87,7 @@ function RowMenu({
       <Menu size="sm" sx={{ minWidth: 140 }}>
         <MenuItem
           onClick={async () => {
+            setLoading(true);
             try {
               // Approve the request
               await approveRequest(request.id!);
@@ -89,10 +95,12 @@ function RowMenu({
             } catch (error: any) {
               console.error(error);
               alert(error.response.data);
+            } finally {
+              setLoading(false);
             }
           }}
         >
-          Approve
+          {loading ? <CircularProgress size={24} /> : "Approve"}
         </MenuItem>
         <Divider />
         <MenuItem
@@ -102,7 +110,7 @@ function RowMenu({
             setRejectOpen(true);
           }}
         >
-          Decline
+          {loading ? <CircularProgress size={24} /> : "Decline"}
         </MenuItem>
       </Menu>
     </Dropdown>
@@ -118,6 +126,7 @@ export default function PITable() {
   const [rejectReason, setRejectReason] = React.useState("");
   const [rejectOpen, setRejectOpen] = React.useState(false);
   const [req, setReq] = React.useState<IRequests | null>(null);
+  const [loading, setLoading] = React.useState(false);
   const [dateRange, setDateRange] = React.useState<{
     start: Date | null;
     end: Date | null;
@@ -179,6 +188,7 @@ export default function PITable() {
   };
 
   const handleReject = async (request: IRequests) => {
+    setLoading(true);
     try {
       await rejectRequest(request.id!, rejectReason);
       handleGetAllRequests();
@@ -187,12 +197,9 @@ export default function PITable() {
       setReq(null); // Clear the selected request
     } catch (error) {
       console.error(error);
+    } finally {
+      setLoading(false);
     }
-  };
-
-  // Handle search input change
-  const handleSearchChange = (event: any) => {
-    setSearchTerm(event.target.value);
   };
 
   // Filter files based on search term
@@ -472,6 +479,8 @@ export default function PITable() {
                           request={row}
                           setRejectOpen={setRejectOpen}
                           setRequest={setReq}
+                          loading={loading}
+                          setLoading={setLoading}
                           handleGetAllRequests={handleGetAllRequests}
                         />
                       ) : null}

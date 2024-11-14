@@ -1,9 +1,14 @@
-import Avatar from "@mui/joy/Avatar";
-import AvatarGroup from "@mui/joy/AvatarGroup";
-import Table from "@mui/joy/Table";
-import Typography from "@mui/joy/Typography";
 import { ArticleRounded } from "@mui/icons-material";
 import ArrowDropDownRoundedIcon from "@mui/icons-material/ArrowDropDownRounded";
+import KeyboardArrowLeftIcon from "@mui/icons-material/KeyboardArrowLeft";
+import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
+import Box from "@mui/joy/Box";
+import Button from "@mui/joy/Button";
+import Option from "@mui/joy/Option";
+import Select from "@mui/joy/Select";
+import Table from "@mui/joy/Table";
+import Typography from "@mui/joy/Typography";
+import { useState } from "react";
 import IFile from "../../interfaces/IFile";
 import { convertArrayToDate } from "../../utils/helpers";
 
@@ -13,6 +18,26 @@ interface TableFilesProps {
 }
 
 export default function TableFiles({ data, onFileClick }: TableFilesProps) {
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  // Calculate the start and end index for the current page
+  const startIndex = page * rowsPerPage;
+  const endIndex = startIndex + rowsPerPage;
+  const currentData = data.slice(startIndex, endIndex);
+  const totalPages = Math.ceil(data.length / rowsPerPage);
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleRowsPerPageChange = (event: any, newValue: number | null) => {
+    if (newValue) {
+      setRowsPerPage(newValue);
+      setPage(0); // Reset to first page when changing rows per page
+    }
+  };
+
   return (
     <div>
       <Table
@@ -50,7 +75,7 @@ export default function TableFiles({ data, onFileClick }: TableFilesProps) {
           </tr>
         </thead>
         <tbody>
-          {data.map((file, index) => (
+          {currentData.map((file, index) => (
             <tr key={index} onClick={() => onFileClick(file)}>
               <td>
                 <Typography
@@ -82,6 +107,61 @@ export default function TableFiles({ data, onFileClick }: TableFilesProps) {
           ))}
         </tbody>
       </Table>
+
+      {/* Pagination Controls */}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-end",
+          gap: 2,
+          mt: 2,
+          px: 2,
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Typography level="body-sm">Rows per page:</Typography>
+          <Select
+            size="sm"
+            value={rowsPerPage}
+            onChange={handleRowsPerPageChange}
+            sx={{ minWidth: 80 }}
+          >
+            <Option value={5}>5</Option>
+            <Option value={10}>10</Option>
+            <Option value={25}>25</Option>
+            <Option value={50}>50</Option>
+          </Select>
+        </Box>
+
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Typography level="body-sm">
+            {startIndex + 1}-{Math.min(endIndex, data.length)} of {data.length}
+          </Typography>
+          <Box sx={{ display: "flex", gap: 0.5 }}>
+            <Button
+              size="sm"
+              variant="plain"
+              color="neutral"
+              disabled={page === 0}
+              onClick={() => handlePageChange(page - 1)}
+              sx={{ minWidth: "unset" }}
+            >
+              <KeyboardArrowLeftIcon />
+            </Button>
+            <Button
+              size="sm"
+              variant="plain"
+              color="neutral"
+              disabled={page >= totalPages - 1}
+              onClick={() => handlePageChange(page + 1)}
+              sx={{ minWidth: "unset" }}
+            >
+              <KeyboardArrowRightIcon />
+            </Button>
+          </Box>
+        </Box>
+      </Box>
     </div>
   );
 }

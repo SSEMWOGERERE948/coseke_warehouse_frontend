@@ -35,6 +35,7 @@ import {
   rejectRequest,
 } from "../Requests/requests_api";
 import { SearchRounded } from "@mui/icons-material";
+import { CircularProgress } from "@mui/material";
 
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
   if (b[orderBy] < a[orderBy]) {
@@ -65,11 +66,15 @@ function RowMenu({
   handleGetAllRequests,
   setRequest,
   setRejectOpen,
+  loading,
+  setLoading,
 }: {
   request: IRequests;
   handleGetAllRequests: () => Promise<void>;
   setRequest: React.Dispatch<React.SetStateAction<IRequests | null>>;
   setRejectOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  loading: boolean;
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   return (
     <Dropdown>
@@ -82,15 +87,18 @@ function RowMenu({
       <Menu size="sm" sx={{ minWidth: 140 }}>
         <MenuItem
           onClick={async () => {
+            setLoading(true);
             try {
               await changeStage(request.id!, "PI Review");
               handleGetAllRequests();
             } catch (error) {
               console.error(error);
+            } finally {
+              setLoading(false);
             }
           }}
         >
-          Forward to PI
+          {loading ? <CircularProgress size={24} /> : "Forward to PI"}
         </MenuItem>
         <Divider />
         <MenuItem
@@ -100,7 +108,7 @@ function RowMenu({
             setRejectOpen(true);
           }}
         >
-          Decline
+          {loading ? <CircularProgress size={24} /> : "Decline"}
         </MenuItem>
       </Menu>
     </Dropdown>
@@ -114,6 +122,7 @@ export default function RequestTable() {
   const [rows, setRows] = React.useState<IRequests[]>([]);
   const user = getCurrentUser();
   const [rejectReason, setRejectReason] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
   const [rejectOpen, setRejectOpen] = React.useState(false);
   const [req, setReq] = React.useState<IRequests | null>(null);
   const [dateRange, setDateRange] = React.useState<{
@@ -177,6 +186,7 @@ export default function RequestTable() {
   };
 
   const handleReject = async (request: IRequests) => {
+    setLoading(true);
     try {
       await rejectRequest(request.id!, rejectReason);
       handleGetAllRequests();
@@ -185,6 +195,8 @@ export default function RequestTable() {
       setReq(null); // Clear the selected request
     } catch (error) {
       console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -469,6 +481,8 @@ export default function RequestTable() {
                         request={row}
                         setRejectOpen={setRejectOpen}
                         setRequest={setReq}
+                        loading={loading}
+                        setLoading={setLoading}
                         handleGetAllRequests={handleGetAllRequests}
                       />
                     </Box>

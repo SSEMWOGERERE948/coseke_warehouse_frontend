@@ -184,7 +184,13 @@ export default function Login() {
                     }}
                   >
                     <Checkbox size="sm" label="Remember me" name="persistent" />
-                    <Link level="title-sm" href="#replace-with-a-link">
+                    <Link
+                      level="title-sm"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        navigate("/forgot-password");
+                      }}
+                    >
                       Forgot your password?
                     </Link>
                   </Box>

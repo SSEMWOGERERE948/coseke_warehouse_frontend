@@ -14,12 +14,16 @@ import routes from "./routes";
 import PI from "../pages/Principal Investigator";
 import Approved from "../pages/Approved";
 import Rejected from "../pages/Rejected";
+import ResetPassword from "../pages/ResetPassword";
+import ForgotPassword from "../pages/ForgotPassword";
 
 function AppRoutes() {
   return (
     <FileProvider>
       <Routes>
         <Route path={routes.LOGIN} element={<Login />} />
+        <Route path={routes.RESET_PASSWORD} element={<ResetPassword />} />
+        <Route path={routes.FORGOT_PASSWORD} element={<ForgotPassword />} />
         <Route path={routes.DASHBOARD} element={<PrivateRoute />}>
           <Route path={routes.DASHBOARD} element={<Dashboard />}>
             <Route path={routes.FILES} element={<PrivateRoute />}>
