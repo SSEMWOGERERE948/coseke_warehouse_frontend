@@ -113,7 +113,9 @@ export default function ApprovalTable() {
     let res = await getAllRequests();
     setRows(
       res.filter((req) =>
-        roleNames.includes("SUPER_ADMIN") || roleNames.includes("MANAGER")
+        roleNames.includes("SUPER_ADMIN") ||
+        roleNames.includes("MANAGER") ||
+        roleNames.includes("SUPERVISOR")
           ? req.stage === "Approved" || req.stage === "Returned"
           : req.stage === "Approved" ||
             (req.stage === "Returned" && req.user?.email === user.email),

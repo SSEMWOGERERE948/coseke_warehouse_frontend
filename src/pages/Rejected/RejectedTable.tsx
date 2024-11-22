@@ -102,7 +102,9 @@ export default function RejectedTable() {
       let res = await getAllRequests();
       setRows(
         res.filter((req) =>
-          roleNames.includes("SUPER_ADMIN") || roleNames.includes("MANAGER")
+          roleNames.includes("SUPER_ADMIN") ||
+          roleNames.includes("MANAGER") ||
+          roleNames.includes("SUPERVISOR")
             ? req.stage === "Rejected"
             : req.stage === "Rejected" && req.user?.email === user.email,
         ),

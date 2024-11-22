@@ -148,20 +148,7 @@ export default function Login() {
                     const roleNames = userRoles.map(
                       (role: { name: string }) => role.name,
                     );
-
-                    if (
-                      roleNames.includes("SUPER_ADMIN") ||
-                      roleNames.includes("MANAGER")
-                    ) {
-                      navigate("/dashboard");
-                    } else if (
-                      roleNames.includes("USER") ||
-                      roleNames.includes("MANAGER")
-                    ) {
-                      navigate(routes.FILES);
-                    } else {
-                      alert("No valid role found for this user");
-                    }
+                    navigate("/dashboard");
                   } catch (e) {
                     alert(`An error has occured!: ${e}`);
                   }

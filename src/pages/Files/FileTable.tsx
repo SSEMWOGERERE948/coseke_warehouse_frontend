@@ -157,6 +157,7 @@ export default function FileTable() {
           setFiles(Array.isArray(files) ? files : []);
         } else if (
           roleNames.includes("MANAGER") ||
+          roleNames.includes("SUPERVISOR") ||
           roleNames.includes("USER")
         ) {
           const userId = currentUser?.id; // Use user ID here
