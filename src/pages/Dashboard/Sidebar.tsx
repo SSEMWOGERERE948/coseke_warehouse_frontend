@@ -234,16 +234,17 @@ export default function Sidebar() {
               )}
             >
               <List sx={{ gap: 0.5 }}>
-                {hasPermission("READ_REQUESTS") && (
-                  <ListItem sx={{ mt: 0.5 }}>
-                    <ListItemButton
-                      selected={selectedItem === routes.PI}
-                      onClick={() => handleSelect(routes.PI)}
-                    >
-                      Principal Investigator
-                    </ListItemButton>
-                  </ListItem>
-                )}
+                {hasPermission("READ_REQUESTS") &&
+                  user.roles.some((role) => role.name === "MANAGER") && (
+                    <ListItem sx={{ mt: 0.5 }}>
+                      <ListItemButton
+                        selected={selectedItem === routes.PI}
+                        onClick={() => handleSelect(routes.PI)}
+                      >
+                        Principal Investigator
+                      </ListItemButton>
+                    </ListItem>
+                  )}
                 {hasPermission("READ_REQUESTS") && (
                   <ListItem>
                     <ListItemButton

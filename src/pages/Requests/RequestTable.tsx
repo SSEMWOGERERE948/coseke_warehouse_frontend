@@ -425,7 +425,7 @@ export default function RequestTable() {
                 Responsible Person
               </th>
               <th style={{ width: 140, padding: "12px 6px" }}>Date Modified</th>
-              <th style={{ width: 140, padding: "12px 6px" }}>Date Uploaded</th>
+              <th style={{ width: 140, padding: "12px 6px" }}>Date Created</th>
               <th style={{ width: 140, padding: "12px 6px" }}></th>
             </tr>
           </thead>
