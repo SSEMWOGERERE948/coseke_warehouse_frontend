@@ -12,7 +12,7 @@ export const permissionList = (): IUser => {
 export const PrivateRoute = ({ permission }: { permission?: string }) => {
   const permisionsList = permissionList();
 
-  const permissions: string[] = permisionsList?.role?.activities;
+  const permissions: string[] = permisionsList?.roles[0]?.activities;
 
   return isAuthenticated() ||
     (permission && permissions.indexOf(permission) !== -1) ? (

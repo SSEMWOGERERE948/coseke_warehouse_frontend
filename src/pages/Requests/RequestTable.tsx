@@ -496,14 +496,20 @@ export default function RequestTable() {
 
                   <td>
                     <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-                      <RowMenu
-                        request={row}
-                        setRejectOpen={setRejectOpen}
-                        setRequest={setReq}
-                        loading={loading}
-                        setLoading={setLoading}
-                        handleGetAllRequests={handleGetAllRequests}
-                      />
+                      {user.roles.some(
+                        (role) =>
+                          role.name === "SUPERVISOR" ||
+                          role.name === "SUPER_ADMIN",
+                      ) ? (
+                        <RowMenu
+                          request={row}
+                          setRejectOpen={setRejectOpen}
+                          setRequest={setReq}
+                          loading={loading}
+                          setLoading={setLoading}
+                          handleGetAllRequests={handleGetAllRequests}
+                        />
+                      ) : null}
                     </Box>
                   </td>
                 </tr>

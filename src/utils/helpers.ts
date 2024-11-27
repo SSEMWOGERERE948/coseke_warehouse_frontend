@@ -1,7 +1,8 @@
+import IUser from "../interfaces/IUser";
 import { accessTokenKey, currentUser } from "./constants";
 import { jwtDecode } from "jwt-decode";
 
-export const getCurrentUser = () => {
+export const getCurrentUser = (): IUser => {
   return sessionStorage.getItem(currentUser)
     ? JSON.parse(sessionStorage.getItem(currentUser)!)
     : "";
@@ -36,13 +37,9 @@ export function convertArrayToDate(dateArray: number[]): Date {
 
   // Extract year, month, day, and other optional parts
   const year = dateArray[0];
-  const month = dateArray[1] - 1; // Month is 0-indexed in JavaScript
-  const day = dateArray[2] - 2;
-  const hour = dateArray[3] ?? 0; // Defaults to 0 if not provided
-  const minute = dateArray[4] ?? 0; // Defaults to 0 if not provided
-  const second = dateArray[5] ?? 0; // Defaults to 0 if not provided
-  const millisecond = dateArray[6] ?? 0; // Defaults to 0 if not provided
+  const month = dateArray[1] - 1;
+  const day = dateArray[2];
 
   // Create a new Date object from the array values
-  return new Date(year, month, day, hour, minute, second, millisecond);
+  return new Date(year, month, day);
 }

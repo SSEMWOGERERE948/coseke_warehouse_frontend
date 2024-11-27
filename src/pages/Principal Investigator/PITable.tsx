@@ -494,7 +494,11 @@ export default function PITable() {
 
                   <td>
                     <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-                      {row.user?.email == user.email ? (
+                      {user.roles.some(
+                        (role) =>
+                          role.name === "MANAGER" ||
+                          role.name === "SUPER_ADMIN",
+                      ) ? (
                         <RowMenu
                           request={row}
                           setRejectOpen={setRejectOpen}
