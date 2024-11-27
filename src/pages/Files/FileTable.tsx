@@ -340,6 +340,10 @@ export default function FileTable() {
     setFiles(filteredFiles);
   }, [dateRange]);
 
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
+
   return (
     <Box sx={{ p: 3 }}>
       <Typography level="h2" sx={{ mb: 2 }}>
