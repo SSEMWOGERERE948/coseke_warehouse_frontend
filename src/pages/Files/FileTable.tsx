@@ -433,7 +433,7 @@ export default function FileTable() {
               <th>Box Number</th>
               {/* <th>Responsible Person</th> */}
               <th>Status</th>
-              <th>Date Modified</th>
+              <th>Case Study</th>
               <th>Date Uploaded</th>
               <th>Actions</th>
             </tr>
@@ -456,11 +456,14 @@ export default function FileTable() {
                 </td> */}
                 <td>{getStatusChip(file.status)}</td>
                 <td>
-                  {file.lastModifiedDateTime
-                    ? convertArrayToDate(
-                        file.lastModifiedDateTime,
-                      )?.toDateString()
-                    : "N/A"}
+                  {file.caseStudy?.name
+                    ?.split(" ")
+                    .map(
+                      (word) =>
+                        word.charAt(0).toUpperCase() +
+                        word.slice(1).toLowerCase(),
+                    )
+                    .join(" ")}
                 </td>
                 <td>
                   {Array.isArray(file.createdDate)
