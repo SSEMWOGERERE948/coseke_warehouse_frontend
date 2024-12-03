@@ -270,7 +270,8 @@ function Index() {
         display: "flex",
         flexDirection: "column",
         minWidth: 0,
-        height: "100dvh",
+        height: "100vh",
+        overflowY: "auto",
         gap: 1,
       }}
     >

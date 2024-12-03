@@ -386,7 +386,7 @@ export default function RejectedTable() {
               <th style={{ width: 140, padding: "12px 6px" }}>
                 Date of Return
               </th>
-              <th style={{ width: 140, padding: "12px 6px" }}>Date Uploaded</th>
+              <th style={{ width: 140, padding: "12px 6px" }}>Date Created</th>
               <th style={{ width: 140, padding: "12px 6px" }}></th>
             </tr>
           </thead>
