@@ -116,123 +116,25 @@ export default function DashboardContent() {
   const [approvalsCount, setApprovalsCount] = useState(0);
   const [allFilesCount, setAllFilesCount] = useState(0);
 
-  useEffect(() => {
-    fetchCaseStudies();
-    fetchUnavailableFiles();
-    fetchApprovals();
-  }, []);
-
-  const fetchCaseStudies = async () => {
+  // Combined fetch function for all file-related data
+  const fetchAllFileData = async () => {
     try {
-      const response = await AxiosInstance.get("case-studies/all");
-      const fetchedCaseStudies = response.data.map((study: any) => ({
-        id: study.id,
-        name: study.name,
-      }));
-      setCaseStudies(fetchedCaseStudies);
-      setCaseStudyCount(fetchedCaseStudies.length);
-    } catch (error: any) {
-      console.error(
-        "Error fetching case studies:",
-        error.response?.data || error.message,
+      const filesResponse = await getAllFilesService();
+
+      // Update all file-related states at once
+      setFileCount(
+        filesResponse.filter((f: IFile) => f.status === "Available").length,
       );
-    }
-  };
-
-  useEffect(() => {
-    fetchCaseStudies();
-  }, [pageSize, currentPage]);
-
-  const fetchUnavailableFiles = async () => {
-    try {
-      const response = await getAllFilesService();
       setUnavailableFileCount(
-        response.filter((f: IFile) => f.status === "Unavailable").length,
+        filesResponse.filter((f: IFile) => f.status === "Unavailable").length,
       );
-    } catch (error: any) {
-      console.error(
-        "Error fetching unavailable files:",
-        error.response?.data || error.message,
-      );
-    }
-  };
-
-  const fetchApprovals = async () => {
-    try {
-      const response = await getAllFilesService();
       setApprovalsCount(
-        response.filter((f: IFile) => f.status === "Approved").length,
+        filesResponse.filter((f: IFile) => f.status === "Approved").length,
       );
-    } catch (error: any) {
-      console.error(
-        "Error fetching approvals:",
-        error.response?.data || error.message,
-      );
-    }
-  };
+      setAllFilesCount(filesResponse.length);
 
-  const cardsData = [
-    {
-      title: "Available files",
-      value: fileCount,
-      icon: <ContentPasteIcon sx={{ color: "white" }} />,
-      color: "blue",
-      backgroundColor: "#BBDEFB", // Lighter blue for a soothing effect
-      change: "Available files in the system",
-      changeColor: "success",
-    },
-    {
-      title: "Unavailable Files",
-      value: unavailableFileCount,
-      icon: <ContentPasteOffIcon sx={{ color: "white" }} />,
-      color: "red",
-      backgroundColor: "#FFCDD2", // Lighter red for visibility
-      change: "Files that have been checked out",
-      changeColor: "success",
-    },
-    {
-      title: "Case Studies",
-      value: caseStudyCount,
-      icon: <BusinessCenterIcon sx={{ color: "white" }} />,
-      color: "green",
-      backgroundColor: "#C8E6C9", // Lighter green for positivity
-      change: "Active case studies",
-      changeColor: "danger",
-    },
-    {
-      title: "Approvals",
-      value: approvalsCount,
-      icon: <AddTaskIcon sx={{ color: "white" }} />,
-      color: "orange", // Orange for the icon background
-      backgroundColor: "#FFE0B2", // Light orange background
-      change: "Current number of Approvals in the system",
-      changeColor: "success",
-    },
-  ];
-
-  // Helper function to group files by month
-  const groupFilesByMonth = (files: any[]) => {
-    const monthlyCounts = Array(12).fill(0); // Array of 12 months initialized to 0
-    files.forEach((file) => {
-      const createdDate = new Date(
-        file.createdDate[0], // Year
-        file.createdDate[1] - 1, // Month (0-indexed)
-        file.createdDate[2], // Day
-        file.createdDate[3], // Hour
-        file.createdDate[4], // Minute
-      );
-      const month = createdDate.getMonth(); // Get the month (0-11)
-      monthlyCounts[month]++; // Increment the count for the month
-    });
-    return monthlyCounts;
-  };
-
-  // Fetch the files and generate chart data
-  const fetchFilesForGraph = async () => {
-    try {
-      const response = await getAllFilesService();
-      const monthlyFileCounts = groupFilesByMonth(response);
-
+      // Generate chart data
+      const monthlyFileCounts = groupFilesByMonth(filesResponse);
       setChartData({
         labels: [
           "Jan",
@@ -265,9 +167,50 @@ export default function DashboardContent() {
     }
   };
 
+  // Combined initial data fetch
   useEffect(() => {
-    fetchFilesForGraph();
+    fetchCaseStudies();
+    fetchAllFileData();
+  }, []);
+
+  // Update chart when scale changes
+  useEffect(() => {
+    fetchAllFileData();
   }, [scale]);
+
+  const fetchCaseStudies = async () => {
+    try {
+      const response = await AxiosInstance.get("case-studies/all");
+      const fetchedCaseStudies = response.data.map((study: any) => ({
+        id: study.id,
+        name: study.name,
+      }));
+      setCaseStudies(fetchedCaseStudies);
+      setCaseStudyCount(fetchedCaseStudies.length);
+    } catch (error: any) {
+      console.error(
+        "Error fetching case studies:",
+        error.response?.data || error.message,
+      );
+    }
+  };
+
+  // Helper function to group files by month
+  const groupFilesByMonth = (files: any[]) => {
+    const monthlyCounts = Array(12).fill(0); // Array of 12 months initialized to 0
+    files.forEach((file) => {
+      const createdDate = new Date(
+        file.createdDate[0], // Year
+        file.createdDate[1] - 1, // Month (0-indexed)
+        file.createdDate[2], // Day
+        file.createdDate[3], // Hour
+        file.createdDate[4], // Minute
+      );
+      const month = createdDate.getMonth(); // Get the month (0-11)
+      monthlyCounts[month]++; // Increment the count for the month
+    });
+    return monthlyCounts;
+  };
 
   const options = {
     responsive: true,
@@ -297,24 +240,44 @@ export default function DashboardContent() {
     },
   };
 
-  useEffect(() => {
-    fetchFiles();
-  }, []);
-
-  const fetchFiles = async () => {
-    try {
-      const response = await getAllFilesService();
-      setFileCount(
-        response.filter((f: IFile) => f.status === "Available").length,
-      );
-      setAllFilesCount(response.length);
-    } catch (error: any) {
-      console.error(
-        "Error fetching files:",
-        error.response?.data || error.message,
-      );
-    }
-  };
+  const cardsData = [
+    {
+      title: "Available Files",
+      value: fileCount,
+      icon: <ContentPasteIcon sx={{ color: "white" }} />,
+      backgroundColor: "#e3f2fd",
+      color: "#1976d2",
+      changeColor: "#1976d2",
+      change: "Available files in the system",
+    },
+    {
+      title: "Unavailable Files",
+      value: unavailableFileCount,
+      icon: <ContentPasteOffIcon sx={{ color: "white" }} />,
+      backgroundColor: "#fbe9e7",
+      color: "#d84315",
+      changeColor: "#d84315",
+      change: "Files that have been checked out",
+    },
+    {
+      title: "Case Studies",
+      value: caseStudyCount,
+      icon: <BusinessCenterIcon sx={{ color: "white" }} />,
+      backgroundColor: "#e8f5e9",
+      color: "#2e7d32",
+      changeColor: "#2e7d32",
+      change: "Active case studies",
+    },
+    {
+      title: "Approvals",
+      value: approvalsCount,
+      icon: <AddTaskIcon sx={{ color: "white" }} />,
+      backgroundColor: "#f3e5f5",
+      color: "#7b1fa2",
+      changeColor: "#7b1fa2",
+      change: "Current number of Approvals in the system",
+    },
+  ];
 
   return (
     <Box sx={{ p: 3, width: "100%" }}>

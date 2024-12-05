@@ -346,9 +346,6 @@ export default function FileTable() {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography level="h2" sx={{ mb: 2 }}>
-        Files
-      </Typography>
       <Box
         sx={{
           display: "flex",
