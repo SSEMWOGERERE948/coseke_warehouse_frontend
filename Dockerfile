@@ -1,14 +1,14 @@
 # Step 1: Build stage
-FROM node:18-slim as build
+FROM node:20-slim as build
 
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy package files
+# Copy the package.json and package-lock.json files
 COPY package*.json ./
 
-# Clean install dependencies
-RUN npm ci --omit=dev --legacy-peer-deps
+# Install the project dependencies
+RUN npm cache clean --force && npm install --legacy-peer-deps
 
 # Copy the rest of the application code
 COPY . .
@@ -17,7 +17,7 @@ COPY . .
 RUN npm run build
 
 # Step 2: Serve the React app using `serve` on port 80
-FROM node:18-slim
+FROM node:20-slim
 
 # Set the working directory in the container
 WORKDIR /app
