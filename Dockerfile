@@ -10,11 +10,11 @@ COPY package*.json ./
 # Clean npm cache
 RUN npm cache clean --force
 
-# Install production dependencies first (avoid peer conflicts)
-RUN npm install --only=production
+# Install dependencies
+RUN npm ci --legacy-peer-deps
 
-# Install remaining dependencies
-RUN npm install --legacy-peer-deps
+# Remove dev dependencies to reduce image size
+RUN npm prune --production
 
 # Copy the rest of the application code
 COPY . .
