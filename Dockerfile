@@ -1,5 +1,6 @@
 # Step 1: Build stage
-FROM node:18-slim as build 
+FROM node:18-slim as build
+
 # Set the working directory in the container
 WORKDIR /app
 
@@ -12,11 +13,12 @@ RUN npm cache clean --force
 # Install dependencies
 RUN npm ci --legacy-peer-deps
 
+
 # Copy the rest of the application code
 COPY . .
 
 # Build the React app for production
-RUN NODE_OPTIONS=--openssl-legacy-provider npm run build  # Fix OpenSSL error
+RUN npm run build
 
 # Step 2: Serve the React app using `serve` on port 80
 FROM node:18-slim
