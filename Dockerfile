@@ -13,8 +13,6 @@ RUN npm cache clean --force
 # Install dependencies
 RUN npm ci --legacy-peer-deps
 
-# Remove dev dependencies to reduce image size
-RUN npm prune --production
 
 # Copy the rest of the application code
 COPY . .
