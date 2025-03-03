@@ -71,9 +71,9 @@ function Index() {
             }}
           >
             <FormControl sx={{ mt: 2 }}>
-              <FormLabel>FilePID</FormLabel>
+              <FormLabel>Filepid</FormLabel>
               <Input
-                placeholder="Enter filePID"
+                placeholder="Enter filepid"
                 required
                 type="text"
                 autoFocus

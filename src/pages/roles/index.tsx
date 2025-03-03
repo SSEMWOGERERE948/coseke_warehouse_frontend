@@ -12,13 +12,19 @@ import {
   ModalDialog,
   ModalClose,
   Input,
+  Select,
+  Option,
 } from "@mui/joy";
 import { AxiosInstance } from "../../core/baseURL";
 import { useParams, useNavigate } from "react-router-dom";
 import { FormGroup } from "@mui/material";
-import IDepartment from "../../interfaces/IDepartment";
 
 interface Role {
+  id: number;
+  name: string;
+}
+
+interface Organization {
   id: number;
   name: string;
 }
@@ -26,28 +32,30 @@ interface Role {
 interface User {
   id: number;
   name: string;
-  email: string; // Add other user fields as necessary
+  email: string;
 }
 
 export default function UserRoles() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  // State variables
   const [selectedRoleIds, setSelectedRoleIds] = useState<number[]>([]);
   const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
-  const [availableDepartments, setAvailableDepartments] = useState<
-    IDepartment[]
+  const [availableOrganizations, setAvailableOrganizations] = useState<
+    Organization[]
   >([]);
-  const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<number[]>(
-    [],
-  );
-  const [user, setUser] = useState<User | null>(null); // State to hold user data
-  const [userName, setUserName] = useState<string>(""); // State for editable user name
-  const [userEmail, setUserEmail] = useState<string>(""); // State for editable user email
-  const [open, setOpen] = useState(true); // Modal open state
-  const navigate = useNavigate();
-  const [phone, setUserPhone] = useState<string>(""); //state for editable user phone
+  const [selectedOrganization, setSelectedOrganization] = useState<
+    number | null
+  >(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [userName, setUserName] = useState<string>("");
+  const [userEmail, setUserEmail] = useState<string>("");
+  const [phone, setUserPhone] = useState<string>("");
   const [address, setUserAddress] = useState<string>("");
+  const [open, setOpen] = useState(true);
 
-  // Fetch roles and user details
+  // Fetch data on component mount
   useEffect(() => {
     const fetchRoles = async () => {
       try {
@@ -63,27 +71,28 @@ export default function UserRoles() {
         const response = await AxiosInstance.get(`/users/${id}`);
         const fetchedUser = response.data;
         setUser(fetchedUser);
-        setUserName(fetchedUser.first_name + " " + fetchedUser.last_name); // Set the editable fields
+        setUserName(`${fetchedUser.first_name} ${fetchedUser.last_name}`);
         setUserEmail(fetchedUser.email);
         setUserPhone(fetchedUser.phone);
         setUserAddress(fetchedUser.address);
+        setSelectedOrganization(fetchedUser.organization?.id || null);
       } catch (error) {
         console.error("Error fetching user:", error);
       }
     };
 
-    const fetchDepartments = async () => {
+    const fetchOrganizations = async () => {
       try {
-        const response = await AxiosInstance.get("departments/");
-        setAvailableDepartments(response.data);
+        const response = await AxiosInstance.get("/organizations/all");
+        setAvailableOrganizations(response.data);
       } catch (error) {
-        console.error("Error fetching roles:", error);
+        console.error("Error fetching organizations:", error);
       }
     };
 
     fetchRoles();
     fetchUser();
-    fetchDepartments();
+    fetchOrganizations();
   }, [id]);
 
   const handleRoleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,25 +106,26 @@ export default function UserRoles() {
 
   const onclose = () => {
     setOpen(false);
-    navigate("/users"); // Navigate back to user list or previous page
+    navigate("/users");
   };
 
   const handleSubmitRoles = async () => {
-    if (!user || selectedRoleIds.length === 0) {
-      console.error("No roles selected or user data missing.");
+    if (!user || selectedRoleIds.length === 0 || !selectedOrganization) {
+      console.error("Missing required fields.");
       return;
     }
 
     try {
       const payload = {
         userId: Number(id),
-        name: userName, // Updated name
-        email: userEmail, // Updated email
+        name: userName,
+        email: userEmail,
         phone: phone,
         address: address,
+        organizationId: selectedOrganization,
         userType: selectedRoleIds.map(
           (id) => availableRoles.find((role) => role.id === id)?.name,
-        ), // Extract role names based on selected IDs
+        ),
       };
 
       await AxiosInstance.post(`assign-userType`, payload);
@@ -141,7 +151,8 @@ export default function UserRoles() {
           <Typography level="h2" sx={{ mb: 3 }}>
             Edit User and Assign Roles
           </Typography>
-          {/* Form for editing user details */}
+
+          {/* User Details */}
           <FormControl>
             <FormLabel>Name</FormLabel>
             <Input
@@ -162,7 +173,7 @@ export default function UserRoles() {
           </FormControl>
           <FormControl sx={{ mt: 2 }}>
             <FormLabel>Phone</FormLabel>
-            <input
+            <Input
               type="phone"
               value={phone}
               onChange={(e) => setUserPhone(e.target.value)}
@@ -171,15 +182,49 @@ export default function UserRoles() {
           </FormControl>
           <FormControl sx={{ mt: 2 }}>
             <FormLabel>Address</FormLabel>
-            <input
-              type="address"
+            <Input
+              type="text"
               value={address}
               onChange={(e) => setUserAddress(e.target.value)}
               placeholder="Enter Address"
             />
           </FormControl>
 
-          {/* Roles selection */}
+          {/* Organization Selection */}
+          <FormControl sx={{ mt: 2 }}>
+            <FormLabel>Organization</FormLabel>
+            <Select
+              placeholder={
+                availableOrganizations.length > 0
+                  ? "Select an organization"
+                  : "Loading organizations..."
+              }
+              value={
+                selectedOrganization !== null
+                  ? selectedOrganization.toString()
+                  : ""
+              }
+              onChange={(e, value) =>
+                setSelectedOrganization(value ? Number(value) : null)
+              }
+              size="md"
+              disabled={availableOrganizations.length === 0}
+            >
+              {availableOrganizations.length > 0 ? (
+                availableOrganizations.map((org) => (
+                  <Option key={org.id} value={org.id.toString()}>
+                    {org.name}
+                  </Option>
+                ))
+              ) : (
+                <Option key="no-orgs" value="" disabled>
+                  No organizations available
+                </Option>
+              )}
+            </Select>
+          </FormControl>
+
+          {/* Roles Selection */}
           <FormControl component="fieldset" sx={{ mt: 3 }}>
             <FormLabel component="legend">Select Roles</FormLabel>
             <FormGroup>
@@ -198,6 +243,7 @@ export default function UserRoles() {
             </FormGroup>
           </FormControl>
 
+          {/* Submit Button */}
           <Button
             fullWidth
             variant="solid"
@@ -211,7 +257,4 @@ export default function UserRoles() {
       </ModalDialog>
     </Modal>
   );
-}
-function setUserPhone(phone: any) {
-  throw new Error("Function not implemented.");
 }

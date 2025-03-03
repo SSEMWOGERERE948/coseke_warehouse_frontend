@@ -29,22 +29,17 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import SwipeableViews from "react-swipeable-views";
 import { AxiosInstance } from "../../core/baseURL";
-import IDepartment from "../../interfaces/IDepartment";
-import IRole from "../../interfaces/IRole";
+import IStorageLocation from "../../interfaces/IStorageLocation";
 import { convertArrayToDate } from "../../utils/helpers";
-import {
-  createDepartment,
-  deleteDepartment,
-  getAllDepartments,
-} from "./roles_api";
+
 import { Routes, Route } from "react-router-dom";
-import CaseStudies from "../case_studies";
 import { MoreVert } from "@mui/icons-material";
 import {
-  assignFoldersToDepartmentService,
-  getAllFoldersService,
-} from "../Folders/folders_api";
-import IFolder from "../../interfaces/IFolder";
+  getAllStorageLocations,
+  deleteStorageLocation,
+  createStorageLocation,
+} from "./roles_api";
+import OrganizationsScreen from "../organisation_creation";
 
 interface Permission {
   id: string;
@@ -76,6 +71,18 @@ interface AssignFolderToDepartment {
   operation: "ASSIGN" | "UNASSIGN";
 }
 
+interface StorageLocation {
+  createdAt: string | number | Date;
+  id: number;
+  type: "Rack" | "Shelf" | "Archival Box" | "Box";
+  name: string;
+  parentId?: number;
+  parentName?: string;
+  createdDate: number[];
+  lastModifiedDate: number[];
+  parent?: { id: number; name: string } | null;
+}
+
 const RolesAndPermissions: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
 
@@ -105,7 +112,7 @@ const RolesAndPermissions: React.FC = () => {
   const [newDepartment, setNewDepartment] = useState<{ name: string }>({
     name: "",
   });
-  interface CaseStudy {
+  interface OrganisationCreation {
     id: number;
     name: string;
     enabled: boolean;
@@ -116,28 +123,47 @@ const RolesAndPermissions: React.FC = () => {
     [],
   );
   const [tabIndex, setTabIndex] = useState<number>(0);
-  const [caseStudies, setCaseStudies] = useState<CaseStudy[]>([]);
+  const [OrganisationCreation, setOrganisationCreation] = useState<
+    OrganisationCreation[]
+  >([]);
   const [isModalOpen, setModalOpen] = useState(false);
-  const [newCaseStudy, setNewCaseStudy] = useState({
+  const [newOrganisationCreation, setNewOrganisationCreation] = useState({
     name: "",
     description: "",
     role: 1, // Default role
   });
   const { userId } = useParams(); // If needed for role/user context
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedFolders, setSelectedFolders] = useState<number[]>([]); // Selected folder IDs
+  const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false); // State for dialog open/close
+  const [storageLocations, setStorageLocations] = useState<StorageLocation[]>(
+    [],
+  );
+  const [selectedLocationId, setSelectedLocationId] = useState<number | null>(
+    null,
+  );
+  const [newLocation, setNewLocation] = useState<IStorageLocation>({
+    id: 0,
+    name: "",
+    type: "Rack", // Ensure type is one of the allowed values
+    parentId: null,
+    createdAt: new Date().toISOString(),
+  });
 
-  // Handle case study form input
+  const [parentLocations, setParentLocations] = useState<StorageLocation[]>([]);
+
+  // Handle file category form input
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewCaseStudy({
-      ...newCaseStudy,
+    setNewOrganisationCreation({
+      ...newOrganisationCreation,
       [e.target.name]: e.target.value,
     });
   };
 
-  // Case Study toggle
-  const handleToggleCaseStudy = (studyId: number) => {
-    setCaseStudies((prevStudies) =>
+  // File category toggle
+  const handleToggleOrganisationCreation = (studyId: number) => {
+    setOrganisationCreation((prevStudies) =>
       prevStudies.map((study) =>
         study.id === studyId
           ? {
@@ -153,12 +179,12 @@ const RolesAndPermissions: React.FC = () => {
     );
   };
 
-  // Permission toggle within a Case Study
-  const handlePermissionToggleCaseStudy = (
+  // Permission toggle within a File category
+  const handlePermissionToggleOrganisationCreation = (
     studyId: number,
     permName: string,
   ) => {
-    setCaseStudies((prevStudies) =>
+    setOrganisationCreation((prevStudies) =>
       prevStudies.map((study) =>
         study.id === studyId
           ? {
@@ -265,15 +291,15 @@ const RolesAndPermissions: React.FC = () => {
               })),
           },
           {
-            Name: "Case Studies",
+            Name: "File categories",
             enabled: true,
             permissions: response.data
               .filter((perm: any) =>
                 [
-                  "READ_CASESTUDIES",
-                  "CREATE_CASESTUDIES",
-                  "UPDATE_CASESTUDIES",
-                  "DELETE_CASESTUDIES",
+                  "READ_OrganisationCreation",
+                  "CREATE_OrganisationCreation",
+                  "UPDATE_OrganisationCreation",
+                  "DELETE_OrganisationCreation",
                 ].includes(perm.name),
               )
               .map((perm: any) => ({
@@ -311,12 +337,12 @@ const RolesAndPermissions: React.FC = () => {
     fetchPermissions();
   }, [selectedRole]); // Add selectedRole as a dependency
 
-  // Fetch case studies
+  // Fetch file categories
   useEffect(() => {
-    const fetchCaseStudies = async () => {
+    const fetchOrganisationCreation = async () => {
       try {
         const response = await AxiosInstance.get("case-studies/all");
-        const fetchedCaseStudies = response.data.map((study: any) => ({
+        const fetchedOrganisationCreation = response.data.map((study: any) => ({
           id: study.id,
           name: study.name,
           enabled: true,
@@ -326,13 +352,13 @@ const RolesAndPermissions: React.FC = () => {
           })),
         }));
 
-        setCaseStudies(fetchedCaseStudies);
+        setOrganisationCreation(fetchedOrganisationCreation);
       } catch (error) {
-        console.error("Error fetching case studies:", error);
+        console.error("Error fetching file categories:", error);
       }
     };
 
-    fetchCaseStudies();
+    fetchOrganisationCreation();
   }, []);
 
   // Role-based toggle for enabling/disabling role permissions
@@ -480,69 +506,93 @@ const RolesAndPermissions: React.FC = () => {
     }
   };
 
-  const handleOpenAddDepartment = () => setIsAddDepartmentOpen(true);
   const handleCloseAddDepartment = () => setIsAddDepartmentOpen(false);
 
-  //Added by Sylvia
-  const [departments, setDepartments] = useState<IDepartment[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [selectedDepartmentId, setSelectedDepartmentId] = useState<
-    number | null
-  >(null);
-  const [folders, setFolders] = useState<IFolder[]>([]); // State to hold fetched folders
-  const [selectedFolders, setSelectedFolders] = useState<number[]>([]); // Selected folder IDs
-  const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false); // State for dialog open/close
-
   useEffect(() => {
-    fetchDepartments();
+    fetchStorageLocations();
   }, []);
 
-  const fetchDepartments = async () => {
-    setIsLoading(true);
+  // Fetch all storage locations
+  const fetchStorageLocations = async () => {
     try {
-      const fetchedDepartments = await getAllDepartments();
-      if (Array.isArray(fetchedDepartments)) {
-        // Ensure it's an array
-        setDepartments(fetchedDepartments);
-      } else {
-        setDepartments([]); // Fallback to an empty array if not an array
-        console.error("Expected an array but got:", fetchedDepartments);
-      }
-      setError(null);
+      const data = await getAllStorageLocations();
+
+      // Ensure proper date formatting and parent location assignment
+      const formattedData = data.map((location: any) => ({
+        ...location,
+        parentName: location.parent ? location.parent.name : "N/A", // Get parent name
+        createdAt: location.createdAt
+          ? new Date(
+              location.createdAt[0], // Year
+              location.createdAt[1] - 1, // Month (Fix month index)
+              location.createdAt[2], // Day
+              location.createdAt[3], // Hour
+              location.createdAt[4], // Minute
+              location.createdAt[5], // Second
+            ).toLocaleString()
+          : "N/A",
+        updatedAt: location.updatedAt
+          ? new Date(
+              location.updatedAt[0], // Year
+              location.updatedAt[1] - 1, // Month (Fix month index)
+              location.updatedAt[2], // Day
+              location.updatedAt[3], // Hour
+              location.updatedAt[4], // Minute
+              location.updatedAt[5], // Second
+            ).toLocaleString()
+          : "N/A",
+      }));
+
+      setStorageLocations(formattedData);
+
+      // Set only valid parent locations (excluding "Box" types)
+      setParentLocations(
+        formattedData.filter((loc: { type: string }) => loc.type !== "Box"),
+      );
     } catch (error) {
-      setError("Failed to fetch departments");
-      console.error("Error fetching departments:", error);
-    } finally {
-      setIsLoading(false);
+      console.error("Error fetching storage locations:", error);
     }
   };
 
-  const handleSubmitNewDepartment = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setIsLoading(true);
+  // Handle deleting a storage location
+  const handleDeleteLocation = async (id: number) => {
     try {
-      await createDepartment({ departmentName: newDepartment.name });
-      await fetchDepartments();
-      handleCloseAddDepartment();
-      setError("Failed to create department");
-      console.error("Error creating department:", error);
-    } finally {
-      setIsLoading(false);
+      await deleteStorageLocation(id);
+      fetchStorageLocations();
+    } catch (error) {
+      console.error("Error deleting location:", error);
     }
   };
-  function setDefaultResultOrder(arg0: string) {
-    throw new Error("Function not implemented.");
-  }
 
-  // stopped here
+  // Handle opening the options menu
+  const handleOpenMenu = (event: React.MouseEvent, id: number) => {
+    setSelectedLocationId(id);
+  };
 
-  // const handleSubmitNewDepartment = (event: React.FormEvent) => {
-  // event.preventDefault();
-  // Handle department submission logic here
-  // handleCloseAddDepartment();
+  // Handle creating a new storage location
+  const handleSubmitLocation = async (event: React.FormEvent) => {
+    event.preventDefault();
+    try {
+      await createStorageLocation(
+        newLocation,
+        newLocation.parentId ?? undefined,
+      );
+      setModalOpen(false);
+      fetchStorageLocations();
+    } catch (error) {
+      console.error("Error creating storage location:", error);
+    }
+  };
+
+  const isValidParent = (
+    location: IStorageLocation,
+    type: IStorageLocation["type"],
+  ) => {
+    if (type === "Shelf") return location.type === "Rack";
+    if (type === "Archival Box") return location.type === "Shelf";
+    if (type === "Box") return location.type === "Archival Box";
+    return false;
+  };
 
   const assignPermissionToBackend = async (permissionPayload: {
     roleName: string;
@@ -588,112 +638,16 @@ const RolesAndPermissions: React.FC = () => {
     }
   };
 
-  const handleFolderAssignment = async (
-    departmentId: number,
-    folderId: number,
-    isAssigning: boolean,
-  ) => {
-    const payload: AssignFolderToDepartment = {
-      departmentId: departmentId,
-      folderIds: [folderId],
-      operation: isAssigning ? "ASSIGN" : "UNASSIGN",
-    };
-
-    try {
-      setIsLoading(true);
-      // Use a single endpoint for both operations
-      await AxiosInstance.post("/folders/manage-assignment", payload);
-
-      // Update local state
-      setFolders((prevFolders) =>
-        prevFolders.map((folder) =>
-          folder.id === folderId
-            ? { ...folder, isAssigned: isAssigning }
-            : folder,
-        ),
-      );
-    } catch (error) {
-      console.error(
-        `Error ${isAssigning ? "assigning" : "unassigning"} folder:`,
-        error,
-      );
-      setError(`Failed to ${isAssigning ? "assign" : "unassign"} folder`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleAssignFolders = async (departmentId: number) => {
-    try {
-      setIsLoading(true);
-      setSelectedDepartmentId(departmentId);
-
-      // Fetch all folders
-      console.log("Fetching all folders...");
-      const allFoldersResponse = await AxiosInstance.get("/folders/all");
-      console.log("All Folders Response:", allFoldersResponse.data); // Log raw response
-
-      // Fetch assigned folders for the department
-      console.log("Fetching assigned folders...");
-      const assignedFoldersResponse = await AxiosInstance.get(
-        `/folders/departments/${departmentId}`,
-      );
-      console.log("Assigned Folders Response:", assignedFoldersResponse.data); // Log raw response
-
-      const assignedFolderIds = assignedFoldersResponse.data.map(
-        (folder: IFolder) => folder.id,
-      );
-
-      // Map the folders with the assignment status
-      const foldersWithAssignments = allFoldersResponse.data.map(
-        (folder: IFolder) => ({
-          ...folder,
-          isAssigned: assignedFolderIds.includes(folder.id),
-        }),
-      );
-
-      console.log("Mapped Folders:", foldersWithAssignments); // Check final folders data
-      setFolders(foldersWithAssignments);
-      setIsFolderDialogOpen(true);
-    } catch (error) {
-      console.error("Error fetching folders:", error);
-      setError("Failed to load folders");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Menu handlers
-  const handleOpenAssignDialog = (
-    event: React.MouseEvent<HTMLElement>,
-    departmentId: number,
-  ) => {
-    setAnchorEl(event.currentTarget);
-    setSelectedDepartmentId(departmentId);
-    console.log("Opening menu for department:", departmentId);
+  const handleAssignLocation = (locationId: number) => {
+    setSelectedLocationId(locationId); // Store the selected location ID
+    setModalOpen(true); // Open the modal to add a sub-location
   };
 
   const handleCloseMenu = () => {
     setAnchorEl(null);
   };
 
-  const handleCloseDialog = () => {
-    setIsFolderDialogOpen(false);
-    setSelectedDepartmentId(null);
-    setSelectedFolders([]);
-  };
-
   // Checkbox change handler
-  const handleFolderCheckboxChange = async (
-    folderId: number,
-    isChecked: boolean,
-  ) => {
-    if (!selectedDepartmentId) return;
-
-    console.log("Checkbox change:", { folderId, isChecked });
-    await handleFolderAssignment(selectedDepartmentId, folderId, isChecked);
-  };
-
   return (
     <CssVarsProvider>
       <CssBaseline />
@@ -705,8 +659,8 @@ const RolesAndPermissions: React.FC = () => {
         >
           <TabList>
             <Tab>System Roles</Tab>
-            <Tab>Case Studies</Tab>
-            <Tab>Departments</Tab>
+            <Tab>Organisations</Tab>
+            <Tab>Storage Locations</Tab>
           </TabList>
         </Tabs>
 
@@ -868,10 +822,10 @@ const RolesAndPermissions: React.FC = () => {
             </Grid>
           </Box>
 
-          {/* Case Studies Tab */}
+          {/* File categories Tab */}
           <Box p={2}>
             <Routes>
-              <Route path="/" element={<CaseStudies />} />
+              <Route path="/" element={<OrganizationsScreen />} />
             </Routes>
           </Box>
           {/* Departments Tab */}
@@ -885,11 +839,11 @@ const RolesAndPermissions: React.FC = () => {
               }}
             >
               <Typography level="h2" fontSize="lg">
-                Organization Departments
+                Storage Locations
               </Typography>
               <Box sx={{ display: "flex", gap: 2 }}>
                 <Input
-                  placeholder="Search departments..."
+                  placeholder="Search storage locations..."
                   variant="outlined"
                   sx={{ minWidth: "200px" }}
                 />
@@ -897,9 +851,9 @@ const RolesAndPermissions: React.FC = () => {
                 <Button
                   variant="solid"
                   color="primary"
-                  onClick={handleOpenAddDepartment}
+                  onClick={() => setModalOpen(true)}
                 >
-                  Add Department
+                  Add Storage Location
                 </Button>
               </Box>
             </Box>
@@ -908,146 +862,142 @@ const RolesAndPermissions: React.FC = () => {
               <Table stickyHeader>
                 <thead>
                   <tr>
-                    <th>Department Name</th>
+                    <th>Storage Level</th>
+                    <th>Location Name</th>
+                    <th>Parent Location</th>
                     <th>Added Date</th>
-                    <th>Modified Date</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {Array.isArray(departments) &&
-                    departments.map((department: IDepartment) => (
-                      <tr key={department.id!}>
-                        <td>{department.departmentName}</td>
-                        <td>
-                          {convertArrayToDate(
-                            department.createdDate!,
-                          ).toDateString()}
-                        </td>
-                        <td>
-                          {convertArrayToDate(
-                            department.lastModifiedDateTime!,
-                          ).toDateString()}
-                        </td>
-                        <td>
-                          <Button
-                            size="sm"
-                            variant="outlined"
-                            color="danger"
-                            onClick={async () => {
-                              if (department.id) {
-                                try {
-                                  await deleteDepartment(department.id);
-                                  await fetchDepartments();
-                                } catch (err) {
-                                  setDefaultResultOrder(
-                                    "Failed to delete department",
-                                  );
-                                  console.error(
-                                    "Error deleting department:",
-                                    err,
-                                  );
-                                }
-                              }
-                            }}
-                          >
-                            Delete
-                          </Button>
-
-                          {/* Three-dotted icon */}
-                          <IconButton
-                            onClick={(event) =>
-                              handleOpenAssignDialog(event, department.id!)
-                            }
-                          >
-                            <MoreVert />
-                          </IconButton>
-
-                          {/* Menu for assigning folders */}
-                          <Menu
-                            anchorEl={anchorEl} // The element the menu is anchored to
-                            open={Boolean(anchorEl)} // Open when anchorEl is not null
-                            onClose={handleCloseMenu} // Close the menu
-                          >
-                            <Menu
-                              anchorEl={anchorEl}
-                              open={
-                                Boolean(anchorEl) &&
-                                selectedDepartmentId === department.id
-                              }
-                              onClose={handleCloseMenu}
-                            >
-                              <MenuItem
-                                onClick={() =>
-                                  handleAssignFolders(department.id!)
-                                }
-                              >
-                                Assign Folders
-                              </MenuItem>
-                            </Menu>
-                          </Menu>
-                        </td>
-                      </tr>
-                    ))}
+                  {storageLocations.map((location) => (
+                    <tr key={location.id}>
+                      <td>{location.type}</td>{" "}
+                      {/* Rack, Shelf, Archival Box, Box */}
+                      <td>{location.name}</td>
+                      <td>{location.parent ? location.parent.name : "N/A"}</td>
+                      <td>
+                        {location.createdAt
+                          ? new Date(location.createdAt).toLocaleString()
+                          : "N/A"}
+                      </td>
+                      <td>
+                        <Button
+                          size="sm"
+                          variant="outlined"
+                          color="danger"
+                          onClick={() => handleDeleteLocation(location.id)}
+                        >
+                          Delete
+                        </Button>
+                        <IconButton
+                          onClick={(event) =>
+                            handleOpenMenu(event, location.id)
+                          }
+                        >
+                          <MoreVert />
+                        </IconButton>
+                        <Menu
+                          anchorEl={null}
+                          open={Boolean(selectedLocationId)}
+                          onClose={() => setSelectedLocationId(null)}
+                        >
+                          <MenuItem>Assign Sub-Locations</MenuItem>
+                        </Menu>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </Table>
             </Sheet>
+
+            {/* Modal for Creating a New Storage Location */}
+            <Modal open={isModalOpen} onClose={() => setModalOpen(false)}>
+              <ModalDialog>
+                <ModalClose />
+                <Typography component="h2" fontSize="lg" mb={2}>
+                  Add Storage Location
+                </Typography>
+                <form onSubmit={handleSubmitLocation}>
+                  <Stack gap={2}>
+                    <FormControl required>
+                      <FormLabel>Storage Level</FormLabel>
+                      <Select
+                        value={newLocation.type}
+                        onChange={(event, newValue) =>
+                          setNewLocation({
+                            ...newLocation,
+                            type: newValue as
+                              | "Rack"
+                              | "Shelf"
+                              | "Archival Box"
+                              | "Box",
+                          })
+                        }
+                      >
+                        <Option value="Rack">Rack</Option>
+                        <Option value="Shelf">Shelf</Option>
+                        <Option value="Archival Box">Archival Box</Option>
+                        <Option value="Box">Box</Option>
+                      </Select>
+                    </FormControl>
+
+                    {newLocation.type !== "Rack" && (
+                      <FormControl required>
+                        <FormLabel>Parent Location</FormLabel>
+                        <Select
+                          value={
+                            newLocation.parentId === null ||
+                            newLocation.parentId === undefined
+                              ? ""
+                              : newLocation.parentId.toString()
+                          }
+                          onChange={(event, newValue) => {
+                            setNewLocation({
+                              ...newLocation,
+                              parentId:
+                                newValue !== null ? Number(newValue) : null, // Ensures a valid number or null
+                            });
+                          }}
+                        >
+                          {parentLocations
+                            .filter((loc) =>
+                              isValidParent(
+                                loc as IStorageLocation,
+                                newLocation.type as IStorageLocation["type"],
+                              ),
+                            )
+                            .map((loc) => (
+                              <Option key={loc.id} value={loc.id.toString()}>
+                                {loc.name} ({loc.type})
+                              </Option>
+                            ))}
+                        </Select>
+                      </FormControl>
+                    )}
+
+                    <FormControl required>
+                      <FormLabel>Location Name</FormLabel>
+                      <Input
+                        value={newLocation.name}
+                        onChange={(e) =>
+                          setNewLocation({
+                            ...newLocation,
+                            name: e.target.value,
+                          })
+                        }
+                      />
+                    </FormControl>
+
+                    <Button type="submit" variant="solid" color="primary">
+                      Add Location
+                    </Button>
+                  </Stack>
+                </form>
+              </ModalDialog>
+            </Modal>
           </Box>
         </SwipeableViews>
-
-        <Modal open={isFolderDialogOpen} onClose={handleCloseDialog}>
-          <ModalDialog>
-            <Typography component="h2" fontSize="lg" mb={2}>
-              Manage Folder Assignments for Department
-            </Typography>
-            <Stack gap={2}>
-              {isLoading && <Typography>Loading...</Typography>}
-              {error && <Typography>{error}</Typography>}
-              {!isLoading &&
-                folders.map((folder: IFolder) => (
-                  <FormControl key={folder.id}>
-                    <Stack direction="row" alignItems="center" spacing={2}>
-                      <Checkbox
-                        checked={Boolean(folder.isAssigned)}
-                        onChange={(e) =>
-                          handleFolderCheckboxChange(
-                            folder.id!,
-                            e.target.checked,
-                          )
-                        }
-                        disabled={isLoading}
-                      />
-                      <FormLabel>{folder.folderName}</FormLabel>
-                    </Stack>
-                  </FormControl>
-                ))}
-            </Stack>
-          </ModalDialog>
-        </Modal>
-
-        {/* Modal for Adding a Department */}
-        <Modal open={isAddDepartmentOpen} onClose={handleCloseAddDepartment}>
-          <ModalDialog>
-            <ModalClose />
-            <Typography component="h2" fontSize="lg" mb={2}>
-              Add Department
-            </Typography>
-            <form onSubmit={handleSubmitNewDepartment}>
-              <Stack gap={2}>
-                <FormControl>
-                  <FormLabel>Department Name</FormLabel>
-                  <Input
-                    required
-                    onChange={(e) => setNewDepartment({ name: e.target.value })}
-                  />
-                </FormControl>
-                <Button type="submit" variant="solid" color="primary">
-                  Add Department
-                </Button>
-              </Stack>
-            </form>
-          </ModalDialog>
-        </Modal>
       </Box>
     </CssVarsProvider>
   );

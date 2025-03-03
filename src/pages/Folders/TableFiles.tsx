@@ -71,33 +71,6 @@ export default function TableFiles({ data, onFileClick }: TableFilesProps) {
             </th>
           </tr>
         </thead>
-        <tbody>
-          {currentData.map((file, index) => (
-            <tr key={index} onClick={() => onFileClick(file)}>
-              <td>
-                <Typography
-                  level="title-sm"
-                  startDecorator={<ArticleRounded color="primary" />}
-                  sx={{ alignItems: "flex-start" }}
-                >
-                  {file.pid}
-                </Typography>
-              </td>
-              <td>
-                <Typography level="body-sm">
-                  {Array.isArray(file.lastModifiedDateTime)
-                    ? convertArrayToDate(
-                        file.lastModifiedDateTime,
-                      )?.toDateString()
-                    : ""}
-                </Typography>
-              </td>
-              <td>
-                <Typography level="body-sm">{file.status}</Typography>
-              </td>
-            </tr>
-          ))}
-        </tbody>
       </Table>
 
       {/* Pagination Controls */}
