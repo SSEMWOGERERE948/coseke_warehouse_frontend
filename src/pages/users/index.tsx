@@ -15,34 +15,35 @@ import {
   Table,
   Sheet,
   Checkbox,
-  List,
-  ListItem,
+  Select,
+  Option,
 } from "@mui/joy";
 import { AxiosInstance } from "../../core/baseURL";
 import { useNavigate } from "react-router-dom";
-import { getAllDepartments } from "../Roles And Permissions/roles_api";
 import { FormControlLabel, FormGroup } from "@mui/material";
-import IRole from "../../interfaces/IRole";
 
 interface Role {
   id: number;
   name: string;
 }
 
-interface Department {
-  departmentName: string;
+interface Organization {
   id: number;
+  name: string;
 }
 
 interface User {
-  departments: any;
-  roles: any;
   id: number;
   first_name: string;
   last_name: string;
   email: string;
   phone: string;
   address: string;
+  roles: any;
+  organization?: {
+    id: number;
+    name: string;
+  };
 }
 
 const Index: React.FC = () => {
@@ -50,16 +51,13 @@ const Index: React.FC = () => {
   const [sortColumn, setSortColumn] = useState<keyof User | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [selectedDepartmentId, setSelectedDepartmentId] = useState<number[]>(
-    [],
-  );
-  const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<number[]>(
-    [],
-  );
-  const [availableDepartments, setAvailableDepartments] = useState<
-    Department[]
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [availableOrganizations, setAvailableOrganizations] = useState<
+    Organization[]
   >([]);
+  const [selectedOrganization, setSelectedOrganization] = useState<
+    number | null
+  >(null);
 
   const [newUser, setNewUser] = useState<{
     first_name: string;
@@ -69,7 +67,6 @@ const Index: React.FC = () => {
     phone: string;
     address: string;
     roles: any;
-    departments: any;
   }>({
     first_name: "",
     last_name: "",
@@ -78,14 +75,28 @@ const Index: React.FC = () => {
     phone: "",
     address: "",
     roles: null,
-    departments: null,
   });
 
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
   const [selectedRoleIds, setSelectedRoleIds] = useState<number[]>([]);
+  const [isLoadingOrganizations, setIsLoadingOrganizations] = useState(false);
 
+  useEffect(() => {
+    const fetchOrganizations = async () => {
+      setIsLoadingOrganizations(true);
+      try {
+        const response = await AxiosInstance.get("/organizations/all");
+        setAvailableOrganizations(response.data);
+      } catch (error) {
+        console.error("Error fetching organizations:", error);
+      } finally {
+        setIsLoadingOrganizations(false);
+      }
+    };
+    fetchOrganizations();
+  }, []);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -103,29 +114,6 @@ const Index: React.FC = () => {
     };
 
     fetchData();
-  }, []);
-
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await AxiosInstance.get("/users");
-        setUsers(response.data);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      }
-    };
-
-    const fetchRoles = async () => {
-      try {
-        const response = await AxiosInstance.get("/roles/all");
-        setAvailableRoles(response.data);
-      } catch (error) {
-        console.error("Error fetching roles:", error);
-      }
-    };
-
-    fetchUsers();
-    fetchRoles();
   }, []);
 
   const handleSort = (column: keyof User) => {
@@ -158,43 +146,53 @@ const Index: React.FC = () => {
       phone: "",
       address: "",
       roles: null,
-      departments: null,
     });
+    setEmailError(null);
   };
 
   const handleSubmitNewUser = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const userData = {
-      ...newUser,
-    };
+    setEmailError(null);
 
     try {
-      const response = await AxiosInstance.post("users/create-users", userData);
-      const newUserId = response.data.id;
-
-      setUsers((prev) => [
-        ...prev,
-        {
-          id: newUserId,
-          ...userData,
-        },
-      ]);
-
+      // Change this to capture the response from the API
+      const response = await AxiosInstance.post("users/create-users", newUser);
+      // Use the ID returned from the backend instead of Date.now()
+      const createdUser = response.data;
+      setUsers((prev) => [...prev, createdUser]);
       handleCloseAddUser();
-    } catch (error) {
+    } catch (error: any) {
+      if (error.response && error.response.status === 400) {
+        if (error.response.data.includes("Email is already in use")) {
+          setEmailError(
+            "Email is already in use. Please use a different email.",
+          );
+        }
+      }
       console.error("Error adding user:", error);
     }
   };
 
-  const handleEditUser = (user: User) => {
+  const handleEditUser = async (user: User) => {
     setSelectedUser(user);
-
     setSelectedRoleIds(user.roles?.map((role: { id: any }) => role.id) || []);
 
-    setSelectedDepartmentIds(
-      user.departments?.map((dept: { id: any }) => dept.id) || [],
-    );
+    // Make sure organizations are fetched before opening the edit modal
+    if (availableOrganizations.length === 0) {
+      try {
+        const response = await AxiosInstance.get("/organizations/all");
+        setAvailableOrganizations(response.data);
+      } catch (error) {
+        console.error("Error fetching organizations:", error);
+      }
+    }
+
+    // Set selected organization if user has one
+    if (user.organization) {
+      setSelectedOrganization(user.organization.id);
+    } else {
+      setSelectedOrganization(null);
+    }
 
     setIsEditUserOpen(true);
   };
@@ -237,40 +235,10 @@ const Index: React.FC = () => {
     }
   };
 
-  const handleDepartmentChange = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const departmentId = Number(event.target.value); // Ensure consistent number type
-    const isChecked = event.target.checked;
-
-    if (!selectedUser) return;
-
-    try {
-      if (isChecked) {
-        // Assign department
-        await AxiosInstance.post(`departments/assign-user-to-department`, {
-          userId: selectedUser.id,
-          departmentIds: [departmentId], // Send only the new department ID
-        });
-        setSelectedDepartmentIds((prev) => [...prev, departmentId]);
-      } else {
-        // Unassign department
-        await AxiosInstance.post(`departments/unassign-user-from-department`, {
-          userId: selectedUser.id,
-          departmentIds: [departmentId], // Send only the unassigned department ID
-        });
-        setSelectedDepartmentIds((prev) =>
-          prev.filter((id) => id !== departmentId),
-        );
-      }
-    } catch (error) {
-      console.error("Error updating user department:", error);
-    }
-  };
-
   const handleCloseEditUser = () => {
     setIsEditUserOpen(false);
     setSelectedUser(null);
+    setSelectedOrganization(null);
   };
 
   const handleSubmitRoles = async () => {
@@ -288,44 +256,60 @@ const Index: React.FC = () => {
       };
 
       await AxiosInstance.post(`assign-userType`, payload);
-      setIsEditUserOpen(false);
     } catch (error) {
       console.error("Error assigning user roles:", error);
     }
   };
 
-  // Fetch all departments
+  const handleUpdateUser = async () => {
+    if (!selectedUser) return;
+
+    try {
+      const updateData = {
+        first_name: selectedUser.first_name,
+        last_name: selectedUser.last_name,
+        email: selectedUser.email,
+        phone: selectedUser.phone,
+        address: selectedUser.address,
+        organizationId: selectedOrganization,
+      };
+
+      await AxiosInstance.post(`/users/update/${selectedUser.id}`, updateData);
+
+      // Update the user in the local state
+      setUsers(
+        users.map((user) =>
+          user.id === selectedUser.id
+            ? {
+                ...user,
+                ...updateData,
+                organization: selectedOrganization
+                  ? availableOrganizations.find(
+                      (org) => org.id === selectedOrganization,
+                    )
+                  : undefined,
+              }
+            : user,
+        ),
+      );
+
+      handleCloseEditUser();
+    } catch (error) {
+      console.error("Error updating user:", error);
+    }
+  };
+
   useEffect(() => {
-    const fetchAllDepartments = async () => {
+    const fetchOrganizations = async () => {
       try {
-        const response = await AxiosInstance.get("departments/all");
-        console.log("Fetched departments data:", response.data); // Log data to check structure
-        setDepartments(response.data);
+        const response = await AxiosInstance.get("/organizations/all");
+        setAvailableOrganizations(response.data);
       } catch (error) {
-        console.error("Error fetching all departments:", error);
+        console.error("Error fetching organizations:", error);
       }
     };
-
-    fetchAllDepartments();
+    fetchOrganizations();
   }, []);
-
-  // Fetch departments assigned to the selected user
-  useEffect(() => {
-    const fetchUserDepartments = async () => {
-      if (!selectedUser) return;
-      try {
-        const response = await AxiosInstance.get(
-          `departments/user/${selectedUser.id}`,
-        );
-        setSelectedDepartmentIds(response.data || []); // Ensure an empty array if response is null
-      } catch (error) {
-        console.error("Error fetching user departments:", error);
-        setSelectedDepartmentIds([]); // Fallback to an empty array on error
-      }
-    };
-
-    fetchUserDepartments();
-  }, [selectedUser]);
 
   return (
     <Box sx={{ maxWidth: 1200, margin: "auto", p: 3 }}>
@@ -374,6 +358,7 @@ const Index: React.FC = () => {
               <th>Email</th>
               <th>Phone</th>
               <th>Address</th>
+              <th>Organization</th>
               <th style={{ width: 120 }} />
             </tr>
           </thead>
@@ -405,11 +390,16 @@ const Index: React.FC = () => {
                   <Typography level="body-sm">{user.address}</Typography>
                 </td>
                 <td>
+                  <Typography level="body-sm">
+                    {user.organization?.name || "Not assigned"}
+                  </Typography>
+                </td>
+                <td>
                   <Stack direction="row" spacing={1}>
                     <Button
                       variant="plain"
                       size="sm"
-                      onClick={() => handleEditUser(user)} // Trigger edit modal with user details
+                      onClick={() => handleEditUser(user)}
                     >
                       <Edit />
                     </Button>
@@ -417,7 +407,7 @@ const Index: React.FC = () => {
                       variant="plain"
                       color="danger"
                       size="sm"
-                      onClick={() => handleRemoveUser(user.id)} // Remove user
+                      onClick={() => handleRemoveUser(user.id)}
                     >
                       <Trash2 />
                     </Button>
@@ -471,16 +461,25 @@ const Index: React.FC = () => {
                   }
                 />
               </FormControl>
-
-              <FormControl>
+              <FormControl error={!!emailError}>
                 <FormLabel>Email</FormLabel>
                 <Input
                   required
                   value={newUser.email}
-                  onChange={(e) =>
-                    setNewUser({ ...newUser, email: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setNewUser({ ...newUser, email: e.target.value });
+                    setEmailError(null); // Reset error when user types
+                  }}
+                  sx={{
+                    borderColor: emailError ? "red" : "",
+                    backgroundColor: emailError ? "#ffeeee" : "",
+                  }}
                 />
+                {emailError && (
+                  <Typography sx={{ color: "red", fontSize: "12px" }}>
+                    {emailError}
+                  </Typography>
+                )}
               </FormControl>
 
               <FormControl>
@@ -581,7 +580,7 @@ const Index: React.FC = () => {
             <FormControl sx={{ mt: 2 }}>
               <FormLabel>Phone</FormLabel>
               <Input
-                type="phone"
+                type="tel"
                 value={selectedUser?.phone || ""}
                 onChange={(e) =>
                   setSelectedUser({ ...selectedUser!, phone: e.target.value })
@@ -599,23 +598,43 @@ const Index: React.FC = () => {
               />
             </FormControl>
 
-            <FormControl component="fieldset" sx={{ mt: 3 }}>
-              <FormLabel component="legend">Department</FormLabel>
-              <FormGroup>
-                <List>
-                  {departments.map((dept) => (
-                    <ListItem key={dept.id}>
-                      <Checkbox
-                        value={dept.id} // Remove toString()
-                        checked={selectedDepartmentIds.includes(dept.id)} // Ensure the check is correct
-                        onChange={handleDepartmentChange}
-                      />
-
-                      <Typography>{dept.departmentName}</Typography>
-                    </ListItem>
-                  ))}
-                </List>
-              </FormGroup>
+            <FormControl sx={{ mt: 2 }}>
+              <FormLabel>Organization</FormLabel>
+              <Select
+                placeholder={
+                  isLoadingOrganizations
+                    ? "Loading organizations..."
+                    : availableOrganizations.length > 0
+                      ? "Select an organization"
+                      : "No organizations available"
+                }
+                value={
+                  selectedOrganization !== null
+                    ? selectedOrganization.toString()
+                    : ""
+                }
+                onChange={(e, value) =>
+                  setSelectedOrganization(value ? Number(value) : null)
+                }
+                size="md"
+                disabled={
+                  isLoadingOrganizations || availableOrganizations.length === 0
+                }
+              >
+                {availableOrganizations.length > 0 ? (
+                  availableOrganizations.map((org) => (
+                    <Option key={org.id} value={org.id.toString()}>
+                      {org.name}
+                    </Option>
+                  ))
+                ) : (
+                  <Option key="no-orgs" value="" disabled>
+                    {isLoadingOrganizations
+                      ? "Loading..."
+                      : "No organizations available"}
+                  </Option>
+                )}
+              </Select>
             </FormControl>
 
             {/* Roles selection */}
@@ -642,7 +661,10 @@ const Index: React.FC = () => {
               fullWidth
               variant="solid"
               color="primary"
-              onClick={handleSubmitRoles}
+              onClick={async () => {
+                await handleUpdateUser();
+                await handleSubmitRoles();
+              }}
               sx={{ mt: 3 }}
             >
               Update User and Roles

@@ -5,17 +5,14 @@ import Files from "../pages/Files";
 import Folders from "../pages/Folders";
 import { FileProvider } from "../pages/Folders/FileContext";
 import Login from "../pages/Login";
-import Profile from "../pages/Profile";
 import Requests from "../pages/Requests";
 import RolesAndPermissions from "../pages/Roles And Permissions";
 import Users from "../pages/users";
 import { PrivateRoute } from "./PrivateRoute";
 import routes from "./routes";
-import PI from "../pages/Principal Investigator";
-import Approved from "../pages/Approved";
-import Rejected from "../pages/Rejected";
 import ResetPassword from "../pages/ResetPassword";
 import ForgotPassword from "../pages/ForgotPassword";
+import Profile from "../pages/profile";
 
 function AppRoutes() {
   return (
@@ -38,17 +35,8 @@ function AppRoutes() {
             <Route path={routes.REQUESTS} element={<PrivateRoute />}>
               <Route path={routes.REQUESTS} element={<Requests />} />
             </Route>
-            <Route path={routes.APPROVED} element={<PrivateRoute />}>
-              <Route path={routes.APPROVED} element={<Approved />} />
-            </Route>
-            <Route path={routes.REJECTED} element={<PrivateRoute />}>
-              <Route path={routes.REJECTED} element={<Rejected />} />
-            </Route>
             <Route path={routes.PROFILE} element={<PrivateRoute />}>
               <Route path={routes.PROFILE} element={<Profile />} />
-            </Route>
-            <Route path={routes.PI} element={<PrivateRoute />}>
-              <Route path={routes.PI} element={<PI />} />
             </Route>
             <Route path={routes.USERS} element={<PrivateRoute />}>
               <Route path={routes.USERS} element={<Users />} />

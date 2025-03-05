@@ -103,7 +103,7 @@ export default function Login() {
           >
             <Box sx={{ gap: 2, display: "flex", alignItems: "center" }}>
               <img src={Images.Logo} alt="" style={{ width: 40, height: 40 }} />
-              <Typography level="title-lg">Baylor Foundation</Typography>
+              <Typography level="title-lg">Coseke-Warehouse</Typography>
             </Box>
             <ColorSchemeToggle />
           </Box>
@@ -190,7 +190,7 @@ export default function Login() {
           </Box>
           <Box component="footer" sx={{ py: 3 }}>
             <Typography level="body-xs" sx={{ textAlign: "center" }}>
-              © Baylor Foundation {new Date().getFullYear()}
+              © Coseke-Warehouse {new Date().getFullYear()}
             </Typography>
           </Box>
         </Box>

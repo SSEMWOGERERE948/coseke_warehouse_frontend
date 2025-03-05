@@ -150,7 +150,7 @@ export default function Sidebar() {
       >
         <img src={Images.Logo} alt="" style={{ width: 40, height: 40 }} />
 
-        <Typography level="title-lg">Baylor Foundation</Typography>
+        <Typography level="title-lg">Coseke-Warehouse</Typography>
         <ColorSchemeToggle sx={{ ml: "auto" }} />
       </Box>
       <Box
@@ -345,7 +345,7 @@ export default function Sidebar() {
           >
             <AssessmentIcon />
             <ListItemContent>
-              <Typography level="title-sm">Case Studies</Typography>
+              <Typography level="title-sm">File categories</Typography>
             </ListItemContent>
           </ListItemButton> */}
         </List>

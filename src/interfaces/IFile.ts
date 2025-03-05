@@ -1,17 +1,32 @@
-import IUser from "./IUser";
-import IFolder from "./IFolder";
-import ICaseStudy from "./ICaseStudy";
-
 export default interface IFile {
-  id?: number; // Optional since it will be generated
-  pid: string;
+  organizationName?: string;
+  organizationId?: number;
+  id?: number;
+  archivalBoxId: number;
   boxNumber: number;
-  status: string;
-  responsibleUser?: IUser; // User entity relationship
-  folder?: IFolder; // Folders entity relationship
-  caseStudy?: ICaseStudy; // CaseStudy entity relationship
-  createdDate?: number[]; // LocalDateTime in Java can be mapped to a string in TS
-  lastModifiedDateTime?: number[];
-  lastModifiedBy?: number;
-  createdBy: number;
+  status?: string;
+  folder?: any;
+
+  // Archival box details
+  archivalBoxName?: string;
+  archivalBoxType?: string;
+  rackId?: number;
+  rackName?: string;
+  rackType?: string;
+  shelfId?: number;
+  shelfName?: string;
+  shelfType?: string;
+
+  metadataJson: Record<string, any>[]; // Always an array of metadata
+}
+
+export interface FileResponse {
+  organizationId?: number;
+  id?: number;
+  archivalBoxId: number;
+  boxNumber: number;
+  status?: string;
+  archivalBoxName?: string;
+  archivalBoxType?: string;
+  metadataJson?: Record<string, any>[] | string; // ✅ Can be an array OR stringified JSON
 }

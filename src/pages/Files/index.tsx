@@ -19,7 +19,7 @@ import IUser from "../../interfaces/IUser";
 import IFile from "../../interfaces/IFile";
 import IFolder from "../../interfaces/IFolder";
 
-interface CaseStudy {
+interface OrganisationCreation {
   users: any;
   id: number;
   name: string;
@@ -32,18 +32,20 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
   onFileCreate,
 }) => {
   const [fileData, setFileData] = useState<
-    IFile & { caseStudyId?: number; folderId?: number }
+    IFile & { OrganisationCreationId?: number; folderId?: number }
   >({
-    status: "Available",
+    archivalBoxId: 0, // Required field
     boxNumber: 0,
-    pid: "",
-    createdBy: 0,
-    caseStudyId: undefined,
+    metadataJson: [], // ✅ Must be an empty array initially
+    OrganisationCreationId: undefined,
     folderId: undefined,
+    organizationId: 0,
   });
 
   const [files, setFiles] = useState<IFile[]>([]);
-  const [caseStudies, setCaseStudies] = useState<CaseStudy[]>([]);
+  const [OrganisationCreation, setOrganisationCreation] = useState<
+    OrganisationCreation[]
+  >([]);
   const [folders, setFolders] = useState<IFolder[]>([]);
   const currentUser = getCurrentUser();
   const userEmails = [currentUser?.email];
@@ -62,7 +64,6 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
     try {
       const newFile: IFile = {
         ...fileData,
-        caseStudy: { id: fileData.caseStudyId!, name: "", description: "" },
         folder: { id: fileData.folderId, folderName: "" },
       };
 
@@ -82,27 +83,27 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
   };
 
   useEffect(() => {
-    fetchCaseStudies();
+    fetchOrganisationCreation();
     fetchAllFolders();
   }, []);
 
-  const fetchCaseStudies = async () => {
+  const fetchOrganisationCreation = async () => {
     try {
       const response = await AxiosInstance.get("case-studies/all");
-      const fetchedCaseStudies = response.data;
+      const fetchedOrganisationCreation = response.data;
 
-      // Filter case studies assigned to the current user's email
-      const assignedCaseStudies = fetchedCaseStudies.filter(
-        (study: CaseStudy) =>
+      // Filter file categories assigned to the current user's email
+      const assignedOrganisationCreation = fetchedOrganisationCreation.filter(
+        (study: OrganisationCreation) =>
           study.users.some((user: { email: any }) =>
             userEmails.includes(user.email),
           ),
       );
 
-      setCaseStudies(assignedCaseStudies);
+      setOrganisationCreation(assignedOrganisationCreation);
     } catch (error: any) {
       console.error(
-        "Error fetching case studies:",
+        "Error fetching file categories:",
         error.response?.data || error.message,
       );
     }
@@ -120,7 +121,7 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
 
   const handleSelectChange = (
     value: number | null,
-    name: "caseStudyId" | "folderId",
+    name: "OrganisationCreationId" | "folderId",
   ) => {
     setFileData((prevData) => ({
       ...prevData,
@@ -128,19 +129,22 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
     }));
   };
 
-  // API to assign the file to a selected case study
-  const assignFileToCaseStudy = async (fileId: number, caseStudyId: number) => {
+  // API to assign the file to a selected file category
+  const assignFileToOrganisationCreation = async (
+    fileId: number,
+    OrganisationCreationId: number,
+  ) => {
     try {
       const response = await AxiosInstance.put(
-        `files/${fileId}/assign-case-study/${caseStudyId}`,
+        `files/${fileId}/assign-case-study/${OrganisationCreationId}`,
       );
       const updatedFile = response.data;
       console.log(
-        `File ${updatedFile.fileName} assigned to case study ${caseStudyId}`,
+        `File ${updatedFile.fileName} assigned to file category ${OrganisationCreationId}`,
       );
     } catch (error: any) {
       console.error(
-        "Error assigning file to case study:",
+        "Error assigning file to file category:",
         error.response?.data || error.message,
       );
     }
@@ -181,14 +185,6 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
         </Typography>
         <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
           <FormControl>
-            <FormLabel>PID</FormLabel>
-            <Input
-              name="pid"
-              value={fileData.pid}
-              onChange={handleInputChange}
-            />
-          </FormControl>
-          <FormControl>
             <FormLabel>Box Number</FormLabel>
             <Input
               name="boxNumber"
@@ -198,15 +194,18 @@ const FileUploadDialog: React.FC<FileUploadDialogProps> = ({
             />
           </FormControl>
           <FormControl>
-            <FormLabel>Case Study</FormLabel>
+            <FormLabel>File category</FormLabel>
             <Select
-              name="caseStudyId"
-              value={fileData.caseStudyId ?? null}
+              name="OrganisationCreationId"
+              value={fileData.OrganisationCreationId ?? null}
               onChange={(_, value) =>
-                handleSelectChange(value as number | null, "caseStudyId")
+                handleSelectChange(
+                  value as number | null,
+                  "OrganisationCreationId",
+                )
               }
             >
-              {caseStudies.map((study) => (
+              {OrganisationCreation.map((study) => (
                 <Option key={study.id} value={study.id}>
                   {study.name}
                 </Option>
@@ -270,8 +269,7 @@ function Index() {
         display: "flex",
         flexDirection: "column",
         minWidth: 0,
-        height: "100vh",
-        overflowY: "auto",
+        height: "100dvh",
         gap: 1,
       }}
     >

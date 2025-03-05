@@ -1,5 +1,5 @@
 // IAssignUserRequest.ts
 export default interface IAssignUserRequest {
-  caseStudyId: number;
+  OrganisationCreationId: number;
   userId: number;
 }

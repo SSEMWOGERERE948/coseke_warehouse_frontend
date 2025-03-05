@@ -223,40 +223,7 @@ export default function FilesExample() {
                               display: "flex",
                               justifyContent: "space-between",
                             }}
-                          >
-                            <Typography
-                              level="title-sm"
-                              startDecorator={
-                                <ArticleRounded color="primary" />
-                              }
-                              sx={{ alignItems: "flex-start" }}
-                            >
-                              {file.pid}
-                            </Typography>
-                            <AvatarGroup
-                              size="sm"
-                              sx={{
-                                "--AvatarGroup-gap": "-8px",
-                                "--Avatar-size": "24px",
-                              }}
-                            >
-                              <Avatar src={file.responsibleUser?.first_name} />
-                            </AvatarGroup>
-                          </Box>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              mt: 2,
-                            }}
-                          >
-                            <Typography level="body-sm">
-                              {file.status}
-                            </Typography>
-                            <Typography level="body-sm">
-                              {file.lastModifiedDateTime?.join("-")}
-                            </Typography>
-                          </Box>
+                          ></Box>
                         </ListItemContent>
                       </ListItemButton>
                     </ListItem>
@@ -275,9 +242,6 @@ export default function FilesExample() {
           }}
         >
           <Box sx={{ p: 2, display: "flex", alignItems: "center" }}>
-            <Typography level="title-md" sx={{ flex: 1 }}>
-              {selectedFile?.folder?.folderName}
-            </Typography>
             <IconButton
               component="span"
               variant="plain"
@@ -316,22 +280,7 @@ export default function FilesExample() {
                       gridTemplateColumns: "auto 1fr",
                       "& > *:nth-child(odd)": { color: "text.secondary" },
                     }}
-                  >
-                    <DetailItem label="File PID" value={selectedFile.pid} />
-                    <DetailItem label="Status" value={selectedFile.status} />
-                    <DetailItem
-                      label="Modified"
-                      value={convertArrayToDate(
-                        selectedFile.lastModifiedDateTime!,
-                      )!.toDateString()}
-                    />
-                    <DetailItem
-                      label="Created"
-                      value={convertArrayToDate(
-                        selectedFile.createdDate!,
-                      )!.toDateString()}
-                    />
-                  </Box>
+                  ></Box>
                   <Divider />
                   <Box sx={{ py: 2, px: 1 }}>
                     <Button

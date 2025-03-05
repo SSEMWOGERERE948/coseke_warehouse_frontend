@@ -1,6 +1,7 @@
 import IRole from "./IRole";
 
 export default interface IUser {
+  organizationId: any;
   permissions: any;
   id: number;
   first_name: string;
