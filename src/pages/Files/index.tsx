@@ -283,19 +283,7 @@ function Index() {
           flexWrap: "wrap",
           justifyContent: "space-between",
         }}
-      >
-        <Typography level="h2" component="h1">
-          Files
-        </Typography>
-        <Button
-          color="primary"
-          startDecorator={<UploadRounded />}
-          size="sm"
-          onClick={() => setOpen(true)}
-        >
-          Create File
-        </Button>
-      </Box>
+      ></Box>
 
       <FileUploadDialog
         open={open}

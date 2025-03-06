@@ -640,14 +640,19 @@ export default function FileTable() {
       >
         <ModalDialog
           sx={{
-            width: "90%",
-            maxWidth: "1000px",
-            maxHeight: "80vh",
+            width: "calc(100vw - 240px)",
+            maxWidth: "100%",
+            height: "80vh",
+            maxHeight: "90vh",
             overflow: "hidden",
             borderRadius: "lg",
             p: 3,
             backgroundColor: "background.surface",
             boxShadow: "lg",
+            position: "absolute",
+            left: "240px",
+            top: "50%",
+            transform: "translateY(-50%)",
           }}
         >
           {/* Header Section */}

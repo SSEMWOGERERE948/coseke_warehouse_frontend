@@ -198,19 +198,6 @@ export default function Sidebar() {
               </ListItemButton>
             </ListItem>
           )}
-          {hasPermission("READ_FOLDERS") && (
-            <ListItem>
-              <ListItemButton
-                selected={selectedItem === routes.FOLDERS}
-                onClick={() => handleSelect(routes.FOLDERS)}
-              >
-                <ShoppingCartRoundedIcon />
-                <ListItemContent>
-                  <Typography level="title-sm">Folders</Typography>
-                </ListItemContent>
-              </ListItemButton>
-            </ListItem>
-          )}
           <ListItem nested>
             <Toggler
               renderToggle={({ open, setOpen }) => (
