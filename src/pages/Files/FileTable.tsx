@@ -30,6 +30,7 @@ import {
   UploadFile,
   Close,
   InfoOutlined,
+  CheckCircleOutline,
 } from "@mui/icons-material";
 import { AxiosInstance } from "../../core/baseURL";
 import IFile from "../../interfaces/IFile";
@@ -109,6 +110,7 @@ export default function FileTable() {
         (role) => role.name === "SUPER_ADMIN",
       );
 
+      // Get files based on user's organization for non-super admins
       const fetchedFiles = await getAllFilesService(
         isSuperAdmin ? undefined : currentUser?.organizationId,
         isSuperAdmin,
@@ -118,14 +120,20 @@ export default function FileTable() {
         ? fetchedFiles
         : [];
 
-      // ✅ Ensure the correct status is taken from the main `status` field, not `metadataJson`
+      // Ensure each file has the organization info properly set
       validFiles.forEach((file) => {
         if (Array.isArray(file.metadataJson) && file.metadataJson.length > 0) {
-          file.metadataJson[0].status = file.status; // ✅ Sync metadata with actual DB status
+          file.metadataJson.forEach((metadata) => {
+            metadata.status = file.status; // Sync metadata with actual DB status
+            metadata.organizationId = file.organizationId; // Ensure organization ID is included
+          });
         }
       });
 
-      console.log("Processed Files with Extracted Status:", validFiles);
+      console.log(
+        "Processed Files with Extracted Status and Organization:",
+        validFiles,
+      );
 
       // Group files by box number
       const grouped = validFiles.reduce((map, file) => {
@@ -162,30 +170,36 @@ export default function FileTable() {
     console.log("handleViewmetadataJson called with:", boxFiles);
 
     if (boxFiles.length > 0) {
-      // Create an array to hold all metadataJson from all files
       const allmetadataJson: Record<string, any>[] = [];
+
+      // Load checked-out files from localStorage
+      const checkedOutFiles = JSON.parse(
+        localStorage.getItem("checkedOutFiles") || "[]",
+      );
 
       boxFiles.forEach((file, index) => {
         console.log(`Processing File ${index + 1}:`, file);
-        console.log(`file id ${index + 1}:`, file.id); // ✅ This is the correct file ID
 
         try {
           if (
             Array.isArray(file.metadataJson) &&
             file.metadataJson.length > 0
           ) {
-            console.log(
-              `File ${index + 1}: Using metadataJson array with ${file.metadataJson.length} items.`,
-            );
-
-            // ✅ Inject the file ID from the main file object into metadataJson
             file.metadataJson.forEach((metadata) => {
-              metadata.fileId = file.id; // ✅ Attach the correct file ID
+              metadata.fileId = file.id;
+              metadata.organizationId = file.organizationId;
+
+              // ✅ Restore checked-out status from localStorage
+              const checkedOut = checkedOutFiles.find(
+                (f: { fileId: number }) => f.fileId === file.id,
+              );
+              if (checkedOut) {
+                metadata.status = "Unavailable";
+                metadata.checkedOutBy = checkedOut.checkedOutBy;
+              }
             });
 
             allmetadataJson.push(...file.metadataJson);
-          } else {
-            console.log(`File ${index + 1}: No metadataJson available.`);
           }
         } catch (error) {
           console.error(
@@ -228,16 +242,55 @@ export default function FileTable() {
     fileId: number,
     currentStatus: string,
     checkedOutBy?: number,
+    fileOrganizationId?: number,
   ) => {
     console.log(`🟢 Clicked: File ID ${fileId} with status: ${currentStatus}`);
 
     try {
       const currentUserId = currentUser?.id;
+      const userOrganizationId = currentUser?.organizationId;
       const isSuperAdmin = roleNames.includes("SUPER_ADMIN");
+
+      // ✅ Check organization permissions for non-super admin users
+      if (
+        !isSuperAdmin &&
+        fileOrganizationId &&
+        fileOrganizationId !== userOrganizationId
+      ) {
+        alert("You can only interact with files within your organization.");
+        return;
+      }
+
+      // ✅ Prevent unauthorized users from checking in files
+      if (
+        currentStatus === "Unavailable" &&
+        !isSuperAdmin &&
+        checkedOutBy !== currentUserId
+      ) {
+        alert(
+          "Only the user who checked out this file or a super admin can check it in.",
+        );
+        return;
+      }
 
       let newStatus =
         currentStatus === "Available" ? "Unavailable" : "Available";
       let newCheckedOutBy = newStatus === "Unavailable" ? currentUserId : null;
+
+      // ✅ Store checked-out files in localStorage
+      let checkedOutFiles = JSON.parse(
+        localStorage.getItem("checkedOutFiles") || "[]",
+      );
+
+      if (newStatus === "Unavailable") {
+        checkedOutFiles.push({ fileId, checkedOutBy: currentUserId });
+      } else {
+        checkedOutFiles = checkedOutFiles.filter(
+          (file: { fileId: number }) => file.fileId !== fileId,
+        );
+      }
+
+      localStorage.setItem("checkedOutFiles", JSON.stringify(checkedOutFiles));
 
       // ✅ Optimistically update UI before API call completes
       setFiles((prevFiles) =>
@@ -257,20 +310,15 @@ export default function FileTable() {
         );
       });
 
-      // ✅ Immediately update count cards
+      // ✅ Update count cards
       updateStatusCounts();
 
       if (currentStatus === "Available") {
         await checkOutFileService(fileId);
         console.log(`✅ Checked out file: ${fileId} by user ${currentUserId}`);
       } else if (currentStatus === "Unavailable") {
-        if (isSuperAdmin || checkedOutBy === currentUserId) {
-          await checkInFileService(fileId);
-          console.log(`✅ Checked in file: ${fileId} by user ${currentUserId}`);
-        } else {
-          alert("You do not have permission to check in this file.");
-          return;
-        }
+        await checkInFileService(fileId);
+        console.log(`✅ Checked in file: ${fileId} by user ${currentUserId}`);
       }
 
       // ✅ Fetch latest data in the background (ensures server sync)
@@ -584,39 +632,50 @@ export default function FileTable() {
       <Modal
         open={ismetadataJsonModalOpen}
         onClose={() => setIsmetadataJsonModalOpen(false)}
-        sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
       >
         <ModalDialog
           sx={{
-            width: "80%",
-            maxWidth: "900px",
+            width: "90%",
+            maxWidth: "1000px",
             maxHeight: "80vh",
+            overflow: "hidden",
             borderRadius: "lg",
-            p: 2,
+            p: 3,
+            backgroundColor: "background.surface",
+            boxShadow: "lg",
           }}
         >
+          {/* Header Section */}
           <Box
             sx={{
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
               mb: 2,
+              borderBottom: "1px solid",
+              borderColor: "divider",
+              pb: 1,
             }}
           >
             <Typography level="title-lg">Metadata JSON Details</Typography>
             <ModalClose />
           </Box>
 
-          {/* Status Cards Inside Modal */}
+          {/* Status Summary Cards */}
           <Box sx={{ display: "flex", gap: 3, mb: 3 }}>
-            <Card sx={{ minWidth: 200, textAlign: "center" }}>
+            <Card sx={{ minWidth: 180, textAlign: "center", flex: 1 }}>
               <CardContent>
                 <Typography
-                  level="h4"
+                  level="h3"
                   sx={{ fontWeight: "bold", color: "success.700" }}
                 >
                   {selectedmetadataJson?.filter(
-                    (file: { status?: string }) => file.status === "Available",
+                    (file: { status: string }) => file.status === "Available",
                   ).length || 0}
                 </Typography>
                 <Typography level="body-sm" sx={{ color: "success.600" }}>
@@ -625,34 +684,46 @@ export default function FileTable() {
               </CardContent>
             </Card>
 
-            <Card sx={{ minWidth: 200, textAlign: "center" }}>
+            <Card sx={{ minWidth: 180, textAlign: "center", flex: 1 }}>
               <CardContent>
                 <Typography
-                  level="h4"
+                  level="h3"
                   sx={{ fontWeight: "bold", color: "danger.700" }}
                 >
                   {selectedmetadataJson?.filter(
-                    (file: { status?: string }) =>
-                      file.status === "Unavailable",
+                    (file: { status: string }) => file.status === "Unavailable",
                   ).length || 0}
                 </Typography>
-
-                <Typography level="body-sm" sx={{ color: "success.600" }}>
-                  UnAvailable Files
+                <Typography level="body-sm" sx={{ color: "danger.600" }}>
+                  Unavailable Files
                 </Typography>
               </CardContent>
             </Card>
           </Box>
 
-          <Box sx={{ overflow: "auto", maxHeight: "calc(80vh - 80px)" }}>
+          {/* Scrollable Table Container */}
+          <Box sx={{ overflow: "auto", maxHeight: "calc(70vh - 120px)" }}>
             {selectedmetadataJson && selectedmetadataJson.length > 0 ? (
               <Table
                 sx={{
+                  width: "100%",
                   "& th": {
                     position: "sticky",
                     top: 0,
                     backgroundColor: "background.surface",
-                    zIndex: 1,
+                    zIndex: 2,
+                    textAlign: "left",
+                    fontWeight: "bold",
+                    p: "10px",
+                    whiteSpace: "nowrap",
+                  },
+                  "& td": {
+                    p: "10px",
+                    textAlign: "left",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    maxWidth: "180px", // Adjust column width dynamically
                   },
                   "& tbody tr:nth-of-type(odd)": {
                     backgroundColor: "background.level1",
@@ -661,70 +732,63 @@ export default function FileTable() {
               >
                 <thead>
                   <tr>
-                    {Object.keys(selectedmetadataJson[0] || {})
-                      .filter(
-                        (key) => key !== "fileId" && key !== "unavailable",
-                      ) // ✅ Exclude `fileId` and `unavailable`
-                      .map((key, index) => (
-                        <th key={index}>{key}</th>
-                      ))}
+                    {Object.keys(selectedmetadataJson[0] || {}).map(
+                      (key, index) => (
+                        <th key={index}>{key.replace(/_/g, " ")}</th>
+                      ),
+                    )}
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {selectedmetadataJson.map(
                     (
-                      data: { [x: string]: any },
+                      data: {
+                        [x: string]: any;
+                        status?: any;
+                        checkedOutBy?: any;
+                        fileId?: any;
+                        organizationId?: any;
+                      },
                       rowIndex: React.Key | null | undefined,
-                    ) => {
-                      const fileId = data["Archival Box ID"]
-                        ? Number(data["Archival Box ID"])
-                        : undefined;
-                      const status = data["Status"] || "Unknown";
-
-                      return (
-                        <tr key={rowIndex}>
-                          {Object.keys(selectedmetadataJson[0] || {})
-                            .filter(
-                              (key) =>
-                                key !== "fileId" && key !== "unavailable",
-                            ) // ✅ Exclude `fileId` and `unavailable`
-                            .map((key, colIndex) => (
-                              <td key={colIndex}>
-                                {data[key] !== undefined
-                                  ? String(data[key])
-                                  : "-"}
-                              </td>
-                            ))}
-                          <td>
-                            <Button
-                              variant="solid"
-                              color={
-                                data.status === "Available"
-                                  ? "warning"
-                                  : "success"
-                              }
-                              disabled={
-                                data.status === "Unavailable" &&
-                                data.checkedOutBy !== currentUser?.id &&
-                                !roleNames.includes("SUPER_ADMIN")
-                              }
-                              onClick={() =>
-                                handleToggleFileStatus(
-                                  data.fileId,
-                                  data.status,
-                                  data.checkedOutBy,
-                                )
-                              }
-                            >
-                              {data.status === "Available"
-                                ? "Check Out"
-                                : "Check In"}
-                            </Button>
+                    ) => (
+                      <tr key={rowIndex}>
+                        {Object.keys(data).map((key, colIndex) => (
+                          <td key={colIndex} title={String(data[key])}>
+                            {String(data[key]) || "-"}
                           </td>
-                        </tr>
-                      );
-                    },
+                        ))}
+                        <td>
+                          <Button
+                            variant="solid"
+                            color={
+                              data.status === "Available"
+                                ? "warning"
+                                : "success"
+                            }
+                            disabled={
+                              // ✅ Disable if:
+                              // 1. File is unavailable AND user is not the one who checked it out AND not a super admin
+                              data.status === "Unavailable" &&
+                              data.checkedOutBy !== currentUser?.id &&
+                              !roleNames.includes("SUPER_ADMIN")
+                            }
+                            onClick={() =>
+                              handleToggleFileStatus(
+                                data.fileId,
+                                data.status,
+                                data.checkedOutBy,
+                                data.organizationId,
+                              )
+                            }
+                          >
+                            {data.status === "Available"
+                              ? "Check Out"
+                              : "Check In"}
+                          </Button>
+                        </td>
+                      </tr>
+                    ),
                   )}
                 </tbody>
               </Table>

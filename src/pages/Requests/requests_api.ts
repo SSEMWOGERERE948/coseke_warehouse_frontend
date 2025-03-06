@@ -50,3 +50,15 @@ export const getAllRequests = async (): Promise<IRequests[]> => {
   const response = await AxiosInstance.get<IRequests[]>("/requests");
   return response.data;
 };
+
+export const getRequestsService = async (isAdmin: boolean) => {
+  try {
+    const response = await AxiosInstance.get(
+      `/files/requests?isAdmin=${isAdmin}`,
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching requests:", error);
+    throw error;
+  }
+};

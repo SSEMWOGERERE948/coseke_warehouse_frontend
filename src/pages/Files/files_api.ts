@@ -183,8 +183,9 @@ export const checkOutFileService = async (fileId: number) => {
   try {
     const currentUser = getCurrentUser();
     const requestData = {
-      fileId: fileId, // ✅ Pass File ID
-      checkedOutBy: currentUser.id, // ✅ Pass User ID
+      fileId: fileId,
+      checkedOutBy: currentUser.id,
+      organizationId: currentUser.organizationId, // Add organization ID to payload
     };
 
     const response = await AxiosInstance.post(

@@ -2,155 +2,135 @@ import React, { useEffect, useState } from "react";
 import {
   Box,
   Button,
-  Checkbox,
   Input,
-  Sheet,
   Table,
   Typography,
+  Sheet,
   CircularProgress,
+  Chip,
 } from "@mui/joy";
 import { SearchRounded } from "@mui/icons-material";
 import { getCurrentUser } from "../../utils/helpers";
-import { getAllRequests } from "../Requests/requests_api";
-import { IRequests } from "../../interfaces/IRequests";
+import { getRequestsService } from "./requests_api";
 
-export default function RequestedFilesTable() {
-  const [requests, setRequests] = useState<IRequests[]>([]);
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(true);
+interface IRequest {
+  id: number;
+  boxNumber?: number;
+  checkedOutBy: number | null;
+  status: string;
+  organization?: { id: number; name: string } | null;
+  organizationName?: string; // ✅ Use extracted organization name
+  createdDate: string;
+  requestType?: string;
+  requestDate?: any;
+  completedDate?: any;
+}
 
-  const user = getCurrentUser();
-  const isSuperAdmin = user?.roles.some((role) => role.name === "SUPER_ADMIN");
+export default function RequestTable() {
+  const [requests, setRequests] = useState<IRequest[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const currentUser = getCurrentUser();
+  const isAdmin = currentUser.roles.some((role) => role.name === "SUPER_ADMIN");
 
   useEffect(() => {
     fetchRequests();
   }, []);
 
   const fetchRequests = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      let allRequests = await getAllRequests();
+      const data = await getRequestsService(isAdmin);
 
-      if (!isSuperAdmin) {
-        // ✅ Filter requests to show only the logged-in user's requests
-        allRequests = allRequests.filter((req) => req.user?.id === user.id);
-      }
+      // ✅ Transform data: Extract organization name and format dates
+      const formattedData = data.map((req: any) => ({
+        ...req,
+        organizationName: req.organization ? req.organization.name : "N/A", // Extract organization name
+        requestDate: req.requestDate
+          ? new Date(
+              req.requestDate[0], // Year
+              req.requestDate[1] - 1, // Month (0-based in JS)
+              req.requestDate[2], // Day
+              req.requestDate[3], // Hour
+              req.requestDate[4], // Minute
+              req.requestDate[5], // Second
+            ).toLocaleString("en-US", { hour12: false })
+          : "N/A",
+        completedDate: req.completedDate
+          ? new Date(
+              req.completedDate[0],
+              req.completedDate[1] - 1,
+              req.completedDate[2],
+              req.completedDate[3],
+              req.completedDate[4],
+              req.completedDate[5],
+            ).toLocaleString("en-US", { hour12: false })
+          : "N/A",
+      }));
 
-      setRequests(allRequests);
+      setRequests(formattedData);
     } catch (error) {
-      console.error("Error fetching requests:", error);
+      console.error("Error fetching file requests:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
-  };
-
-  // ✅ Filter requests based on search term
-  const filteredRequests = requests.filter(
-    (req) =>
-      req.files?.boxNumber?.toString().includes(searchTerm) ||
-      req.user?.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      req.user?.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      req.state.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
-
   return (
     <Box sx={{ p: 4, backgroundColor: "#f5f5f5" }}>
-      <Typography
-        level="h2"
-        sx={{ mb: 3, color: "#2c3e50", fontWeight: "bold" }}
-      >
-        Requested Files
+      <Typography level="h2" sx={{ mb: 3, fontWeight: "bold" }}>
+        File Requests
       </Typography>
 
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 3,
-        }}
-      >
+      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
         <Input
           startDecorator={<SearchRounded />}
-          placeholder="Search by Box Number, Requester, or Status"
+          placeholder="Search requests..."
           size="md"
-          sx={{ width: 300, backgroundColor: "white" }}
-          onChange={handleSearch}
+          sx={{ width: 300 }}
+          onChange={(e) => setSearch(e.target.value)}
         />
       </Box>
 
-      {loading ? (
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            height: 200,
-          }}
-        >
-          <CircularProgress size="lg" />
-        </Box>
-      ) : (
-        <Sheet
-          variant="outlined"
-          sx={{
-            width: "100%",
-            overflow: "auto",
-            borderRadius: "md",
-            backgroundColor: "white",
-          }}
-        >
+      <Sheet sx={{ width: "100%", overflow: "auto", backgroundColor: "white" }}>
+        {loading ? (
+          <CircularProgress />
+        ) : (
           <Table hoverRow>
             <thead>
               <tr>
+                <th>ID</th>
                 <th>Box Number</th>
-                <th>Organization</th>
-                <th>Requester</th>
-                <th>Email</th>
+                <th>Request Type</th>
                 <th>Status</th>
-                <th>Requested On</th>
+                <th>Organization</th>
+                <th>Created Date</th>
               </tr>
             </thead>
             <tbody>
-              {filteredRequests.length > 0 ? (
-                filteredRequests.map((req) => (
-                  <tr key={req.id}>
-                    <td>{req.files?.boxNumber || "N/A"}</td>
-                    <td>{req.files?.organizationName || "N/A"}</td>
-                    <td>
-                      {req.user?.first_name} {req.user?.last_name}
-                    </td>
-                    <td>{req.user?.email}</td>
-                    <td>
-                      <Button
-                        variant="solid"
-                        color={
-                          req.state === "Checked Out" ? "danger" : "success"
-                        }
-                      >
-                        {req.state}
-                      </Button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={6}
-                    style={{ textAlign: "center", padding: "16px" }}
-                  >
-                    No requests found.
+              {requests.map((request) => (
+                <tr key={request.id}>
+                  <td>{request.id}</td>
+                  <td>{request.boxNumber || "N/A"}</td>
+                  <td>{request.requestType || "N/A"}</td>
+                  <td>
+                    <Chip
+                      color={
+                        request.status === "Unavailable" ? "danger" : "success"
+                      }
+                    >
+                      {request.status}
+                    </Chip>
                   </td>
+                  <td>{request.organizationName || "N/A"}</td>
+                  <td>{request.requestDate || "N/A"}</td>
                 </tr>
-              )}
+              ))}
             </tbody>
           </Table>
-        </Sheet>
-      )}
+        )}
+      </Sheet>
     </Box>
   );
 }
