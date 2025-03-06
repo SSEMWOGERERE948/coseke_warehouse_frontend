@@ -577,7 +577,7 @@ export default function FileTable() {
 
         {/* 🔥 "Add File" Button */}
         <Button
-          variant="solid"
+          variant="soft"
           color="success"
           onClick={() => setIsAddFileModalOpen(true)}
           startDecorator={<UploadFile />}
@@ -616,11 +616,11 @@ export default function FileTable() {
                 <td>{boxFiles[0]?.organizationName || "N/A"}</td>
                 <td>
                   <Button
-                    variant="solid"
+                    variant="soft"
                     color="primary"
                     onClick={() => handleViewmetadataJson(boxFiles)}
                   >
-                    View metadataJson
+                    View files
                   </Button>
                 </td>
               </tr>
@@ -667,7 +667,7 @@ export default function FileTable() {
               pb: 1,
             }}
           >
-            <Typography level="title-lg">Metadata JSON Details</Typography>
+            <Typography level="title-lg">Files</Typography>
             <ModalClose />
           </Box>
 
@@ -763,20 +763,19 @@ export default function FileTable() {
                             {String(data[key]) || "-"}
                           </td>
                         ))}
-                        <td>
+                        <td
+                          style={{
+                            textAlign: "center",
+                            minWidth: "130px",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
                           <Button
-                            variant="solid"
+                            variant="soft"
                             color={
                               data.status === "Available"
                                 ? "warning"
                                 : "success"
-                            }
-                            disabled={
-                              // ✅ Disable if:
-                              // 1. File is unavailable AND user is not the one who checked it out AND not a super admin
-                              data.status === "Unavailable" &&
-                              data.checkedOutBy !== currentUser?.id &&
-                              !roleNames.includes("SUPER_ADMIN")
                             }
                             onClick={() =>
                               handleToggleFileStatus(
@@ -786,6 +785,27 @@ export default function FileTable() {
                                 data.organizationId,
                               )
                             }
+                            disabled={
+                              data.status === "Unavailable" &&
+                              data.checkedOutBy !== currentUser?.id &&
+                              !roleNames.includes("SUPER_ADMIN")
+                            }
+                            startDecorator={
+                              data.status === "Available" ? (
+                                <DownloadIcon fontSize="small" />
+                              ) : (
+                                <CheckCircleOutline fontSize="small" />
+                              )
+                            }
+                            sx={{
+                              width: "100px",
+                              minWidth: "100px",
+                              justifyContent: "center",
+                              fontSize: "12px",
+                              padding: "6px",
+                              display: "inline-flex",
+                              textTransform: "none",
+                            }}
                           >
                             {data.status === "Available"
                               ? "Check Out"
@@ -1201,8 +1221,7 @@ export default function FileTable() {
               </Button>
 
               <Button
-                variant="solid"
-                color="primary"
+                variant="soft"
                 disabled={
                   loading ||
                   selectedFiles.length === 0 ||
