@@ -53,6 +53,7 @@ import {
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { getAllOrganisationCreationService } from "../organisation_creation/organisation_creation_api";
+import { approveRequestService } from "../Requests/requests_api";
 
 export default function FileTable() {
   const [files, setFiles] = useState<IFile[]>([]);
@@ -96,10 +97,71 @@ export default function FileTable() {
     (file) => file.status === "Unavailable",
   );
   const [isExtracting, setIsExtracting] = useState(false);
+  const isSuperAdmin = currentUser?.roles?.some(
+    (role) => role.name === "SUPER_ADMIN",
+  );
+
+  // Search functionality
+  const [filteredGroupedBoxes, setFilteredGroupedBoxes] = useState<
+    Map<number, IFile[]>
+  >(new Map());
+  const [filteredMetadataJson, setFilteredMetadataJson] = useState<Record<
+    string,
+    any
+  > | null>(null);
 
   useEffect(() => {
     fetchFiles();
   }, []);
+
+  // Apply search filter whenever search term or data changes
+  useEffect(() => {
+    if (search.trim() === "") {
+      // If search is empty, show all data
+      setFilteredGroupedBoxes(groupedBoxes);
+      setFilteredMetadataJson(selectedmetadataJson);
+      return;
+    }
+
+    // Filter the grouped boxes
+    const searchLower = search.toLowerCase();
+    const filteredBoxes = new Map<number, IFile[]>();
+
+    // Filter the main table data
+    groupedBoxes.forEach((boxFiles, boxNumber) => {
+      // Check if any of the searchable fields contain the search term
+      const matchingFiles = boxFiles.filter(
+        (file) =>
+          boxNumber.toString().includes(searchLower) ||
+          (file.archivalBoxName || "").toLowerCase().includes(searchLower) ||
+          (file.shelfName || "").toLowerCase().includes(searchLower) ||
+          (file.rackName || "").toLowerCase().includes(searchLower) ||
+          (file.organizationName || "").toLowerCase().includes(searchLower),
+      );
+
+      if (matchingFiles.length > 0) {
+        filteredBoxes.set(boxNumber, matchingFiles);
+      }
+    });
+
+    setFilteredGroupedBoxes(filteredBoxes);
+
+    // Filter metadata JSON if it's open
+    if (selectedmetadataJson && Array.isArray(selectedmetadataJson)) {
+      const filteredJson = selectedmetadataJson.filter((item) => {
+        return Object.entries(item).some(([key, value]) => {
+          if (typeof value === "string" || typeof value === "number") {
+            return String(value).toLowerCase().includes(searchLower);
+          }
+          return false;
+        });
+      });
+
+      setFilteredMetadataJson(filteredJson.length > 0 ? filteredJson : null);
+    } else {
+      setFilteredMetadataJson(null);
+    }
+  }, [search, groupedBoxes, selectedmetadataJson]);
 
   const fetchFiles = async () => {
     try {
@@ -147,6 +209,7 @@ export default function FileTable() {
       // Update state
       setFiles(validFiles);
       setGroupedBoxes(grouped);
+      setFilteredGroupedBoxes(grouped); // Initialize filtered data with all data
     } catch (error) {
       console.error("Error fetching files:", error);
     }
@@ -172,11 +235,6 @@ export default function FileTable() {
     if (boxFiles.length > 0) {
       const allmetadataJson: Record<string, any>[] = [];
 
-      // Load checked-out files from localStorage
-      const checkedOutFiles = JSON.parse(
-        localStorage.getItem("checkedOutFiles") || "[]",
-      );
-
       boxFiles.forEach((file, index) => {
         console.log(`Processing File ${index + 1}:`, file);
 
@@ -189,13 +247,14 @@ export default function FileTable() {
               metadata.fileId = file.id;
               metadata.organizationId = file.organizationId;
 
-              // ✅ Restore checked-out status from localStorage
-              const checkedOut = checkedOutFiles.find(
-                (f: { fileId: number }) => f.fileId === file.id,
-              );
-              if (checkedOut) {
-                metadata.status = "Unavailable";
-                metadata.checkedOutBy = checkedOut.checkedOutBy;
+              // ✅ Remove checkedOutBy (No display, but logic intact)
+              delete metadata.checkedOutBy;
+
+              // ✅ Change "Unavailable" to "Approved"
+              if (metadata.status === "Checked Out") {
+                metadata.status = "Approved";
+              } else if (metadata.status === "Checked In") {
+                metadata.status = "Available";
               }
             });
 
@@ -211,9 +270,9 @@ export default function FileTable() {
 
       console.log("Final metadataJson array:", allmetadataJson);
 
-      setSelectedmetadataJson(
-        allmetadataJson.length > 0 ? allmetadataJson : null,
-      );
+      const jsonData = allmetadataJson.length > 0 ? allmetadataJson : null;
+      setSelectedmetadataJson(jsonData);
+      setFilteredMetadataJson(jsonData); // Initialize filtered data with all data
       setIsmetadataJsonModalOpen(true);
     } else {
       console.log("No box files provided to handleViewmetadataJson");
@@ -241,7 +300,6 @@ export default function FileTable() {
   const handleToggleFileStatus = async (
     fileId: number,
     currentStatus: string,
-    checkedOutBy?: number,
     fileOrganizationId?: number,
   ) => {
     console.log(`🟢 Clicked: File ID ${fileId} with status: ${currentStatus}`);
@@ -251,7 +309,6 @@ export default function FileTable() {
       const userOrganizationId = currentUser?.organizationId;
       const isSuperAdmin = roleNames.includes("SUPER_ADMIN");
 
-      // ✅ Check organization permissions for non-super admin users
       if (
         !isSuperAdmin &&
         fileOrganizationId &&
@@ -261,68 +318,65 @@ export default function FileTable() {
         return;
       }
 
-      // ✅ Prevent unauthorized users from checking in files
-      if (
-        currentStatus === "Unavailable" &&
-        !isSuperAdmin &&
-        checkedOutBy !== currentUserId
-      ) {
-        alert(
-          "Only the user who checked out this file or a super admin can check it in.",
+      // ✅ Admin Approves & Marks as "Approved"
+      if (currentStatus === "Pending" && isSuperAdmin) {
+        await approveRequestService(fileId);
+        console.log(`✅ Admin approved request for File ID ${fileId}`);
+
+        setFiles((prevFiles) =>
+          prevFiles.map((file) =>
+            file.id === fileId ? { ...file, status: "Approved" } : file,
+          ),
         );
+
+        setSelectedmetadataJson((prevMetadata) => {
+          if (!Array.isArray(prevMetadata)) return [];
+          return prevMetadata.map((data) =>
+            data.fileId === fileId ? { ...data, status: "Approved" } : data,
+          );
+        });
+
+        // Also update filtered metadata
+        setFilteredMetadataJson((prevMetadata) => {
+          if (!Array.isArray(prevMetadata)) return [];
+          return prevMetadata.map((data) =>
+            data.fileId === fileId ? { ...data, status: "Approved" } : data,
+          );
+        });
+
         return;
       }
 
-      let newStatus =
-        currentStatus === "Available" ? "Unavailable" : "Available";
-      let newCheckedOutBy = newStatus === "Unavailable" ? currentUserId : null;
-
-      // ✅ Store checked-out files in localStorage
-      let checkedOutFiles = JSON.parse(
-        localStorage.getItem("checkedOutFiles") || "[]",
-      );
-
-      if (newStatus === "Unavailable") {
-        checkedOutFiles.push({ fileId, checkedOutBy: currentUserId });
-      } else {
-        checkedOutFiles = checkedOutFiles.filter(
-          (file: { fileId: number }) => file.fileId !== fileId,
-        );
-      }
-
-      localStorage.setItem("checkedOutFiles", JSON.stringify(checkedOutFiles));
-
-      // ✅ Optimistically update UI before API call completes
-      setFiles((prevFiles) =>
-        prevFiles.map((file) =>
-          file.id === fileId
-            ? { ...file, status: newStatus, checkedOutBy: newCheckedOutBy }
-            : file,
-        ),
-      );
-
-      setSelectedmetadataJson((prevMetadata) => {
-        if (!Array.isArray(prevMetadata)) return [];
-        return prevMetadata.map((data) =>
-          data.fileId === fileId
-            ? { ...data, status: newStatus, checkedOutBy: newCheckedOutBy }
-            : data,
-        );
-      });
-
-      // ✅ Update count cards
-      updateStatusCounts();
-
-      if (currentStatus === "Available") {
-        await checkOutFileService(fileId);
-        console.log(`✅ Checked out file: ${fileId} by user ${currentUserId}`);
-      } else if (currentStatus === "Unavailable") {
+      // ✅ Only Admin can check in
+      if (currentStatus === "Approved" && isSuperAdmin) {
         await checkInFileService(fileId);
-        console.log(`✅ Checked in file: ${fileId} by user ${currentUserId}`);
+        console.log(`✅ File checked in: File ID ${fileId}`);
+
+        setFiles((prevFiles) =>
+          prevFiles.map((file) =>
+            file.id === fileId ? { ...file, status: "Available" } : file,
+          ),
+        );
+
+        setSelectedmetadataJson((prevMetadata) => {
+          if (!Array.isArray(prevMetadata)) return [];
+          return prevMetadata.map((data) =>
+            data.fileId === fileId ? { ...data, status: "Available" } : data,
+          );
+        });
+
+        // Also update filtered metadata
+        setFilteredMetadataJson((prevMetadata) => {
+          if (!Array.isArray(prevMetadata)) return [];
+          return prevMetadata.map((data) =>
+            data.fileId === fileId ? { ...data, status: "Available" } : data,
+          );
+        });
+
+        return;
       }
 
-      // ✅ Fetch latest data in the background (ensures server sync)
-      fetchFiles().then(() => console.log("✅ Background refresh complete"));
+      alert("Only the Admin can approve or check in files.");
     } catch (error: any) {
       console.error(`❌ Error processing file ${fileId}:`, error);
       alert(error.message);
@@ -550,6 +604,15 @@ export default function FileTable() {
     return selectedFiles.includes(pid);
   };
 
+  // Search handlers
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+  };
+
+  const clearSearch = () => {
+    setSearch("");
+  };
+
   return (
     <Box sx={{ p: 4, backgroundColor: "#f5f5f5" }}>
       <Typography
@@ -569,10 +632,14 @@ export default function FileTable() {
       >
         <Input
           startDecorator={<SearchRounded />}
-          placeholder="Search for file"
+          endDecorator={
+            search && <Close onClick={clearSearch} sx={{ cursor: "pointer" }} />
+          }
+          placeholder="Search for file, box number, organization..."
           size="md"
           sx={{ width: 300, backgroundColor: "white" }}
-          onChange={(e) => setSearch(e.target.value)}
+          value={search}
+          onChange={handleSearchChange}
         />
 
         {/* 🔥 "Add File" Button */}
@@ -607,24 +674,39 @@ export default function FileTable() {
             </tr>
           </thead>
           <tbody>
-            {Array.from(groupedBoxes.entries()).map(([boxNumber, boxFiles]) => (
-              <tr key={boxNumber}>
-                <td>{boxNumber}</td>
-                <td>{boxFiles[0]?.archivalBoxName || "N/A"}</td>
-                <td>{boxFiles[0]?.shelfName || "N/A"}</td>
-                <td>{boxFiles[0]?.rackName || "N/A"}</td>
-                <td>{boxFiles[0]?.organizationName || "N/A"}</td>
-                <td>
-                  <Button
-                    variant="soft"
-                    color="primary"
-                    onClick={() => handleViewmetadataJson(boxFiles)}
-                  >
-                    View files
-                  </Button>
+            {filteredGroupedBoxes.size > 0 ? (
+              Array.from(filteredGroupedBoxes.entries()).map(
+                ([boxNumber, boxFiles]) => (
+                  <tr key={boxNumber}>
+                    <td>{boxNumber}</td>
+                    <td>{boxFiles[0]?.archivalBoxName || "N/A"}</td>
+                    <td>{boxFiles[0]?.shelfName || "N/A"}</td>
+                    <td>{boxFiles[0]?.rackName || "N/A"}</td>
+                    <td>{boxFiles[0]?.organizationName || "N/A"}</td>
+                    <td>
+                      <Button
+                        variant="soft"
+                        color="primary"
+                        onClick={() => handleViewmetadataJson(boxFiles)}
+                      >
+                        View files
+                      </Button>
+                    </td>
+                  </tr>
+                ),
+              )
+            ) : (
+              <tr>
+                <td
+                  colSpan={6}
+                  style={{ textAlign: "center", padding: "20px" }}
+                >
+                  {search
+                    ? "No results found for your search"
+                    : "No files available"}
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </Table>
       </Sheet>
@@ -668,7 +750,24 @@ export default function FileTable() {
             }}
           >
             <Typography level="title-lg">Files</Typography>
-            <ModalClose />
+
+            {/* Add search in metadata modal */}
+            <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+              <Input
+                startDecorator={<SearchRounded />}
+                endDecorator={
+                  search && (
+                    <Close onClick={clearSearch} sx={{ cursor: "pointer" }} />
+                  )
+                }
+                placeholder="Search files..."
+                size="sm"
+                value={search}
+                onChange={handleSearchChange}
+                sx={{ width: 250 }}
+              />
+              <ModalClose />
+            </Box>
           </Box>
 
           {/* Status Summary Cards */}
@@ -679,7 +778,7 @@ export default function FileTable() {
                   level="h3"
                   sx={{ fontWeight: "bold", color: "success.700" }}
                 >
-                  {selectedmetadataJson?.filter(
+                  {filteredMetadataJson?.filter(
                     (file: { status: string }) => file.status === "Available",
                   ).length || 0}
                 </Typography>
@@ -695,7 +794,7 @@ export default function FileTable() {
                   level="h3"
                   sx={{ fontWeight: "bold", color: "danger.700" }}
                 >
-                  {selectedmetadataJson?.filter(
+                  {filteredMetadataJson?.filter(
                     (file: { status: string }) => file.status === "Unavailable",
                   ).length || 0}
                 </Typography>
@@ -708,7 +807,9 @@ export default function FileTable() {
 
           {/* Scrollable Table Container */}
           <Box sx={{ overflow: "auto", maxHeight: "calc(70vh - 120px)" }}>
-            {selectedmetadataJson && selectedmetadataJson.length > 0 ? (
+            {filteredMetadataJson &&
+            Array.isArray(filteredMetadataJson) &&
+            filteredMetadataJson.length > 0 ? (
               <Table
                 sx={{
                   width: "100%",
@@ -737,7 +838,7 @@ export default function FileTable() {
               >
                 <thead>
                   <tr>
-                    {Object.keys(selectedmetadataJson[0] || {}).map(
+                    {Object.keys(filteredMetadataJson[0] || {}).map(
                       (key, index) => (
                         <th key={index}>{key.replace(/_/g, " ")}</th>
                       ),
@@ -746,12 +847,11 @@ export default function FileTable() {
                   </tr>
                 </thead>
                 <tbody>
-                  {selectedmetadataJson.map(
+                  {filteredMetadataJson.map(
                     (
                       data: {
                         [x: string]: any;
                         status?: any;
-                        checkedOutBy?: any;
                         fileId?: any;
                         organizationId?: any;
                       },
@@ -763,6 +863,8 @@ export default function FileTable() {
                             {String(data[key]) || "-"}
                           </td>
                         ))}
+
+                        {/* ✅ File Status Chip (Unchanged) */}
                         <td
                           style={{
                             textAlign: "center",
@@ -770,47 +872,108 @@ export default function FileTable() {
                             whiteSpace: "nowrap",
                           }}
                         >
-                          <Button
+                          <Chip
                             variant="soft"
                             color={
-                              data.status === "Available"
+                              data.status === "Pending"
                                 ? "warning"
-                                : "success"
+                                : data.status === "Available"
+                                  ? "primary"
+                                  : data.status === "Approved"
+                                    ? "success"
+                                    : "neutral"
                             }
-                            onClick={() =>
-                              handleToggleFileStatus(
-                                data.fileId,
-                                data.status,
-                                data.checkedOutBy,
-                                data.organizationId,
-                              )
-                            }
-                            disabled={
-                              data.status === "Unavailable" &&
-                              data.checkedOutBy !== currentUser?.id &&
-                              !roleNames.includes("SUPER_ADMIN")
-                            }
-                            startDecorator={
-                              data.status === "Available" ? (
-                                <DownloadIcon fontSize="small" />
-                              ) : (
-                                <CheckCircleOutline fontSize="small" />
-                              )
-                            }
+                            size="sm"
+                            // In the Chip onClick handler
+                            onClick={async () => {
+                              if (data.status === "Available") {
+                                try {
+                                  await checkOutFileService(data.fileId);
+                                  console.log(
+                                    `✅ Checked out file ID: ${data.fileId}`,
+                                  );
+
+                                  // Update files state
+                                  setFiles((prevFiles) =>
+                                    prevFiles.map((file) =>
+                                      file.id === data.fileId
+                                        ? { ...file, status: "Unavailable" }
+                                        : file,
+                                    ),
+                                  );
+
+                                  // ADDED: Also update the selectedmetadataJson state to "Pending"
+                                  setSelectedmetadataJson((prevMetadata) => {
+                                    if (!Array.isArray(prevMetadata)) return [];
+                                    return prevMetadata.map((item) =>
+                                      item.fileId === data.fileId
+                                        ? { ...item, status: "Pending" }
+                                        : item,
+                                    );
+                                  });
+                                } catch (error) {
+                                  console.error(
+                                    "❌ Error checking out file:",
+                                    error,
+                                  );
+                                }
+                              }
+                            }}
+                            disabled={data.status !== "Available"}
                             sx={{
-                              width: "100px",
-                              minWidth: "100px",
-                              justifyContent: "center",
-                              fontSize: "12px",
-                              padding: "6px",
                               display: "inline-flex",
-                              textTransform: "none",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              width: "120px",
+                              minWidth: "120px",
+                              maxWidth: "120px",
+                              textAlign: "center",
+                              padding: "6px",
+                              fontSize: "12px",
+                              whiteSpace: "nowrap",
+                              height: "32px",
+                              boxSizing: "border-box",
+                              margin: "0 auto",
+                              cursor:
+                                data.status === "Available"
+                                  ? "pointer"
+                                  : "default",
+                              "&.Mui-disabled": {
+                                opacity: 0.6,
+                              },
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
                             }}
                           >
-                            {data.status === "Available"
-                              ? "Check Out"
-                              : "Check In"}
-                          </Button>
+                            {/* Icon based on status */}
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                width: "20px",
+                                marginRight: "4px",
+                                justifyContent: "center",
+                              }}
+                            >
+                              {data.status === "Pending" ? (
+                                <InfoOutlined fontSize="small" />
+                              ) : data.status === "Available" ? (
+                                <DownloadIcon fontSize="small" />
+                              ) : data.status === "Approved" ? (
+                                <CheckCircleOutline fontSize="small" />
+                              ) : (
+                                <CheckCircleOutline fontSize="small" />
+                              )}
+                            </span>
+
+                            {/* Status Text */}
+                            <span>
+                              {data.status === "Pending"
+                                ? "Pending"
+                                : data.status === "Available"
+                                  ? "Check Out"
+                                  : "Checked Out"}
+                            </span>
+                          </Chip>
                         </td>
                       </tr>
                     ),

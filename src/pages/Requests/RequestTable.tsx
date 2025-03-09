@@ -2,34 +2,35 @@ import React, { useEffect, useState } from "react";
 import {
   Box,
   Button,
-  Input,
   Table,
   Typography,
   Sheet,
   CircularProgress,
   Chip,
 } from "@mui/joy";
-import { SearchRounded } from "@mui/icons-material";
 import { getCurrentUser } from "../../utils/helpers";
-import { getRequestsService } from "./requests_api";
+import { getRequestsService, approveRequestService } from "./requests_api";
+import { checkInFileService } from "../Files/files_api";
 
 interface IRequest {
   id: number;
+  fileId: number;
+  requestType: string;
   boxNumber?: number;
   checkedOutBy: number | null;
   status: string;
-  organization?: { id: number; name: string } | null;
-  organizationName?: string; // ✅ Use extracted organization name
-  createdDate: string;
-  requestType?: string;
-  requestDate?: any;
-  completedDate?: any;
+  requestDate?: number[];
+  organization?: {
+    id: number;
+    name: string;
+    dateAdded: number[];
+    expiryDate: number[];
+  };
 }
 
 export default function RequestTable() {
   const [requests, setRequests] = useState<IRequest[]>([]);
   const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState("");
 
   const currentUser = getCurrentUser();
   const isAdmin = currentUser.roles.some((role) => role.name === "SUPER_ADMIN");
@@ -43,37 +44,68 @@ export default function RequestTable() {
     try {
       const data = await getRequestsService(isAdmin);
 
-      // ✅ Transform data: Extract organization name and format dates
-      const formattedData = data.map((req: any) => ({
-        ...req,
-        organizationName: req.organization ? req.organization.name : "N/A", // Extract organization name
-        requestDate: req.requestDate
-          ? new Date(
-              req.requestDate[0], // Year
-              req.requestDate[1] - 1, // Month (0-based in JS)
-              req.requestDate[2], // Day
-              req.requestDate[3], // Hour
-              req.requestDate[4], // Minute
-              req.requestDate[5], // Second
-            ).toLocaleString("en-US", { hour12: false })
-          : "N/A",
-        completedDate: req.completedDate
-          ? new Date(
-              req.completedDate[0],
-              req.completedDate[1] - 1,
-              req.completedDate[2],
-              req.completedDate[3],
-              req.completedDate[4],
-              req.completedDate[5],
-            ).toLocaleString("en-US", { hour12: false })
-          : "N/A",
+      // ✅ Ensure `fileId` is correctly mapped from `id`
+      const processedRequests = data.map((request: any) => ({
+        ...request,
+        fileId: request.id,
       }));
 
-      setRequests(formattedData);
+      setRequests(processedRequests);
     } catch (error) {
-      console.error("Error fetching file requests:", error);
+      console.error("Error fetching requests:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleApproveRequest = async (
+    fileId: number,
+    currentStatus: string,
+  ) => {
+    try {
+      if (currentStatus === "Pending") {
+        await approveRequestService(fileId);
+        console.log(`✅ Admin approved request for File ID ${fileId}`);
+      } else if (currentStatus === "Approved") {
+        await approveRequestService(fileId);
+        console.log(`✅ Admin approved check-in for File ID ${fileId}`);
+      }
+
+      fetchRequests();
+    } catch (error) {
+      console.error(`❌ Error approving request ${fileId}:`, error);
+    }
+  };
+
+  const handleCheckIn = async (
+    fileId: number,
+    currentStatus: string | undefined,
+  ) => {
+    if (!fileId) {
+      console.error("❌ Cannot check in file: File ID is undefined");
+      return;
+    }
+
+    // ✅ Only check in files with "Approved" status
+    if (currentStatus !== "Approved") {
+      console.error("❌ Only approved files can be checked in.");
+      alert("Only approved files can be checked in.");
+      return;
+    }
+
+    try {
+      await checkInFileService(fileId); // ✅ Use Axios API service
+      console.log(`✅ File ID ${fileId} checked in successfully`);
+
+      // ✅ Update UI after check-in
+      setRequests(
+        (prevRequests) => prevRequests.filter((req) => req.fileId !== fileId), // Remove checked-in file from requests
+      );
+
+      fetchRequests(); // Refresh UI
+    } catch (error) {
+      console.error(`❌ Error checking in file ${fileId}:`, error);
+      alert("Failed to check in file. Please try again.");
     }
   };
 
@@ -83,16 +115,6 @@ export default function RequestTable() {
         File Requests
       </Typography>
 
-      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
-        <Input
-          startDecorator={<SearchRounded />}
-          placeholder="Search requests..."
-          size="md"
-          sx={{ width: 300 }}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </Box>
-
       <Sheet sx={{ width: "100%", overflow: "auto", backgroundColor: "white" }}>
         {loading ? (
           <CircularProgress />
@@ -100,33 +122,72 @@ export default function RequestTable() {
           <Table hoverRow>
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Box Number</th>
+                <th>Request ID</th>
+                <th>File ID</th>
                 <th>Request Type</th>
-                <th>Status</th>
+                <th>Box Number</th>
                 <th>Organization</th>
-                <th>Created Date</th>
+                <th>Request Date</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {requests.map((request) => (
-                <tr key={request.id}>
-                  <td>{request.id}</td>
-                  <td>{request.boxNumber || "N/A"}</td>
-                  <td>{request.requestType || "N/A"}</td>
-                  <td>
-                    <Chip
-                      color={
-                        request.status === "Unavailable" ? "danger" : "success"
-                      }
-                    >
-                      {request.status}
-                    </Chip>
-                  </td>
-                  <td>{request.organizationName || "N/A"}</td>
-                  <td>{request.requestDate || "N/A"}</td>
-                </tr>
-              ))}
+              {requests.map((request) =>
+                request.status !== "Completed" ? (
+                  <tr key={request.id}>
+                    <td>{request.id}</td>
+                    <td>{request.fileId || "N/A"}</td>
+                    <td>{request.requestType}</td>
+                    <td>{request.boxNumber || "N/A"}</td>
+                    <td>{request.organization?.name || "N/A"}</td>{" "}
+                    {/* ✅ Organization name fixed */}
+                    <td>
+                      {request.requestDate
+                        ? new Date(
+                            request.requestDate[0],
+                            request.requestDate[1] - 1,
+                            request.requestDate[2],
+                            request.requestDate[3],
+                            request.requestDate[4],
+                            request.requestDate[5],
+                          ).toLocaleString()
+                        : "N/A"}
+                    </td>
+                    <td>
+                      <Chip
+                        color={
+                          request.status === "Pending" ? "warning" : "success"
+                        }
+                      >
+                        {request.status}
+                      </Chip>
+                    </td>
+                    <td>
+                      {request.status === "Pending" && isAdmin ? (
+                        <Button
+                          onClick={() =>
+                            handleApproveRequest(request.fileId, request.status)
+                          }
+                          disabled={!request.fileId}
+                        >
+                          Approve
+                        </Button>
+                      ) : request.status === "Approved" ? (
+                        <Button
+                          onClick={() =>
+                            handleCheckIn(request.fileId, request.status)
+                          }
+                        >
+                          Check In
+                        </Button>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
+                  </tr>
+                ) : null,
+              )}
             </tbody>
           </Table>
         )}

@@ -210,11 +210,9 @@ export default function Login() {
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
-          backgroundImage:
-            "url(https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8ZnJlZSUyMHJlc2VhcmNoJTIwaW1hZ2VzfGVufDB8fDB8fHww)",
+          backgroundImage: `url(${Images.Warehouse})`, // ✅ Updated to use local warehouse image
           [theme.getColorSchemeSelector("dark")]: {
-            backgroundImage:
-              "url(https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTF8fGZyZWUlMjBtZWRpY2luZSUyMGltYWdlc3xlbnwwfHwwfHx8MA%3D%3D)",
+            backgroundImage: `url(${Images.Warehouse})`, // ✅ Same image for dark mode
           },
         })}
       />

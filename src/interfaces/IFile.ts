@@ -6,6 +6,11 @@ export default interface IFile {
   boxNumber: number;
   status?: string;
   folder?: any;
+  checkedOutBy?: number | null;
+  checkedOutByName?: string | null;
+  checkedOutByEmail?: string | null;
+  checkedOutByFirstName?: string | null;
+  checkedOutByLastName?: string | null;
 
   // Archival box details
   archivalBoxName?: string;

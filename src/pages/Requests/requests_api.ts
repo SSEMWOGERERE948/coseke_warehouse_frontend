@@ -62,3 +62,19 @@ export const getRequestsService = async (isAdmin: boolean) => {
     throw error;
   }
 };
+
+export const approveRequestService = async (requestId: number) => {
+  try {
+    const response = await AxiosInstance.post(`/files/${requestId}/approve`);
+    console.log(`✅ Request ${requestId} approved:`, response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      `❌ Error approving request ${requestId}:`,
+      error.response?.data || error.message,
+    );
+    throw new Error(
+      error.response?.data?.message || `Failed to approve request ${requestId}`,
+    );
+  }
+};
