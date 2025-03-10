@@ -94,12 +94,12 @@ export default function RequestTable() {
     }
 
     try {
-      await checkInFileService(fileId); // ✅ Use Axios API service
+      await checkInFileService(fileId); // ✅ Use fileId, not requestId
       console.log(`✅ File ID ${fileId} checked in successfully`);
 
       // ✅ Update UI after check-in
       setRequests(
-        (prevRequests) => prevRequests.filter((req) => req.fileId !== fileId), // Remove checked-in file from requests
+        (prevRequests) => prevRequests.filter((req) => req.fileId !== fileId), // Remove checked-in request
       );
 
       fetchRequests(); // Refresh UI
@@ -177,7 +177,7 @@ export default function RequestTable() {
                         <Button
                           onClick={() =>
                             handleCheckIn(request.fileId, request.status)
-                          }
+                          } // ✅ Use request.fileId
                         >
                           Check In
                         </Button>
