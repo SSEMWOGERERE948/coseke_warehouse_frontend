@@ -1,4 +1,4 @@
-import Logo from "./logo.png";
+import Logo from "./logo.jpg";
 import Warehouse from "./warehouse_image.jpg";
 
 export default {

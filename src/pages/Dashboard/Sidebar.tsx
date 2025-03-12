@@ -198,42 +198,44 @@ export default function Sidebar() {
               </ListItemButton>
             </ListItem>
           )}
-          <ListItem nested>
-            <Toggler
-              renderToggle={({ open, setOpen }) => (
-                <ListItemButton onClick={() => setOpen(!open)}>
-                  <AssignmentRoundedIcon />
-                  <ListItemContent>
-                    <Typography level="title-sm">Requests</Typography>
-                  </ListItemContent>
-                  <KeyboardArrowDownIcon
-                    sx={[
-                      open
-                        ? {
-                            transform: "rotate(180deg)",
-                          }
-                        : {
-                            transform: "none",
-                          },
-                    ]}
-                  />
-                </ListItemButton>
-              )}
-            >
-              <List sx={{ gap: 0.5 }}>
-                {hasPermission("READ_REQUESTS") && (
-                  <ListItem>
-                    <ListItemButton
-                      selected={selectedItem === routes.REQUESTS}
-                      onClick={() => handleSelect(routes.REQUESTS)}
-                    >
-                      Requests
-                    </ListItemButton>
-                  </ListItem>
+          {hasPermission("READ_REQUESTS") && (
+            <ListItem nested>
+              <Toggler
+                renderToggle={({ open, setOpen }) => (
+                  <ListItemButton onClick={() => setOpen(!open)}>
+                    <AssignmentRoundedIcon />
+                    <ListItemContent>
+                      <Typography level="title-sm">Requests</Typography>
+                    </ListItemContent>
+                    <KeyboardArrowDownIcon
+                      sx={[
+                        open
+                          ? {
+                              transform: "rotate(180deg)",
+                            }
+                          : {
+                              transform: "none",
+                            },
+                      ]}
+                    />
+                  </ListItemButton>
                 )}
-              </List>
-            </Toggler>
-          </ListItem>
+              >
+                <List sx={{ gap: 0.5 }}>
+                  {hasPermission("READ_REQUESTS") && (
+                    <ListItem>
+                      <ListItemButton
+                        selected={selectedItem === routes.REQUESTS}
+                        onClick={() => handleSelect(routes.REQUESTS)}
+                      >
+                        Requests
+                      </ListItemButton>
+                    </ListItem>
+                  )}
+                </List>
+              </Toggler>
+            </ListItem>
+          )}
 
           {hasPermission("READ_USER") && (
             <ListItem nested>

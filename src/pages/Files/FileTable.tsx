@@ -23,6 +23,7 @@ import {
   Grid,
   Card,
   CardContent,
+  Snackbar,
 } from "@mui/joy";
 import {
   SearchRounded,
@@ -54,6 +55,7 @@ import {
 import * as XLSX from "xlsx";
 import { getAllOrganisationCreationService } from "../organisation_creation/organisation_creation_api";
 import { approveRequestService } from "../Requests/requests_api";
+import Alert from "@mui/material/Alert";
 
 export default function FileTable() {
   const [files, setFiles] = useState<IFile[]>([]);
@@ -63,17 +65,24 @@ export default function FileTable() {
   const [pid, setPid] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
   const [isAddFileModalOpen, setIsAddFileModalOpen] = useState(false);
   const [excelData, setExcelData] = useState<any[]>([]);
   const [columns, setColumns] = useState<string[]>([]);
   const [allSelected, setAllSelected] = useState(false);
+  const [requesting, setRequesting] = useState<number | null>(null); // Loader for individual requests
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string }>({
+    open: false,
+    message: "",
+  });
 
   const currentUser = getCurrentUser();
   const userRoles = currentUser?.roles || [];
   const roleNames = userRoles
     .map((role: { name: any }) => role.name)
     .filter(Boolean);
+  const isManager = userRoles.some(
+    (role) => role.name.toUpperCase() === "MANAGER",
+  );
   const [archivalBoxes, setArchivalBoxes] = useState<any[]>([]);
   const [selectedArchivalBox, setSelectedArchivalBox] = useState<number | null>(
     null,
@@ -109,6 +118,11 @@ export default function FileTable() {
     string,
     any
   > | null>(null);
+
+  const [loading, setLoading] = useState(false);
+  const [loadingFileId, setLoadingFileId] = useState<number | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
 
   useEffect(() => {
     fetchFiles();
@@ -319,7 +333,7 @@ export default function FileTable() {
       }
 
       // ✅ Admin Approves & Marks as "Approved"
-      if (currentStatus === "Pending" && isSuperAdmin) {
+      if (currentStatus === "Requested" && isSuperAdmin) {
         await approveRequestService(fileId);
         console.log(`✅ Admin approved request for File ID ${fileId}`);
 
@@ -495,11 +509,13 @@ export default function FileTable() {
       await bulkUploadFilesService(
         selectedArchivalBox,
         Number(boxNumber),
-        selectedOrganization, // ✅ Send organizationId
+        selectedOrganization,
         structuredData,
       );
 
-      alert("Files uploaded successfully!");
+      setUploadSuccess(true); // Show Snackbar on success
+
+      // Reset form
       setSelectedFiles([]);
       setExcelData([]);
       setColumns([]);
@@ -513,11 +529,20 @@ export default function FileTable() {
     }
   };
 
+  const convertExcelDate = (excelDate: number) => {
+    if (!excelDate) return ""; // Handle empty values
+
+    if (typeof excelDate === "number") {
+      const date = new Date((excelDate - 25569) * 86400 * 1000); // Excel serial date conversion
+      return date.toISOString().split("T")[0]; // Returns YYYY-MM-DD format
+    }
+
+    return excelDate; // If it's already in text format, return as is
+  };
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
-    setIsExtracting(true); // ✅ Show loader while processing
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -527,37 +552,30 @@ export default function FileTable() {
         const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
 
+        // Convert sheet to JSON format
         const parsedData: any[][] = XLSX.utils.sheet_to_json(sheet, {
-          header: 1,
+          header: 1, // Read headers as the first row
         });
 
         if (parsedData.length > 0) {
           const headers = parsedData[0] as string[];
           setColumns(headers);
 
-          const filteredRows = parsedData
-            .slice(1)
-            .filter((row) =>
-              row.some(
-                (cell) => cell !== undefined && cell !== null && cell !== "",
-              ),
-            );
-          setExcelData(filteredRows);
+          const filteredRows = parsedData.slice(1).map((row) => {
+            return row.map((cell, index) => {
+              // Detect and convert date columns
+              if (headers[index].toLowerCase().includes("date")) {
+                return convertExcelDate(cell);
+              }
+              return cell;
+            });
+          });
 
-          const pidColumnIndex = headers.findIndex(
-            (h) => h.toLowerCase().includes("pid") || h.toLowerCase() === "id",
-          );
-          const pids = filteredRows
-            .map((row) => row[pidColumnIndex]?.toString())
-            .filter(Boolean);
-          setSelectedFiles(pids);
-          setAllSelected(pids.length === filteredRows.length);
+          setExcelData(filteredRows);
         }
       } catch (error) {
         console.error("Error processing file:", error);
         alert("Failed to process file. Please upload a valid Excel file.");
-      } finally {
-        setIsExtracting(false); // ✅ Hide loader after processing
       }
     };
 
@@ -643,14 +661,16 @@ export default function FileTable() {
         />
 
         {/* 🔥 "Add File" Button */}
-        <Button
-          variant="soft"
-          color="success"
-          onClick={() => setIsAddFileModalOpen(true)}
-          startDecorator={<UploadFile />}
-        >
-          Add File
-        </Button>
+        {!isManager && (
+          <Button
+            variant="soft"
+            color="success"
+            onClick={() => setIsAddFileModalOpen(true)}
+            startDecorator={<UploadFile />}
+          >
+            Add File
+          </Button>
+        )}
       </Box>
 
       <Sheet
@@ -875,7 +895,7 @@ export default function FileTable() {
                           <Chip
                             variant="soft"
                             color={
-                              data.status === "Pending"
+                              data.status === "Requested"
                                 ? "warning"
                                 : data.status === "Available"
                                   ? "primary"
@@ -884,9 +904,9 @@ export default function FileTable() {
                                     : "neutral"
                             }
                             size="sm"
-                            // In the Chip onClick handler
                             onClick={async () => {
                               if (data.status === "Available") {
+                                setLoadingFileId(data.fileId); // Start loader
                                 try {
                                   await checkOutFileService(data.fileId);
                                   console.log(
@@ -902,20 +922,27 @@ export default function FileTable() {
                                     ),
                                   );
 
-                                  // ADDED: Also update the selectedmetadataJson state to "Pending"
+                                  // Also update metadata JSON to "Requested"
                                   setSelectedmetadataJson((prevMetadata) => {
                                     if (!Array.isArray(prevMetadata)) return [];
                                     return prevMetadata.map((item) =>
                                       item.fileId === data.fileId
-                                        ? { ...item, status: "Pending" }
+                                        ? { ...item, status: "Requested" }
                                         : item,
                                     );
                                   });
+
+                                  // Show success message
+                                  setSuccessMessage(
+                                    "Successfully requested! Email sent to warehouse admin.",
+                                  );
                                 } catch (error) {
                                   console.error(
                                     "❌ Error checking out file:",
                                     error,
                                   );
+                                } finally {
+                                  setLoadingFileId(null); // Stop loader
                                 }
                               }
                             }}
@@ -945,7 +972,6 @@ export default function FileTable() {
                               textOverflow: "ellipsis",
                             }}
                           >
-                            {/* Icon based on status */}
                             <span
                               style={{
                                 display: "inline-flex",
@@ -954,7 +980,9 @@ export default function FileTable() {
                                 justifyContent: "center",
                               }}
                             >
-                              {data.status === "Pending" ? (
+                              {loadingFileId === data.fileId ? (
+                                <CircularProgress size="sm" />
+                              ) : data.status === "Requested" ? (
                                 <InfoOutlined fontSize="small" />
                               ) : data.status === "Available" ? (
                                 <DownloadIcon fontSize="small" />
@@ -965,13 +993,14 @@ export default function FileTable() {
                               )}
                             </span>
 
-                            {/* Status Text */}
                             <span>
-                              {data.status === "Pending"
-                                ? "Pending"
-                                : data.status === "Available"
-                                  ? "Check Out"
-                                  : "Checked Out"}
+                              {loadingFileId === data.fileId
+                                ? "Requesting..."
+                                : data.status === "Requested"
+                                  ? "File Requested"
+                                  : data.status === "Available"
+                                    ? "Request File"
+                                    : "File Requested"}
                             </span>
                           </Chip>
                         </td>
@@ -1408,6 +1437,34 @@ export default function FileTable() {
           </Box>
         </ModalDialog>
       </Modal>
+
+      {/* Success Snackbar */}
+      <Snackbar
+        open={uploadSuccess}
+        autoHideDuration={3000} // Hides after 3 seconds
+        onClose={() => setUploadSuccess(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }} // Adjust position if needed
+        sx={{
+          backgroundColor: "success.softBg",
+          color: "success.plainColor",
+          borderRadius: "8px",
+          boxShadow: "sm",
+          padding: "8px 16px",
+        }}
+      >
+        <Chip
+          variant="soft"
+          color="success"
+          startDecorator={<CheckCircleOutline fontSize="small" />}
+          sx={{
+            fontWeight: "medium",
+            padding: "6px 12px",
+            backgroundColor: "success.outlinedBg",
+          }}
+        >
+          Files uploaded successfully!
+        </Chip>
+      </Snackbar>
     </Box>
   );
 }

@@ -55,8 +55,8 @@ interface RolePermissions {
 
 const roles: Role[] = [
   { id: 1, roleName: "Manager" },
-  { id: 2, roleName: "User" },
-  { id: 3, roleName: "Supervisor" },
+  // { id: 2, roleName: "User" },
+  // { id: 3, roleName: "Supervisor" },
   { id: 4, roleName: "Super_Admin" },
 ];
 
@@ -255,24 +255,6 @@ const RolesAndPermissions: React.FC = () => {
               })),
           },
           {
-            Name: "Folders",
-            enabled: true,
-            permissions: response.data
-              .filter((perm: any) =>
-                [
-                  "READ_FOLDERS",
-                  "CREATE_FOLDERS",
-                  "UPDATE_FOLDERS",
-                  "DELETE_FOLDERS",
-                ].includes(perm.name),
-              )
-              .map((perm: any) => ({
-                id: perm.id,
-                permissionName: perm.name,
-                checked: rolePermissions.has(perm.name),
-              })),
-          },
-          {
             Name: "Users",
             enabled: true,
             permissions: response.data
@@ -282,24 +264,6 @@ const RolesAndPermissions: React.FC = () => {
                   "CREATE_USER",
                   "UPDATE_USER",
                   "DELETE_USER",
-                ].includes(perm.name),
-              )
-              .map((perm: any) => ({
-                id: perm.id,
-                permissionName: perm.name,
-                checked: rolePermissions.has(perm.name),
-              })),
-          },
-          {
-            Name: "File categories",
-            enabled: true,
-            permissions: response.data
-              .filter((perm: any) =>
-                [
-                  "READ_OrganisationCreation",
-                  "CREATE_OrganisationCreation",
-                  "UPDATE_OrganisationCreation",
-                  "DELETE_OrganisationCreation",
                 ].includes(perm.name),
               )
               .map((perm: any) => ({
@@ -667,10 +631,6 @@ const RolesAndPermissions: React.FC = () => {
         <SwipeableViews index={tabIndex} onChangeIndex={setTabIndex}>
           {/* System Roles and Permissions */}
           <Box p={2} sx={{ overflowX: "hidden", maxWidth: "100vw" }}>
-            <Typography level="h1" fontSize="xl" mb={2}>
-              System Roles and Permissions
-            </Typography>
-
             <Box
               display="flex"
               justifyContent="space-between"

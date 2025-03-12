@@ -1,4 +1,4 @@
-# Getting Started with Baylor Foundation Records Asset Management System
+# Getting Started with Coseke-Warehouse Records Asset Management System
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 

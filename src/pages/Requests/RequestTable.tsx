@@ -14,12 +14,34 @@ import { checkInFileService } from "../Files/files_api";
 
 interface IRequest {
   id: number;
-  fileId: number;
+  file: {
+    id: number;
+    name: string;
+    boxNumber?: number;
+    archivalBox?: {
+      id: number;
+      name: string;
+      shelf?: {
+        id: number;
+        name: string;
+        rack?: {
+          id: number;
+          name: string;
+        };
+      };
+    };
+  };
   requestType: string;
-  boxNumber?: number;
-  checkedOutBy: number | null;
   status: string;
   requestDate?: number[];
+  completedDate?: number[] | null;
+  boxNumber?: number;
+  user?: {
+    id: number;
+    first_name: string;
+    last_name: string;
+    email: string;
+  };
   organization?: {
     id: number;
     name: string;
@@ -43,14 +65,7 @@ export default function RequestTable() {
     setLoading(true);
     try {
       const data = await getRequestsService(isAdmin);
-
-      // ✅ Ensure `fileId` is correctly mapped from `id`
-      const processedRequests = data.map((request: any) => ({
-        ...request,
-        fileId: request.id,
-      }));
-
-      setRequests(processedRequests);
+      setRequests(data);
     } catch (error) {
       console.error("Error fetching requests:", error);
     } finally {
@@ -59,25 +74,22 @@ export default function RequestTable() {
   };
 
   const handleApproveRequest = async (
-    fileId: number,
+    requestId: number,
     currentStatus: string,
   ) => {
     try {
-      if (currentStatus === "Pending") {
-        await approveRequestService(fileId);
-        console.log(`✅ Admin approved request for File ID ${fileId}`);
-      } else if (currentStatus === "Approved") {
-        await approveRequestService(fileId);
-        console.log(`✅ Admin approved check-in for File ID ${fileId}`);
+      if (currentStatus === "Requested") {
+        await approveRequestService(requestId);
+        console.log(`✅ Admin approved request ${requestId}`);
       }
-
       fetchRequests();
     } catch (error) {
-      console.error(`❌ Error approving request ${fileId}:`, error);
+      console.error(`❌ Error approving request ${requestId}:`, error);
     }
   };
 
   const handleCheckIn = async (
+    requestId: number,
     fileId: number,
     currentStatus: string | undefined,
   ) => {
@@ -86,7 +98,6 @@ export default function RequestTable() {
       return;
     }
 
-    // ✅ Only check in files with "Approved" status
     if (currentStatus !== "Approved") {
       console.error("❌ Only approved files can be checked in.");
       alert("Only approved files can be checked in.");
@@ -94,19 +105,35 @@ export default function RequestTable() {
     }
 
     try {
-      await checkInFileService(fileId); // ✅ Use fileId, not requestId
+      await checkInFileService(requestId); // Using requestId for check-in as per backend implementation
       console.log(`✅ File ID ${fileId} checked in successfully`);
-
-      // ✅ Update UI after check-in
-      setRequests(
-        (prevRequests) => prevRequests.filter((req) => req.fileId !== fileId), // Remove checked-in request
-      );
-
       fetchRequests(); // Refresh UI
     } catch (error) {
       console.error(`❌ Error checking in file ${fileId}:`, error);
       alert("Failed to check in file. Please try again.");
     }
+  };
+
+  // Helper function to format date
+  const formatDate = (dateArray?: number[]) => {
+    if (!dateArray || dateArray.length < 6) return "N/A";
+    return new Date(
+      dateArray[0],
+      dateArray[1] - 1,
+      dateArray[2],
+      dateArray[3],
+      dateArray[4],
+      dateArray[5],
+    ).toLocaleString();
+  };
+
+  // Helper function to get user full name
+  const getUserFullName = (user?: {
+    first_name: string;
+    last_name: string;
+  }) => {
+    if (!user) return "N/A";
+    return `${user.first_name} ${user.last_name}`;
   };
 
   return (
@@ -122,11 +149,14 @@ export default function RequestTable() {
           <Table hoverRow>
             <thead>
               <tr>
-                <th>Request ID</th>
-                <th>File ID</th>
-                <th>Request Type</th>
-                <th>Box Number</th>
+                <th>File id</th>
+                <th>File Name</th>
+                <th>Requested By</th>
                 <th>Organization</th>
+                <th>Rack</th>
+                <th>Shelf</th>
+                <th>Archival Box</th>
+                <th>Box Number</th>
                 <th>Request Date</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -136,48 +166,46 @@ export default function RequestTable() {
               {requests.map((request) =>
                 request.status !== "Completed" ? (
                   <tr key={request.id}>
-                    <td>{request.id}</td>
-                    <td>{request.fileId || "N/A"}</td>
-                    <td>{request.requestType}</td>
-                    <td>{request.boxNumber || "N/A"}</td>
-                    <td>{request.organization?.name || "N/A"}</td>{" "}
-                    {/* ✅ Organization name fixed */}
+                    <td>{request.file?.id}</td>
+                    <td>{request.file?.name || "Unnamed File"}</td>
+                    <td>{getUserFullName(request.user)}</td>
+                    <td>{request.organization?.name || "N/A"}</td>
                     <td>
-                      {request.requestDate
-                        ? new Date(
-                            request.requestDate[0],
-                            request.requestDate[1] - 1,
-                            request.requestDate[2],
-                            request.requestDate[3],
-                            request.requestDate[4],
-                            request.requestDate[5],
-                          ).toLocaleString()
-                        : "N/A"}
+                      {request.file?.archivalBox?.shelf?.rack?.name || "N/A"}
                     </td>
+                    <td>{request.file?.archivalBox?.shelf?.name || "N/A"}</td>
+                    <td>{request.file?.archivalBox?.name || "N/A"}</td>
+                    <td>
+                      {request.boxNumber || request.file?.boxNumber || "N/A"}
+                    </td>
+                    <td>{formatDate(request.requestDate)}</td>
                     <td>
                       <Chip
                         color={
-                          request.status === "Pending" ? "warning" : "success"
+                          request.status === "Requested" ? "warning" : "success"
                         }
                       >
                         {request.status}
                       </Chip>
                     </td>
                     <td>
-                      {request.status === "Pending" && isAdmin ? (
+                      {request.status === "Requested" && isAdmin ? (
                         <Button
                           onClick={() =>
-                            handleApproveRequest(request.fileId, request.status)
+                            handleApproveRequest(request.id, request.status)
                           }
-                          disabled={!request.fileId}
                         >
                           Approve
                         </Button>
                       ) : request.status === "Approved" ? (
                         <Button
                           onClick={() =>
-                            handleCheckIn(request.fileId, request.status)
-                          } // ✅ Use request.fileId
+                            handleCheckIn(
+                              request.id,
+                              request.file.id,
+                              request.status,
+                            )
+                          }
                         >
                           Check In
                         </Button>
