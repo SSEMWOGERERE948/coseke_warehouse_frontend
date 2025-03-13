@@ -123,6 +123,10 @@ export default function FileTable() {
   const [loadingFileId, setLoadingFileId] = useState<number | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [requestedFiles, setRequestedFiles] = useState<Set<number>>(new Set());
+  const [processingRequests, setProcessingRequests] = useState<Set<number>>(
+    new Set(),
+  );
 
   useEffect(() => {
     fetchFiles();
@@ -858,12 +862,12 @@ export default function FileTable() {
               >
                 <thead>
                   <tr>
-                    {Object.keys(filteredMetadataJson[0] || {}).map(
-                      (key, index) => (
+                    {Object.keys(filteredMetadataJson[0] || {})
+                      .filter((key) => key !== "organizationId")
+                      .map((key, index) => (
                         <th key={index}>{key.replace(/_/g, " ")}</th>
-                      ),
-                    )}
-                    <th>Actions</th>
+                      ))}
+                    {!isSuperAdmin && <th>Actions</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -878,132 +882,124 @@ export default function FileTable() {
                       rowIndex: React.Key | null | undefined,
                     ) => (
                       <tr key={rowIndex}>
-                        {Object.keys(data).map((key, colIndex) => (
-                          <td key={colIndex} title={String(data[key])}>
-                            {String(data[key]) || "-"}
-                          </td>
-                        ))}
+                        {Object.keys(data)
+                          .filter((key) => key !== "organizationId")
+                          .map((key, colIndex) => (
+                            <td key={colIndex} title={String(data[key])}>
+                              {String(data[key]) || "-"}
+                            </td>
+                          ))}
 
                         {/* ✅ File Status Chip (Unchanged) */}
-                        <td
-                          style={{
-                            textAlign: "center",
-                            minWidth: "130px",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          <Chip
-                            variant="soft"
-                            color={
-                              data.status === "Requested"
-                                ? "warning"
-                                : data.status === "Available"
-                                  ? "primary"
-                                  : data.status === "Approved"
-                                    ? "success"
-                                    : "neutral"
-                            }
-                            size="sm"
-                            onClick={async () => {
-                              if (data.status === "Available") {
-                                setLoadingFileId(data.fileId); // Start loader
+                        {!isSuperAdmin && (
+                          <td
+                            style={{
+                              textAlign: "center",
+                              minWidth: "130px",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            <Chip
+                              variant="soft"
+                              color={
+                                requestedFiles.has(data.fileId) ||
+                                data.status !== "Available"
+                                  ? "neutral"
+                                  : "primary"
+                              }
+                              size="sm"
+                              onClick={async () => {
+                                // Check if this file is already being processed
+                                if (
+                                  processingRequests.has(data.fileId) ||
+                                  requestedFiles.has(data.fileId) ||
+                                  data.status !== "Available"
+                                ) {
+                                  console.warn(
+                                    `❌ File ID ${data.fileId} is already requested or being processed.`,
+                                  );
+                                  return;
+                                }
+
+                                // Mark this file as being processed
+                                setProcessingRequests((prev) =>
+                                  new Set(prev).add(data.fileId),
+                                );
+                                setLoadingFileId(data.fileId);
+
                                 try {
                                   await checkOutFileService(data.fileId);
-                                  console.log(
-                                    `✅ Checked out file ID: ${data.fileId}`,
+                                  // Rest of your success handling
+                                  setRequestedFiles((prev) =>
+                                    new Set(prev).add(data.fileId),
                                   );
-
-                                  // Update files state
-                                  setFiles((prevFiles) =>
-                                    prevFiles.map((file) =>
-                                      file.id === data.fileId
-                                        ? { ...file, status: "Unavailable" }
-                                        : file,
-                                    ),
-                                  );
-
-                                  // Also update metadata JSON to "Requested"
-                                  setSelectedmetadataJson((prevMetadata) => {
-                                    if (!Array.isArray(prevMetadata)) return [];
-                                    return prevMetadata.map((item) =>
-                                      item.fileId === data.fileId
-                                        ? { ...item, status: "Requested" }
-                                        : item,
-                                    );
-                                  });
-
-                                  // Show success message
-                                  setSuccessMessage(
-                                    "Successfully requested! Email sent to warehouse admin.",
-                                  );
+                                  // Update UI...
                                 } catch (error) {
                                   console.error(
-                                    "❌ Error checking out file:",
+                                    `❌ Error requesting file ID ${data.fileId}:`,
                                     error,
                                   );
                                 } finally {
-                                  setLoadingFileId(null); // Stop loader
+                                  setLoadingFileId(null);
+                                  // Remove from processing set when done
+                                  setProcessingRequests((prev) => {
+                                    const newSet = new Set(prev);
+                                    newSet.delete(data.fileId);
+                                    return newSet;
+                                  });
                                 }
+                              }}
+                              disabled={
+                                requestedFiles.has(data.fileId) ||
+                                data.status !== "Available"
                               }
-                            }}
-                            disabled={data.status !== "Available"}
-                            sx={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              width: "120px",
-                              minWidth: "120px",
-                              maxWidth: "120px",
-                              textAlign: "center",
-                              padding: "6px",
-                              fontSize: "12px",
-                              whiteSpace: "nowrap",
-                              height: "32px",
-                              boxSizing: "border-box",
-                              margin: "0 auto",
-                              cursor:
-                                data.status === "Available"
-                                  ? "pointer"
-                                  : "default",
-                              "&.Mui-disabled": {
-                                opacity: 0.6,
-                              },
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                            }}
-                          >
-                            <span
-                              style={{
+                              sx={{
                                 display: "inline-flex",
-                                width: "20px",
-                                marginRight: "4px",
+                                alignItems: "center",
                                 justifyContent: "center",
+                                width: "120px",
+                                textAlign: "center",
+                                padding: "6px",
+                                fontSize: "12px",
+                                whiteSpace: "nowrap",
+                                height: "32px",
+                                boxSizing: "border-box",
+                                margin: "0 auto",
+                                cursor: requestedFiles.has(data.fileId)
+                                  ? "not-allowed"
+                                  : "pointer",
+                                "&.Mui-disabled": {
+                                  opacity: 0.6,
+                                },
                               }}
                             >
-                              {loadingFileId === data.fileId ? (
-                                <CircularProgress size="sm" />
-                              ) : data.status === "Requested" ? (
-                                <InfoOutlined fontSize="small" />
-                              ) : data.status === "Available" ? (
-                                <DownloadIcon fontSize="small" />
-                              ) : data.status === "Approved" ? (
-                                <CheckCircleOutline fontSize="small" />
-                              ) : (
-                                <CheckCircleOutline fontSize="small" />
-                              )}
-                            </span>
+                              <span
+                                style={{
+                                  display: "inline-flex",
+                                  width: "20px",
+                                  marginRight: "4px",
+                                  justifyContent: "center",
+                                }}
+                              >
+                                {loadingFileId === data.fileId ? (
+                                  <CircularProgress size="sm" />
+                                ) : requestedFiles.has(data.fileId) ? (
+                                  <InfoOutlined fontSize="small" />
+                                ) : (
+                                  <DownloadIcon fontSize="small" />
+                                )}
+                              </span>
 
-                            <span>
-                              {loadingFileId === data.fileId
-                                ? "Requesting..."
-                                : data.status === "Requested"
-                                  ? "File Requested"
-                                  : data.status === "Available"
-                                    ? "Request File"
-                                    : "File Requested"}
-                            </span>
-                          </Chip>
-                        </td>
+                              <span>
+                                {loadingFileId === data.fileId
+                                  ? "Requesting..."
+                                  : requestedFiles.has(data.fileId)
+                                    ? "Already Requested"
+                                    : "Request File"}
+                              </span>
+                            </Chip>
+                          </td>
+                        )}
                       </tr>
                     ),
                   )}

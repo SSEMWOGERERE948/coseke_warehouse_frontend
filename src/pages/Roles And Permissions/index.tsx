@@ -55,9 +55,7 @@ interface RolePermissions {
 
 const roles: Role[] = [
   { id: 1, roleName: "Manager" },
-  // { id: 2, roleName: "User" },
-  // { id: 3, roleName: "Supervisor" },
-  { id: 4, roleName: "Super_Admin" },
+  { id: 2, roleName: "Super_Admin" },
 ];
 
 interface Role {

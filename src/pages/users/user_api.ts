@@ -54,7 +54,10 @@ export const deleteUser = async (id: number) => {
 // Update a user's basic information
 export const updateUser = async (id: number, updateData: any) => {
   try {
-    const response = await AxiosInstance.put(`/users/update/${id}`, updateData);
+    const response = await AxiosInstance.post(
+      `/users/update/${id}`,
+      updateData,
+    );
     return response.data;
   } catch (error) {
     throw error;
