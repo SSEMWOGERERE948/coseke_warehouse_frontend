@@ -21,6 +21,12 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
+      - name: Set up Firebase Authentication
+        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > $HOME/firebase-key.json
+
+      - name: Set Firebase Credentials Environment Variable
+        run: echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/firebase-key.json" >> $GITHUB_ENV
+
       - name: Install Dependencies
         run: npm install --legacy-peer-deps
 
@@ -31,6 +37,4 @@ jobs:
         run: npm run build || echo "Build completed with warnings"
 
       - name: Deploy to Firebase (Production)
-        run: firebase deploy --only hosting --project coseke-warehouse
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: firebase deploy --only hosting --project coseke-warehouse --debug
