@@ -1,12 +1,12 @@
-name: Deploy React App to Firebase Hosting
+name: Deploy React App to Firebase Hosting (Production)
 
 on:
   push:
     branches:
-      - main
+      - main  # Deploy when pushing to the main branch
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,18 +21,16 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: npm install --legacy-peer-deps
 
       - name: Run ESLint (Ignore Warnings)
         run: npm run lint || echo "ESLint warnings detected, continuing deployment"
 
-      - name: Build the React app (Ignore Errors)
+      - name: Build the React App
         run: npm run build || echo "Build completed with warnings"
 
-      - name: Deploy to Firebase
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: "${{ secrets.GITHUB_TOKEN }}"
-          firebaseServiceAccount: "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}"
-          projectId: "coseke-warehouse"
+      - name: Deploy to Firebase (Production)
+        run: firebase deploy --only hosting --project coseke-warehouse
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
