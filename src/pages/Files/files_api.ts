@@ -7,7 +7,7 @@ export const getAllFilesService = async (
   isSuperAdmin: boolean = false,
 ): Promise<IFile[]> => {
   try {
-    const url = new URL("http://localhost:8080/api/v1/files/all");
+    const url = new URL("https://warehouse.cosekeservices.com");
 
     if (organizationId !== undefined) {
       url.searchParams.append("organizationId", organizationId.toString());
@@ -246,7 +246,7 @@ export const getUserCheckedOutFiles = async (): Promise<IFile[]> => {
       (role) => role.name === "SUPER_ADMIN",
     );
 
-    const url = new URL("http://localhost:8080/api/v1/files/all");
+    const url = new URL("https://warehouse.cosekeservices.com");
 
     if (!isSuperAdmin) {
       url.searchParams.append("checkedOutBy", currentUser.id.toString()); // ✅ Filter by user ID
