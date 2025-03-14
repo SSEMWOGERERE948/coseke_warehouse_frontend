@@ -19,7 +19,6 @@ import {
   Option,
 } from "@mui/joy";
 import { AxiosInstance } from "../../core/baseURL";
-import { useNavigate } from "react-router-dom";
 import { FormControlLabel, FormGroup } from "@mui/material";
 
 interface Role {
@@ -97,7 +96,6 @@ const Index: React.FC = () => {
     };
     fetchOrganizations();
   }, []);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
